@@ -94,3 +94,25 @@ npx grunt amd --root=local/profilephoto
 
 Después de cualquier cambio en `amd/src/`, incrementa `$plugin->version`
 en `version.php` para invalidar la caché de JS (`$CFG->jsrev`).
+
+### Por qué hay también un `search.min.js.map`
+
+Confirmado leyendo `public/lib/requirejs.php` de `MOODLE_501_STABLE`: cuando
+`$CFG->cachejs` está desactivado (típico en un sitio de desarrollo, con
+`$rev <= 0`), Moodle sirve los módulos AMD uno a uno y, para cada uno,
+comprueba si existe `amd/build/<módulo>.min.js.map` junto al build:
+
+* si existe, sirve el `.min.js` real (nuestro build correcto, en formato
+  `define()`);
+* si **no** existe, asume que es "código fuente antiguo de un plugin" y
+  sirve directamente `amd/src/<módulo>.js` tal cual, sin transpilar.
+
+Como `amd/src/search.js` está escrito en el estilo moderno de Moodle (ES
+modules, con `import`/`export`), servirlo sin pasar por el build produce
+exactamente el error `Uncaught SyntaxError: Cannot use import statement
+outside a module` seguido de `No define call for local_profilephoto/search`
+en la consola del navegador. Por eso `amd/build/search.min.js.map` se
+incluye en el repositorio (con `mappings` vacío — sólo hace falta que el
+archivo exista para que Moodle tome la rama correcta; no es una fuente de
+mapeo línea a línea real). Cuando se regenere el build con `grunt amd`
+oficialmente, el `.map` correcto sustituirá a este.
