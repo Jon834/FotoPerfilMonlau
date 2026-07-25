@@ -72,7 +72,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="operatorid_timecreated" UNIQUE="false" FIELDS="operatorid, timecreated"/>
-        <INDEX NAME="targetuserid" UNIQUE="false" FIELDS="targetuserid"/>
+        <INDEX NAME="targetuserid_idx" UNIQUE="false" FIELDS="targetuserid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

@@ -95,7 +95,7 @@ function xmldb_local_profilephoto_upgrade($oldversion) {
         $table->add_key('operatorid', XMLDB_KEY_FOREIGN, ['operatorid'], 'user', ['id']);
         $table->add_key('targetuserid', XMLDB_KEY_FOREIGN, ['targetuserid'], 'user', ['id']);
         $table->add_index('operatorid_timecreated', XMLDB_INDEX_NOTUNIQUE, ['operatorid', 'timecreated']);
-        $table->add_index('targetuserid', XMLDB_INDEX_NOTUNIQUE, ['targetuserid']);
+        $table->add_index('targetuserid_idx', XMLDB_INDEX_NOTUNIQUE, ['targetuserid']);
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
         }
