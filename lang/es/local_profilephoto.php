@@ -49,6 +49,7 @@ $string['settings_maxsourcebytes'] = 'Tamaño máximo de la imagen capturada (by
 $string['settings_maxsourcebytes_desc'] = 'Las imágenes recibidas que superen este tamaño se rechazan antes de procesarse.';
 $string['settings_maxsearchresults'] = 'Número máximo de resultados de búsqueda';
 $string['settings_maxsearchresults_desc'] = 'Límite superior de resultados devueltos por cada búsqueda, independientemente de lo que solicite el cliente.';
+$string['opencapturescreen'] = 'Abrir pantalla de captura';
 
 $string['event_picture_updated'] = 'Fotografía de perfil actualizada';
 

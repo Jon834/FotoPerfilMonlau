@@ -30,6 +30,18 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
+    // Direct entry point to the capture screen itself, listed alongside the
+    // settings page under Site administration > Plugins > Local plugins,
+    // since photographers otherwise have no reason to browse Site
+    // administration and would only find index.php via the primary
+    // navigation node added in lib.php (easy to miss in the Boost drawer).
+    $ADMIN->add('localplugins', new admin_externalpage(
+        'local_profilephoto_launch',
+        get_string('opencapturescreen', 'local_profilephoto'),
+        new moodle_url('/local/profilephoto/index.php'),
+        'local/profilephoto:view'
+    ));
+
     $settings = new admin_settingpage('local_profilephoto', get_string('pluginname', 'local_profilephoto'));
     $ADMIN->add('localplugins', $settings);
 

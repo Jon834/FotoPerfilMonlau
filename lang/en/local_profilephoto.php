@@ -49,6 +49,7 @@ $string['settings_maxsourcebytes'] = 'Maximum size of the captured image (bytes)
 $string['settings_maxsourcebytes_desc'] = 'Incoming images larger than this are rejected before processing.';
 $string['settings_maxsearchresults'] = 'Maximum search results';
 $string['settings_maxsearchresults_desc'] = 'Upper bound on results returned per search, regardless of what the client requests.';
+$string['opencapturescreen'] = 'Open capture screen';
 
 $string['event_picture_updated'] = 'Profile picture updated';
 
