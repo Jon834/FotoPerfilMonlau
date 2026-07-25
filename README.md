@@ -12,8 +12,8 @@ fotografía de un usuario.
 
 ## Estado de esta entrega
 
-Esta es la **Entrega 1** de un desarrollo iterativo en 5 entregas (ver
-sección 33 del encargo original):
+Desarrollo iterativo en 5 entregas (ver sección 33 del encargo original).
+**Entregas 1 y 2 completas:**
 
 * ✅ Esqueleto instalable, capacidades, configuración de administración.
 * ✅ Búsqueda AJAX rápida y priorizada (idnumber/correo/usuario exactos
@@ -24,12 +24,15 @@ sección 33 del encargo original):
 * ✅ Actualización **real** de la fotografía de perfil oficial mediante
   `\core\user::update_picture()` — la misma API que usa
   `user/editadvanced.php` en el núcleo de Moodle.
-* ✅ Captura mediante subida manual de archivo (sustituye temporalmente a
-  la cámara en directo, para poder validar el guardado real sin depender
-  de hardware). El contrato de `save_picture` no cambiará al introducir la
-  cámara.
-* ⏳ Cámara en directo (`getUserMedia`), atajos de teclado, cuenta atrás →
-  Entrega 2.
+* ✅ Captura con cámara en directo (`getUserMedia`), con subida manual de
+  archivo como fallback automático cuando el navegador o el contexto no
+  admiten cámara.
+* ✅ Atajos de teclado (Espacio, Enter, R, B, Esc), configurables y
+  desactivables; compatibles con disparadores USB tipo teclado.
+* ✅ Cuenta atrás opcional antes de capturar (desactivada por defecto).
+* ✅ Protección contra doble envío (identificador de operación + botón
+  deshabilitado) y contra asignar una captura pendiente al alumno
+  equivocado si se cambia de selección antes de guardar.
 * ⏳ Cohortes/grupos/cursos, colas, sesiones fotográficas, auditoría
   persistente → Entrega 3.
 * ⏳ Exportación ZIP, `manifest.csv`, tareas de limpieza → Entrega 4.

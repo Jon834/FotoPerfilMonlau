@@ -1,4 +1,4 @@
-# Instalación — local_profilephoto (Entrega 1)
+# Instalación — local_profilephoto (Entregas 1 y 2)
 
 ## Requisitos
 
@@ -7,9 +7,9 @@
   copia en `public/local/profilephoto/`.
 * PHP con extensión **GD** compilada con soporte JPEG y PNG (usada tanto
   por este plugin como por el propio `process_new_icon()` de Moodle).
-* HTTPS en producción (obligatorio para que el navegador conceda acceso a
-  la cámara en la Entrega 2; no bloqueante para esta Entrega 1, que usa
-  subida manual de archivo).
+* **HTTPS** (o `localhost`) para que el navegador conceda acceso a la
+  cámara. Sin HTTPS la pantalla sigue siendo utilizable: cae
+  automáticamente a la subida manual de archivo.
 
 ## Pasos
 
@@ -65,26 +65,40 @@ En ambos casos, continúa con estos pasos:
    aparece en la navegación principal para cualquier usuario con
    `local/profilephoto:view`).
 
-## Verificación funcional mínima de esta entrega
+## Verificación funcional mínima
 
 1. Busca un alumno por nombre, correo, usuario o `idnumber` — los
    resultados deben aparecer sin recargar la página.
 2. Selecciónalo: debe verse su ficha con nombre, foto actual y avisos de
    estado.
-3. Sube una imagen de prueba (JPEG o PNG) y pulsa **Guardar y siguiente**.
-4. Comprueba en `user/profile.php?id=<id>` que la fotografía ha cambiado
+3. Pulsa **Activar cámara** y concede permiso cuando el navegador lo pida.
+   Debe verse el vídeo en directo con la guía facial superpuesta.
+4. Pulsa **Hacer foto** (o la barra espaciadora): debe aparecer la
+   previsualización congelada con los botones **Repetir** y **Guardar y
+   siguiente**.
+5. Pulsa **Repetir** (o `R`) y comprueba que vuelve al vídeo en directo sin
+   reiniciar la cámara (sin parpadeo/reconexión).
+6. Vuelve a capturar y pulsa **Guardar y siguiente** (o `Enter`).
+7. Comprueba en `user/profile.php?id=<id>` que la fotografía ha cambiado
    inmediatamente, sin necesidad de purgar cachés a mano.
-5. Repite el intento con un usuario **sin** `local/profilephoto:updatepicture`:
+8. En un navegador/pestaña sin HTTPS, o denegando el permiso de cámara,
+   comprueba que la pantalla cae automáticamente a la subida manual de
+   archivo (Entrega 1) y que ese flujo sigue guardando correctamente.
+9. Repite el intento con un usuario **sin** `local/profilephoto:updatepicture`:
    la llamada debe fallar con un error de capacidad y la foto no debe
    cambiar, aunque se manipule el `userid` enviado por AJAX.
+10. Selecciona un alumno, haz una foto (sin guardar) y luego busca y
+    selecciona a otro alumno distinto: la captura pendiente del primero
+    debe descartarse automáticamente, nunca guardarse contra el segundo.
 
-## Nota sobre el módulo AMD
+## Nota sobre los módulos AMD
 
-`amd/build/search.min.js` de esta entrega es un puerto manual (no
-minificado, funcionalmente idéntico) de `amd/src/search.js`, escrito así
-porque este entorno de desarrollo no dispone del toolchain `grunt`/Node de
-un checkout completo de Moodle core. Antes de una entrega a producción a
-gran escala, regenera el build de forma oficial:
+Los cuatro módulos AMD del plugin (`search`, `camera`, `shortcuts`,
+`capture`) se distribuyen como un puerto manual (no minificado,
+funcionalmente idéntico) de sus fuentes en `amd/src/`, escrito así porque
+este entorno de desarrollo no dispone del toolchain `grunt`/Node de un
+checkout completo de Moodle core. Antes de una entrega a producción a gran
+escala, regenera los builds de forma oficial:
 
 ```bash
 # desde la raíz de un checkout de Moodle core, con local/profilephoto ya copiado dentro
@@ -92,10 +106,15 @@ npm install
 npx grunt amd --root=local/profilephoto
 ```
 
-Después de cualquier cambio en `amd/src/`, incrementa `$plugin->version`
-en `version.php` para invalidar la caché de JS (`$CFG->jsrev`).
+Después de cualquier cambio en `amd/src/`:
 
-### Por qué hay también un `search.min.js.map`
+1. Incrementa `$plugin->version` en `version.php`.
+2. Purga las cachés del sitio (**Administración del sitio → Desarrollo →
+   Purgar cachés**). Esto es imprescindible incluso en sitios de
+   desarrollo: Moodle combina todos los módulos AMD en un paquete cacheado
+   en disco que **no** se invalida solo con subir la versión del plugin.
+
+### Por qué cada módulo lleva también un `.js.map`
 
 Confirmado leyendo `public/lib/requirejs.php` de `MOODLE_501_STABLE`: cuando
 `$CFG->cachejs` está desactivado (típico en un sitio de desarrollo, con
@@ -107,12 +126,13 @@ comprueba si existe `amd/build/<módulo>.min.js.map` junto al build:
 * si **no** existe, asume que es "código fuente antiguo de un plugin" y
   sirve directamente `amd/src/<módulo>.js` tal cual, sin transpilar.
 
-Como `amd/src/search.js` está escrito en el estilo moderno de Moodle (ES
-modules, con `import`/`export`), servirlo sin pasar por el build produce
-exactamente el error `Uncaught SyntaxError: Cannot use import statement
-outside a module` seguido de `No define call for local_profilephoto/search`
-en la consola del navegador. Por eso `amd/build/search.min.js.map` se
-incluye en el repositorio (con `mappings` vacío — sólo hace falta que el
-archivo exista para que Moodle tome la rama correcta; no es una fuente de
-mapeo línea a línea real). Cuando se regenere el build con `grunt amd`
-oficialmente, el `.map` correcto sustituirá a este.
+Como los ficheros en `amd/src/` están escritos en el estilo moderno de
+Moodle (ES modules, con `import`/`export`), servirlos sin pasar por el
+build produce exactamente `Uncaught SyntaxError: Cannot use import
+statement outside a module` seguido de `No define call for
+local_profilephoto/<módulo>` en la consola del navegador — el bug real que
+se diagnosticó durante las pruebas de la Entrega 1. Por eso cada
+`amd/build/<módulo>.min.js` incluye su `.map` (con `mappings` vacío — solo
+hace falta que el archivo exista para que Moodle tome la rama correcta; no
+es una fuente de mapeo línea a línea real). Cuando se regeneren los builds
+con `grunt amd` oficialmente, los `.map` correctos sustituirán a estos.

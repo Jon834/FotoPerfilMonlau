@@ -7,13 +7,13 @@ docroot servible a `public/`; el contenido del plugin en sí no cambia, solo
 dónde lo copia el instalador).
 
 > Este documento se entrega como Fase 1 y se actualiza en cada entrega. El
-> desarrollo se realiza de forma iterativa (sección 33 del encargo): esta
-> primera iteración de código cubre la **Entrega 1** — esqueleto instalable,
-> permisos, búsqueda AJAX, actualización real de la foto de perfil vía la API
-> oficial de Moodle y una captura manual de prueba (subida de archivo) para
-> validar el flujo completo sin depender todavía de la cámara. Las entregas
-> 2-5 (cámara en vivo, colas/sesiones, exportación ZIP, batería de pruebas)
-> se construyen sobre esta base sin romper la API pública ya fijada aquí.
+> desarrollo se realiza de forma iterativa (sección 33 del encargo).
+> **Entrega 1** (esqueleto instalable, permisos, búsqueda AJAX, actualización
+> real de la foto de perfil, captura manual de prueba) y **Entrega 2**
+> (cámara en directo, atajos de teclado, doble-envío) ya están cubiertas por
+> el código de este repositorio — ver sección 11. Las entregas 3-5
+> (cohortes/colas/sesiones, exportación ZIP, batería de pruebas completa) se
+> construyen sobre esta base sin romper la API pública ya fijada aquí.
 
 ## 1. Resumen de la solución
 
@@ -70,11 +70,13 @@ vuelve a cámara   guarda con \core\user::update_picture(), registra evento,
                   automáticamente el siguiente alumno pendiente de la cola
 ```
 
-En Entrega 1 el "hacer foto" se resuelve con una entrada de archivo (para
-poder probar el guardado real contra Moodle sin depender de una cámara);
-en Entrega 2 se sustituye por `getUserMedia` sin cambiar el contrato del
-external function `save_picture` (que ya recibe un blob de imagen, no un
-`<input type=file>` concreto).
+En Entrega 1 el "hacer foto" se resolvió con una entrada de archivo (para
+poder probar el guardado real contra Moodle sin depender de una cámara).
+En Entrega 2 (este commit) se sustituye por `getUserMedia` como camino
+principal, sin cambiar el contrato del external function `save_picture`
+(que ya recibía un blob de imagen en base64, no un `<input type=file>`
+concreto) — la entrada de archivo se conserva como *fallback* automático,
+mostrada solo cuando el navegador o el contexto no admiten cámara.
 
 ## 4. Método exacto para actualizar la fotografía oficial (crítico — prioridad 1)
 
@@ -190,11 +192,13 @@ capacidades desde ahora porque es un manifiesto, no lógica viva.
   revalidarse contra el código realmente instalado, por si un parche de
   seguridad posterior cambia la firma de `update_picture()`.
 
-## 8. Estructura de archivos (Entrega 1)
+## 8. Estructura de archivos
 
 ```
 local_profilephoto/
-├── amd/src/search.js
+├── amd/
+│   ├── src/{search,camera,shortcuts,capture}.js
+│   └── build/{search,camera,shortcuts,capture}.min.js(.map)
 ├── classes/
 │   ├── external/{search_users,get_user,save_picture}.php
 │   ├── local/access/scope.php
@@ -217,11 +221,11 @@ local_profilephoto/
 
 ## 9. Fases de implementación
 
-Fase 1 (este documento) → Fase 2/3/4 parcial = **Entrega 1** (este commit) →
-Entrega 2 (cámara real, atajos, doble-envío) → Entrega 3 (cohortes/grupos,
-colas, sesiones, auditoría persistente) → Entrega 4 (exportación ZIP) →
-Entrega 5 (PHPUnit/Behat completos, revisión de seguridad y accesibilidad,
-paquete final).
+Fase 1 (este documento) → Fase 2/3/4 parcial = **Entrega 1** → **Entrega 2**
+(cámara real, atajos, doble-envío) → Entrega 3 (cohortes/grupos, colas,
+sesiones, auditoría persistente) → Entrega 4 (exportación ZIP) → Entrega 5
+(PHPUnit/Behat completos, revisión de seguridad y accesibilidad, paquete
+final).
 
 ## 10. Criterios de prueba de esta entrega
 
@@ -237,3 +241,116 @@ paquete final).
 * Un usuario sin `local/profilephoto:updatepicture` recibe
   `require_capability` y la foto no cambia, aunque manipule el `userid` en
   la petición AJAX.
+
+## 11. Entrega 2 — cámara en directo, atajos, doble-envío
+
+### 11.1. Arquitectura JS
+
+Se divide la lógica de cliente en cuatro módulos AMD, cada uno con una
+responsabilidad única, en lugar de un único script monolítico:
+
+```
+local_profilephoto/search     → buscar y elegir un alumno (AJAX; sin noción de cámara ni de guardado)
+local_profilephoto/camera     → ciclo de vida de getUserMedia, listado de dispositivos, captura a Blob
+local_profilephoto/shortcuts  → atajos de teclado configurables, ignora campos de texto
+local_profilephoto/capture    → orquestador: es lo que carga index.php; conecta los tres anteriores
+                                 con save_picture y con la regla "nunca asignar la foto al alumno
+                                 equivocado" (ver 11.3)
+```
+
+`capture.js` sustituye a `search.js` como módulo que llama `index.php`
+(`js_call_amd('local_profilephoto/capture', 'init', [...])`); `search.js`
+pasa a exponer solo `init(onSelect)` y ya no conoce nada de cámaras ni de
+guardado, lo que permite probarlo por separado.
+
+### 11.2. Captura con cámara (encargo sección 7)
+
+* `navigator.mediaDevices.getUserMedia({video: {...}, audio: false})` -
+  nunca se pide audio.
+* Requiere `window.isSecureContext` (HTTPS, o `localhost`); si no se
+  cumple, o si `getUserMedia` no existe, la pantalla pasa automáticamente
+  al formulario de subida manual (Entrega 1) sin que el operador tenga que
+  hacer nada - `local_profilephoto/camera` expone `isSupported()` para esta
+  comprobación previa.
+* Si `getUserMedia` existe pero la llamada real falla (permiso denegado,
+  sin cámara, cámara en uso), el mismo fallback manual se activa de forma
+  permanente para el resto de la sesión (no tiene sentido reintentar la UI
+  de cámara si ya falló una vez) - ver el flag `useCameraUi` en
+  `capture.js`.
+* Resolución solicitada: `{ideal: 1280}` en ambos ejes (dentro del rango
+  720-1000+ recomendado por el encargo). La captura se recorta a cuadrado
+  centrado en el propio `<canvas>` del cliente (coherente con la guía
+  visual superpuesta al vídeo) y se limita a 1600 px de lado para no
+  disparar el tamaño del payload; el recorte/compresión *definitivos* los
+  sigue haciendo el servidor (`processor.php`), este recorte del cliente
+  es solo para que la previsualización coincida con lo que se guardará.
+* La cámara elegida se recuerda en `localStorage` (no es un dato personal
+  del alumno, es una preferencia de dispositivo del operador en su propio
+  navegador, por lo que no aplica la Privacy API de Moodle).
+* El stream se libera (`stop()`) en `beforeunload` y `pagehide`, y también
+  antes de arrancar uno nuevo (cambio de cámara), para no mantener varias
+  cámaras abiertas simultáneamente.
+* No se implementa detección facial ni ningún procesamiento biométrico
+  (encargo sección 8): el guía visual sobre el vídeo es puramente
+  decorativo (CSS), no hay análisis de la imagen en el cliente.
+
+### 11.3. Prevención de asignación incorrecta (prioridad 2 del encargo)
+
+Si el operador ha capturado una foto (todavía sin guardar) y busca/selecciona
+a un alumno **distinto** antes de pulsar "Guardar y siguiente", la captura
+pendiente se descarta automáticamente (`discardCapture()` se llama desde el
+callback `onSelect` de `search.js`). Así una foto nunca puede terminar
+guardada contra el alumno equivocado por un cambio de selección a medio
+capturar. Si se produce un error al guardar, la pantalla se queda en modo
+previsualización (no avanza automáticamente), tal como exige la sección 13.
+
+### 11.4. Atajos de teclado (encargo sección 6)
+
+Implementados: `Espacio` (hacer foto), `Enter` (guardar y siguiente), `R`
+(repetir), `B` (ir al buscador), `Esc` (cancelar previsualización).
+`ArrowLeft`/`ArrowRight`/`S` (navegación de cola, saltar/pendiente) se
+reservan para la Entrega 3, cuando exista una cola real que navegar - no se
+vinculan todavía para no ofrecer atajos que no hacen nada. Un disparador
+USB que emule Espacio o Enter funciona automáticamente, sin código
+adicional, siempre que el foco no esté en un campo de texto (comprobado en
+`shortcuts.js`). Activable/desactivable por configuración
+(`local_profilephoto/enableshortcuts`).
+
+### 11.5. Doble-envío
+
+Se mantiene el identificador de operación (`operationid`) más el
+deshabilitado del botón "Guardar y siguiente" introducidos en la Entrega 1
+(`classes/external/save_picture.php`, caché de sesión `recentsaves`); no
+ha hecho falta ningún cambio de servidor para la Entrega 2, ya que el
+contrato de `save_picture` no cambió (sigue recibiendo un blob en base64,
+ahora procedente de `canvas.toBlob()` en vez de un `<input type=file>`).
+
+### 11.6. Lección operativa: por qué hacen falta los `.js.map`
+
+Durante las pruebas en el sitio real del centro, la búsqueda dejó de
+funcionar con `Uncaught SyntaxError: Cannot use import statement outside a
+module` en `search.js`. La causa, confirmada leyendo el código real de
+`public/lib/requirejs.php` en `MOODLE_501_STABLE`: cuando `$CFG->cachejs`
+está desactivado (típico en un sitio de desarrollo), Moodle sirve los
+módulos AMD uno a uno y, para cada uno, comprueba si existe
+`amd/build/<módulo>.min.js.map`. Si no existe, asume que es "código fuente
+antiguo de un plugin" (pre-ES-modules) y sirve `amd/src/<módulo>.js` tal
+cual, sin transpilar - lo cual rompe cualquier módulo escrito con
+`import`/`export`. Por eso **todo** módulo de este plugin se distribuye
+con su `.map` correspondiente (con `mappings` vacío: solo hace falta que
+el archivo exista, Moodle no valida su contenido en esta ruta). Ver
+INSTALL.md para el detalle completo y cómo regenerarlos con `grunt amd`
+cuando haya toolchain de Node disponible.
+
+### 11.7. Riesgos añadidos en esta entrega
+
+* **Compatibilidad de navegador**: `getUserMedia`, `canvas.toBlob` y
+  `mediaDevices.enumerateDevices` están ampliamente soportados en
+  navegadores modernos, pero no en IE11 ni WebViews antiguos - el
+  fallback manual cubre ese caso sin bloquear la operación.
+* **Etiquetas de dispositivo vacías** antes de conceder permiso por
+  primera vez: `camera.js` gestiona esto mostrando un texto de respaldo
+  (`Cámara 1`, `Cámara 2`...) en el selector.
+* **Reproducción automática bloqueada por el navegador**: el `<video>` se
+  marca `muted` y `playsinline` precisamente para maximizar que
+  `video.play()` no sea bloqueado por las políticas de autoplay.

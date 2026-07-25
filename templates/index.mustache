@@ -17,12 +17,12 @@
 {{!
     @template local_profilephoto/index
 
-    Main capture screen shell (Entrega 1: manual file-based capture; the
-    camera panel arrives in Entrega 2 without changing this markup's ids,
-    since amd/src/search.js and the future camera.js both bind to them).
+    Main capture screen shell (Entrega 2: live camera via getUserMedia,
+    with the Entrega 1 manual file input kept as an automatic fallback for
+    browsers/contexts where the camera API is unavailable).
 
-    Context variables required by this template:
-    * sesskey - current session key, for the manual-capture fallback form.
+    This template has no context variables of its own - all state is
+    applied client-side by amd/src/capture.js after render.
 }}
 <div class="local-profilephoto-app" data-region="lpp-app">
 
@@ -40,19 +40,61 @@
 
     <div class="lpp-layout">
         <div class="lpp-camera-zone" data-region="lpp-camera-zone">
-            <p class="lpp-camera-placeholder text-muted">
-                {{#str}}camera_comingsoon, local_profilephoto{{/str}}
+
+            <p id="lpp-camera-warning" class="lpp-camera-warning text-muted" hidden>
+                {{#str}}camera_unsupported, local_profilephoto{{/str}}
             </p>
 
-            <form id="lpp-manual-capture-form" class="lpp-manual-capture-form">
-                <input type="hidden" name="sesskey" value="{{sesskey}}">
-                <label for="lpp-manual-file">{{#str}}manual_capture_label, local_profilephoto{{/str}}</label>
-                <input type="file" id="lpp-manual-file" accept="image/jpeg,image/png">
-                <img id="lpp-manual-preview" class="lpp-manual-preview" alt="" hidden>
-                <button type="submit" id="lpp-save-btn" class="btn btn-primary" disabled>
+            <div data-region="lpp-camera-live" class="lpp-camera-live">
+                <div class="lpp-video-wrapper">
+                    <video id="lpp-video" class="lpp-video" autoplay playsinline muted></video>
+                    <div class="lpp-camera-guide" aria-hidden="true"></div>
+                    <div id="lpp-countdown" class="lpp-countdown" aria-live="assertive" hidden></div>
+                </div>
+            </div>
+
+            <div data-region="lpp-camera-preview" class="lpp-camera-preview" hidden>
+                <img id="lpp-preview-img" class="lpp-preview-img" alt="">
+            </div>
+
+            <p id="lpp-camera-status" class="lpp-camera-status" role="status" aria-live="polite"></p>
+
+            <div data-region="lpp-controls-live" class="lpp-camera-controls">
+                <label for="lpp-camera-select" class="sr-only">{{#str}}camera_select, local_profilephoto{{/str}}</label>
+                <select id="lpp-camera-select" class="form-control lpp-camera-select" hidden></select>
+                <button type="button" id="lpp-camera-start-btn" class="btn btn-secondary">
+                    {{#str}}camera_activate, local_profilephoto{{/str}}
+                </button>
+                <button type="button" id="lpp-capture-btn" class="btn btn-primary lpp-capture-btn" disabled>
+                    {{#str}}take_photo, local_profilephoto{{/str}}
+                </button>
+            </div>
+
+            <div data-region="lpp-controls-preview" class="lpp-camera-controls" hidden>
+                <button type="button" id="lpp-repeat-btn" class="btn btn-secondary">
+                    {{#str}}repeat_photo, local_profilephoto{{/str}}
+                </button>
+                <button type="button" id="lpp-save-btn" class="btn btn-primary" disabled>
                     {{#str}}save_and_next, local_profilephoto{{/str}}
                 </button>
-            </form>
+            </div>
+
+            <div data-region="lpp-manual-fallback" class="lpp-manual-fallback" hidden>
+                <p class="text-muted">{{#str}}manual_fallback_desc, local_profilephoto{{/str}}</p>
+                <label for="lpp-manual-file">{{#str}}manual_fallback_label, local_profilephoto{{/str}}</label>
+                <input type="file" id="lpp-manual-file" accept="image/jpeg,image/png">
+            </div>
+
+            <details class="lpp-shortcuts-help">
+                <summary>{{#str}}shortcuts_help_title, local_profilephoto{{/str}}</summary>
+                <ul>
+                    <li><kbd>{{#str}}key_space, local_profilephoto{{/str}}</kbd> — {{#str}}shortcut_capture, local_profilephoto{{/str}}</li>
+                    <li><kbd>{{#str}}key_enter, local_profilephoto{{/str}}</kbd> — {{#str}}shortcut_save, local_profilephoto{{/str}}</li>
+                    <li><kbd>R</kbd> — {{#str}}shortcut_repeat, local_profilephoto{{/str}}</li>
+                    <li><kbd>B</kbd> — {{#str}}shortcut_search, local_profilephoto{{/str}}</li>
+                    <li><kbd>{{#str}}key_esc, local_profilephoto{{/str}}</kbd> — {{#str}}shortcut_cancel, local_profilephoto{{/str}}</li>
+                </ul>
+            </details>
         </div>
 
         <div class="lpp-student-zone" data-region="lpp-user-panel">

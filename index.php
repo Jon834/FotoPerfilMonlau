@@ -17,9 +17,9 @@
 /**
  * Main capture screen.
  *
- * Entrega 1: search + select + manual (file input) capture, to validate
- * the real Moodle picture update end to end before the live camera lands
- * in Entrega 2. See docs/technical-design.md.
+ * Entrega 2: search + select + live camera capture (getUserMedia), with
+ * the Entrega 1 manual file input kept as an automatic fallback for
+ * browsers/contexts without camera support. See docs/technical-design.md.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -43,12 +43,14 @@ $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('pluginname', 'local_profilephoto'));
 $PAGE->set_heading(get_string('pluginname', 'local_profilephoto'));
 
-$PAGE->requires->js_call_amd('local_profilephoto/search', 'init');
+$PAGE->requires->js_call_amd('local_profilephoto/capture', 'init', [[
+    'countdownEnabled' => (bool) get_config('local_profilephoto', 'enablecountdown'),
+    'countdownSeconds' => (int) get_config('local_profilephoto', 'countdownseconds'),
+    'shortcutsEnabled' => (bool) get_config('local_profilephoto', 'enableshortcuts'),
+]]);
 
 echo $OUTPUT->header();
 
-echo $OUTPUT->render_from_template('local_profilephoto/index', [
-    'sesskey' => sesskey(),
-]);
+echo $OUTPUT->render_from_template('local_profilephoto/index', []);
 
 echo $OUTPUT->footer();

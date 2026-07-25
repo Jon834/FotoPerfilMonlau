@@ -83,4 +83,26 @@ if ($hassiteconfig) {
         20,
         PARAM_INT
     ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_profilephoto/enableshortcuts',
+        get_string('settings_enableshortcuts', 'local_profilephoto'),
+        get_string('settings_enableshortcuts_desc', 'local_profilephoto'),
+        1
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_profilephoto/enablecountdown',
+        get_string('settings_enablecountdown', 'local_profilephoto'),
+        get_string('settings_enablecountdown_desc', 'local_profilephoto'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_profilephoto/countdownseconds',
+        get_string('settings_countdownseconds', 'local_profilephoto'),
+        get_string('settings_countdownseconds_desc', 'local_profilephoto'),
+        3,
+        PARAM_INT
+    ));
 }
