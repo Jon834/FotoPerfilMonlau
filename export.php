@@ -30,6 +30,10 @@
  */
 
 require(__DIR__ . '/../../config.php');
+// send_temp_file() lives in filelib.php, which setup.php only autoloads
+// under a specific proxy configuration - not guaranteed on every request,
+// so it must be required explicitly here.
+require_once($CFG->libdir . '/filelib.php');
 
 require_login();
 

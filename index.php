@@ -61,6 +61,9 @@ echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_profilephoto/index', [
     'canexport' => $canexport,
     'exporturl' => (new moodle_url('/local/profilephoto/export.php'))->out(false),
+    'helpicon_sessionfiltertype' => $OUTPUT->help_icon('session_filtertype', 'local_profilephoto'),
+    'helpicon_sessionorder' => $OUTPUT->help_icon('session_order', 'local_profilephoto'),
+    'helpicon_search' => $OUTPUT->help_icon('search_label', 'local_profilephoto'),
 ]);
 
 echo $OUTPUT->footer();

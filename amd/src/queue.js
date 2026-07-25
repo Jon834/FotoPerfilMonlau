@@ -117,6 +117,7 @@ export const init = (handlers) => {
     // replaced by hand on every update instead of round-tripping to the
     // server on each progress change (encargo section 11 performance goals).
     const progressTemplate = getString('session_progress_template', 'local_profilephoto');
+    const endConfirmText = getString('session_end_confirm', 'local_profilephoto');
 
     const updateFilterVisibility = () => {
         const isCourse = filterType.value === 'course';
@@ -180,10 +181,16 @@ export const init = (handlers) => {
     });
 
     endBtn.addEventListener('click', () => {
-        sessionId = null;
-        setup.hidden = false;
-        progress.hidden = true;
-        handlers.onNext(null);
+        endConfirmText.then((message) => {
+            if (!window.confirm(message)) {
+                return null;
+            }
+            sessionId = null;
+            setup.hidden = false;
+            progress.hidden = true;
+            handlers.onNext(null);
+            return null;
+        }).catch(Notification.exception);
     });
 
     return {

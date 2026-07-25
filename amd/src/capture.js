@@ -46,6 +46,7 @@ const SELECTORS = {
     CAMERA_WARNING: '#lpp-camera-warning',
     CAMERA_STATUS: '#lpp-camera-status',
     VIDEO: '#lpp-video',
+    CAMERA_PLACEHOLDER: '#lpp-camera-placeholder',
     CAMERA_SELECT: '#lpp-camera-select',
     CAMERA_START_BTN: '#lpp-camera-start-btn',
     CAPTURE_BTN: '#lpp-capture-btn',
@@ -116,6 +117,7 @@ export const init = (config) => {
     const cameraWarning = document.querySelector(SELECTORS.CAMERA_WARNING);
     const cameraStatus = document.querySelector(SELECTORS.CAMERA_STATUS);
     const video = document.querySelector(SELECTORS.VIDEO);
+    const cameraPlaceholder = document.querySelector(SELECTORS.CAMERA_PLACEHOLDER);
     const cameraSelect = document.querySelector(SELECTORS.CAMERA_SELECT);
     const cameraStartBtn = document.querySelector(SELECTORS.CAMERA_START_BTN);
     const captureBtn = document.querySelector(SELECTORS.CAPTURE_BTN);
@@ -324,6 +326,7 @@ export const init = (config) => {
         return camera.start(deviceId).then(() => {
             cameraReady = true;
             cameraStatus.textContent = '';
+            cameraPlaceholder.hidden = true;
             updateCaptureButtonState();
             return camera.listDevices();
         }).then((devices) => {

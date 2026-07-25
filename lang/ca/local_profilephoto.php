@@ -124,9 +124,11 @@ $string['settings_exportretentionminutes_desc'] = 'Els fitxers ZIP generats i no
 $string['task_cleanup_exports'] = 'Eliminar exportacions ZIP caducades';
 
 $string['session_filtertype'] = 'Àmbit de la sessió';
+$string['session_filtertype_help'] = 'Tria "Curs" o "Cohort" per generar automàticament una cua amb tots els seus alumnes, en l\'ordre que prefereixis. Útil quan fotografies un grup sencer seguit. Si només necessites un alumne concret, no cal iniciar una sessió: fes servir el cercador de més avall directament.';
 $string['session_filter_course'] = 'Curs';
 $string['session_filter_cohort'] = 'Cohort';
 $string['session_order'] = 'Ordre';
+$string['session_order_help'] = 'Determina en quin ordre apareixeran els alumnes de la cua en prémer "Desar i següent". Per defecte, per cognoms.';
 $string['order_lastname'] = 'Cognoms';
 $string['order_firstname'] = 'Nom';
 $string['order_email'] = 'Correu electrònic';
@@ -134,9 +136,16 @@ $string['order_idnumber'] = 'ID';
 $string['order_username'] = 'Nom d\'usuari';
 $string['session_start'] = 'Iniciar sessió de fotos';
 $string['session_end'] = 'Finalitzar sessió';
+$string['session_end_confirm'] = 'Finalitzar la sessió de fotos actual? Els alumnes ja fotografiats queden desats; els pendents es podran reprendre iniciant una nova sessió amb el mateix curs o cohort.';
 $string['session_progress_template'] = '{$a->captured}/{$a->total} fotografiats — {$a->pending} pendents';
 $string['queue_skip'] = 'Saltar';
 $string['queue_absent'] = 'Absent';
+
+$string['ux_step1'] = 'Cerca un alumne, o inicia una sessió per curs/cohort';
+$string['ux_step2'] = 'Activa la càmera i fes la foto';
+$string['ux_step3'] = 'Desa: el següent alumne es carrega sol';
+$string['camera_placeholder'] = 'Prem «Activar càmera» per començar';
+$string['search_label_help'] = 'Escriu almenys 2 lletres del nom, cognoms, correu, usuari o ID de l\'alumne. Els resultats apareixen sols, sense necessitat de prémer res.';
 
 $string['export_title'] = 'Exportar fotografies';
 $string['export_link'] = 'Exportar fotografies descarregables';

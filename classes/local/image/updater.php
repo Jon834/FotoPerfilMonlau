@@ -65,6 +65,13 @@ class updater {
         global $CFG;
 
         require_once($CFG->libdir . '/gdlib.php');
+        // file_get_unused_draft_itemid() below, and file_save_draft_area_files()
+        // called internally by \core\user::update_picture(), both live in
+        // filelib.php - which setup.php only autoloads under a specific
+        // proxy configuration, not on every request (confirmed against
+        // MOODLE_501_STABLE source; same class of bug as export.php's
+        // missing send_temp_file()).
+        require_once($CFG->libdir . '/filelib.php');
 
         $draftitemid = self::stage_draft_file($operatorid, $jpegdata);
 

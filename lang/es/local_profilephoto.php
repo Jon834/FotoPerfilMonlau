@@ -124,9 +124,11 @@ $string['settings_exportretentionminutes_desc'] = 'Los archivos ZIP generados y 
 $string['task_cleanup_exports'] = 'Eliminar exportaciones ZIP caducadas';
 
 $string['session_filtertype'] = 'Ámbito de la sesión';
+$string['session_filtertype_help'] = 'Elige "Curso" o "Cohorte" para generar automáticamente una cola con todos sus alumnos, en el orden que prefieras. Útil cuando vas a fotografiar a un grupo entero seguido. Si solo necesitas a un alumno concreto, no hace falta iniciar una sesión: usa el buscador de más abajo directamente.';
 $string['session_filter_course'] = 'Curso';
 $string['session_filter_cohort'] = 'Cohorte';
 $string['session_order'] = 'Orden';
+$string['session_order_help'] = 'Determina en qué orden aparecerán los alumnos de la cola al pulsar "Guardar y siguiente". Por defecto, por apellidos.';
 $string['order_lastname'] = 'Apellidos';
 $string['order_firstname'] = 'Nombre';
 $string['order_email'] = 'Correo electrónico';
@@ -134,9 +136,16 @@ $string['order_idnumber'] = 'ID';
 $string['order_username'] = 'Nombre de usuario';
 $string['session_start'] = 'Iniciar sesión de fotos';
 $string['session_end'] = 'Finalizar sesión';
+$string['session_end_confirm'] = '¿Finalizar la sesión de fotos actual? Los alumnos ya fotografiados quedan guardados; los pendientes se podrán retomar iniciando una nueva sesión con el mismo curso o cohorte.';
 $string['session_progress_template'] = '{$a->captured}/{$a->total} fotografiados — {$a->pending} pendientes';
 $string['queue_skip'] = 'Saltar';
 $string['queue_absent'] = 'Ausente';
+
+$string['ux_step1'] = 'Busca un alumno, o inicia una sesión por curso/cohorte';
+$string['ux_step2'] = 'Activa la cámara y haz la foto';
+$string['ux_step3'] = 'Guarda: el siguiente alumno se carga solo';
+$string['camera_placeholder'] = 'Pulsa «Activar cámara» para empezar';
+$string['search_label_help'] = 'Escribe al menos 2 letras del nombre, apellidos, correo, usuario o ID del alumno. Los resultados aparecen solos, sin necesidad de pulsar nada.';
 
 $string['export_title'] = 'Exportar fotografías';
 $string['export_link'] = 'Exportar fotografías descargables';

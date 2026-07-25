@@ -124,9 +124,11 @@ $string['settings_exportretentionminutes_desc'] = 'Generated ZIPs that are never
 $string['task_cleanup_exports'] = 'Delete expired export ZIPs';
 
 $string['session_filtertype'] = 'Session scope';
+$string['session_filtertype_help'] = 'Choose "Course" or "Cohort" to automatically build a queue with all its students, in whichever order you prefer. Useful when photographing a whole group in a row. If you only need one specific student, you don\'t need to start a session: use the search box below directly.';
 $string['session_filter_course'] = 'Course';
 $string['session_filter_cohort'] = 'Cohort';
 $string['session_order'] = 'Order';
+$string['session_order_help'] = 'Determines the order students appear in the queue when you click "Save and next". Last name by default.';
 $string['order_lastname'] = 'Last name';
 $string['order_firstname'] = 'First name';
 $string['order_email'] = 'Email';
@@ -134,9 +136,16 @@ $string['order_idnumber'] = 'ID';
 $string['order_username'] = 'Username';
 $string['session_start'] = 'Start photo session';
 $string['session_end'] = 'End session';
+$string['session_end_confirm'] = 'End the current photo session? Students already photographed stay saved; pending ones can be resumed by starting a new session with the same course or cohort.';
 $string['session_progress_template'] = '{$a->captured}/{$a->total} captured — {$a->pending} pending';
 $string['queue_skip'] = 'Skip';
 $string['queue_absent'] = 'Absent';
+
+$string['ux_step1'] = 'Search for a student, or start a session by course/cohort';
+$string['ux_step2'] = 'Activate the camera and take the photo';
+$string['ux_step3'] = 'Save: the next student loads on its own';
+$string['camera_placeholder'] = 'Click "Activate camera" to get started';
+$string['search_label_help'] = 'Type at least 2 letters of the student\'s name, surname, email, username or ID. Results appear on their own, no need to press anything.';
 
 $string['export_title'] = 'Export photos';
 $string['export_link'] = 'Export downloadable photos';

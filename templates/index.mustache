@@ -17,62 +17,91 @@
 {{!
     @template local_profilephoto/index
 
-    Main capture screen shell (Entrega 2: live camera via getUserMedia,
-    with the Entrega 1 manual file input kept as an automatic fallback for
-    browsers/contexts where the camera API is unavailable).
+    Main capture screen shell. All state is applied client-side by
+    amd/src/capture.js after render.
 
     Context variables:
     * canexport - bool, whether to show the export screen link.
     * exporturl - string, URL to export.php.
+    * helpicon_sessionfiltertype, helpicon_sessionorder, helpicon_search -
+      pre-rendered $OUTPUT->help_icon() HTML (raw, output unescaped).
 }}
 <div class="local-profilephoto-app" data-region="lpp-app">
 
     {{#canexport}}
     <p class="lpp-export-link">
-        <a href="{{exporturl}}">{{#str}}export_link, local_profilephoto{{/str}}</a>
+        <a href="{{exporturl}}" title="{{#str}}export_link, local_profilephoto{{/str}}">
+            {{#str}}export_link, local_profilephoto{{/str}}
+        </a>
     </p>
     {{/canexport}}
 
+    <ol class="lpp-steps">
+        <li>{{#str}}ux_step1, local_profilephoto{{/str}}</li>
+        <li>{{#str}}ux_step2, local_profilephoto{{/str}}</li>
+        <li>{{#str}}ux_step3, local_profilephoto{{/str}}</li>
+    </ol>
+
     <div class="lpp-session-bar">
         <div data-region="lpp-session-setup" class="lpp-session-setup">
-            <label for="lpp-session-filtertype">{{#str}}session_filtertype, local_profilephoto{{/str}}</label>
-            <select id="lpp-session-filtertype" class="form-control">
-                <option value="course">{{#str}}session_filter_course, local_profilephoto{{/str}}</option>
-                <option value="cohort">{{#str}}session_filter_cohort, local_profilephoto{{/str}}</option>
-            </select>
+            <p class="lpp-section-title">{{#str}}session_filtertype, local_profilephoto{{/str}} {{{helpicon_sessionfiltertype}}}</p>
 
-            <select id="lpp-session-course" class="form-control"></select>
-            <select id="lpp-session-cohort" class="form-control" hidden></select>
+            <div class="lpp-session-setup-controls">
+                <label for="lpp-session-filtertype" class="sr-only">{{#str}}session_filtertype, local_profilephoto{{/str}}</label>
+                <select id="lpp-session-filtertype"
+                        class="form-control"
+                        title="{{#str}}session_filtertype, local_profilephoto{{/str}}">
+                    <option value="course">{{#str}}session_filter_course, local_profilephoto{{/str}}</option>
+                    <option value="cohort">{{#str}}session_filter_cohort, local_profilephoto{{/str}}</option>
+                </select>
 
-            <label for="lpp-session-order">{{#str}}session_order, local_profilephoto{{/str}}</label>
-            <select id="lpp-session-order" class="form-control">
-                <option value="lastname">{{#str}}order_lastname, local_profilephoto{{/str}}</option>
-                <option value="firstname">{{#str}}order_firstname, local_profilephoto{{/str}}</option>
-                <option value="email">{{#str}}order_email, local_profilephoto{{/str}}</option>
-                <option value="idnumber">{{#str}}order_idnumber, local_profilephoto{{/str}}</option>
-                <option value="username">{{#str}}order_username, local_profilephoto{{/str}}</option>
-            </select>
+                <select id="lpp-session-course" class="form-control"></select>
+                <select id="lpp-session-cohort" class="form-control" hidden></select>
 
-            <button type="button" id="lpp-session-start-btn" class="btn btn-secondary">
-                {{#str}}session_start, local_profilephoto{{/str}}
-            </button>
+                <label for="lpp-session-order">
+                    {{#str}}session_order, local_profilephoto{{/str}} {{{helpicon_sessionorder}}}
+                </label>
+                <select id="lpp-session-order"
+                        class="form-control"
+                        title="{{#str}}session_order, local_profilephoto{{/str}}">
+                    <option value="lastname">{{#str}}order_lastname, local_profilephoto{{/str}}</option>
+                    <option value="firstname">{{#str}}order_firstname, local_profilephoto{{/str}}</option>
+                    <option value="email">{{#str}}order_email, local_profilephoto{{/str}}</option>
+                    <option value="idnumber">{{#str}}order_idnumber, local_profilephoto{{/str}}</option>
+                    <option value="username">{{#str}}order_username, local_profilephoto{{/str}}</option>
+                </select>
+
+                <button type="button"
+                        id="lpp-session-start-btn"
+                        class="btn btn-secondary"
+                        title="{{#str}}session_start, local_profilephoto{{/str}}">
+                    {{#str}}session_start, local_profilephoto{{/str}}
+                </button>
+            </div>
         </div>
 
         <div data-region="lpp-session-progress" class="lpp-session-progress" hidden>
             <span id="lpp-session-progress-text"></span>
-            <button type="button" id="lpp-session-end-btn" class="btn btn-link btn-sm">
+            <button type="button"
+                    id="lpp-session-end-btn"
+                    class="btn btn-link btn-sm"
+                    title="{{#str}}session_end, local_profilephoto{{/str}}">
                 {{#str}}session_end, local_profilephoto{{/str}}
             </button>
         </div>
     </div>
 
     <div class="lpp-searchbar">
-        <label for="lpp-search-input" class="sr-only">{{#str}}search_label, local_profilephoto{{/str}}</label>
+        <p class="lpp-section-title">
+            <label for="lpp-search-input">{{#str}}search_label, local_profilephoto{{/str}}</label>
+            {{{helpicon_search}}}
+        </p>
         <input type="text"
                id="lpp-search-input"
                class="form-control lpp-search-input"
                autocomplete="off"
-               placeholder="{{#str}}search_placeholder, local_profilephoto{{/str}}">
+               placeholder="{{#str}}search_placeholder, local_profilephoto{{/str}}"
+               title="{{#str}}search_label, local_profilephoto{{/str}}">
         <div id="lpp-search-results" class="lpp-search-results" data-region="lpp-search-results"></div>
     </div>
 
@@ -89,6 +118,9 @@
                 <div class="lpp-video-wrapper">
                     <video id="lpp-video" class="lpp-video" autoplay playsinline muted></video>
                     <div class="lpp-camera-guide" aria-hidden="true"></div>
+                    <p id="lpp-camera-placeholder" class="lpp-camera-placeholder-text">
+                        {{#str}}camera_placeholder, local_profilephoto{{/str}}
+                    </p>
                     <div id="lpp-countdown" class="lpp-countdown" aria-live="assertive" hidden></div>
                 </div>
             </div>
@@ -101,29 +133,52 @@
 
             <div data-region="lpp-controls-live" class="lpp-camera-controls">
                 <label for="lpp-camera-select" class="sr-only">{{#str}}camera_select, local_profilephoto{{/str}}</label>
-                <select id="lpp-camera-select" class="form-control lpp-camera-select" hidden></select>
-                <button type="button" id="lpp-camera-start-btn" class="btn btn-secondary">
+                <select id="lpp-camera-select" class="form-control lpp-camera-select" hidden
+                        title="{{#str}}camera_select, local_profilephoto{{/str}}"></select>
+                <button type="button"
+                        id="lpp-camera-start-btn"
+                        class="btn btn-secondary"
+                        title="{{#str}}camera_activate, local_profilephoto{{/str}}">
                     {{#str}}camera_activate, local_profilephoto{{/str}}
                 </button>
-                <button type="button" id="lpp-capture-btn" class="btn btn-primary lpp-capture-btn" disabled>
+                <button type="button"
+                        id="lpp-capture-btn"
+                        class="btn btn-primary lpp-capture-btn"
+                        title="{{#str}}take_photo, local_profilephoto{{/str}} ({{#str}}key_space, local_profilephoto{{/str}})"
+                        disabled>
                     {{#str}}take_photo, local_profilephoto{{/str}}
                 </button>
             </div>
 
             <div data-region="lpp-controls-preview" class="lpp-camera-controls" hidden>
-                <button type="button" id="lpp-repeat-btn" class="btn btn-secondary">
+                <button type="button"
+                        id="lpp-repeat-btn"
+                        class="btn btn-secondary"
+                        title="{{#str}}repeat_photo, local_profilephoto{{/str}} (R)">
                     {{#str}}repeat_photo, local_profilephoto{{/str}}
                 </button>
-                <button type="button" id="lpp-save-btn" class="btn btn-primary" disabled>
+                <button type="button"
+                        id="lpp-save-btn"
+                        class="btn btn-primary"
+                        title="{{#str}}save_and_next, local_profilephoto{{/str}} ({{#str}}key_enter, local_profilephoto{{/str}})"
+                        disabled>
                     {{#str}}save_and_next, local_profilephoto{{/str}}
                 </button>
             </div>
 
             <div class="lpp-queue-controls">
-                <button type="button" id="lpp-skip-btn" class="btn btn-outline-secondary btn-sm" hidden>
+                <button type="button"
+                        id="lpp-skip-btn"
+                        class="btn btn-outline-secondary btn-sm"
+                        title="{{#str}}shortcut_skip, local_profilephoto{{/str}} (S)"
+                        hidden>
                     {{#str}}queue_skip, local_profilephoto{{/str}}
                 </button>
-                <button type="button" id="lpp-absent-btn" class="btn btn-outline-secondary btn-sm" hidden>
+                <button type="button"
+                        id="lpp-absent-btn"
+                        class="btn btn-outline-secondary btn-sm"
+                        title="{{#str}}queue_absent, local_profilephoto{{/str}}"
+                        hidden>
                     {{#str}}queue_absent, local_profilephoto{{/str}}
                 </button>
             </div>
