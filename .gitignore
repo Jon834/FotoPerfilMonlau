@@ -1,0 +1,6 @@
+# Node tooling artefacts, if `grunt`/npm are ever run locally against a Moodle core checkout.
+node_modules/
+
+# OS / editor cruft.
+.DS_Store
+Thumbs.db
