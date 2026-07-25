@@ -13,20 +13,37 @@
 
 ## Pasos
 
-1. Copia la carpeta de este plugin (todo el contenido de este repositorio)
-   dentro de tu instalación de Moodle como:
+Este repositorio tiene el plugin en su raíz (sin carpeta contenedora): los
+archivos `version.php`, `lib.php`, etc. están directamente en la raíz del
+repo. Elige una de estas dos vías para llevarlo a tu Moodle:
 
-   ```text
-   <moodle>/public/local/profilephoto/
-   ```
+### Opción A — clonar directamente en el servidor (recomendada)
 
-   (en instalaciones anteriores a la reestructuración `public/` de Moodle
-   5.0, sería `<moodle>/local/profilephoto/`).
+```bash
+git clone https://github.com/Jon834/FotoPerfilMonlau.git public/local/profilephoto
+```
 
-2. Visita **Administración del sitio → Notificaciones** y deja que Moodle
+(en instalaciones anteriores a la reestructuración `public/` de Moodle 5.0,
+el destino sería `local/profilephoto` en lugar de `public/local/profilephoto`).
+
+### Opción B — subir un ZIP desde la interfaz de administración
+
+1. Descarga [`dist/profilephoto.zip`](dist/profilephoto.zip) directamente
+   desde GitHub (botón "Download raw file" en esa página, o
+   `https://github.com/Jon834/FotoPerfilMonlau/raw/main/dist/profilephoto.zip`).
+   Ese ZIP ya tiene la carpeta interna llamada `profilephoto` (el nombre
+   que Moodle espera para instalar `local_profilephoto`), a diferencia del
+   ZIP que genera el botón "Code → Download ZIP" de GitHub, que **no** es
+   directamente instalable (usa el nombre del repositorio, no del plugin).
+2. Ve a **Administración del sitio → Extensiones → Plugins → Instalar
+   plugins** y sube ese ZIP.
+
+En ambos casos, continúa con estos pasos:
+
+1. Visita **Administración del sitio → Notificaciones** y deja que Moodle
    ejecute la instalación del plugin.
 
-3. Ve a **Administración del sitio → Usuarios → Permisos → Definir roles**
+2. Ve a **Administración del sitio → Usuarios → Permisos → Definir roles**
    y crea (o adapta un rol existente) un rol **Fotógrafo** con, como
    mínimo:
 
@@ -39,12 +56,12 @@
    ámbito real del fotógrafo (o en el contexto de sistema si debe operar
    sobre todo el centro, junto con `local/profilephoto:viewallusers`).
 
-4. Ve a **Administración del sitio → Extensiones → Plugins locales →
+3. Ve a **Administración del sitio → Extensiones → Plugins locales →
    Captura de fotografías de perfil** y revisa la configuración (tamaño
    final, calidad JPEG, tamaño máximo de imagen, resultados máximos de
    búsqueda).
 
-5. Accede a `<moodle>/local/profilephoto/index.php` (o usa el enlace que
+4. Accede a `<moodle>/local/profilephoto/index.php` (o usa el enlace que
    aparece en la navegación principal para cualquier usuario con
    `local/profilephoto:view`).
 
