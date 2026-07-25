@@ -14,9 +14,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Main page controller for the capture screen (Entrega 2).
+ * Main page controller for the capture screen.
  *
- * Orchestrates local_profilephoto/search (find a student),
+ * Orchestrates local_profilephoto/search (find a student manually),
+ * local_profilephoto/queue (session/queue auto-advance),
  * local_profilephoto/camera (live capture, with a manual file-upload
  * fallback when the camera is unavailable) and
  * local_profilephoto/shortcuts (keyboard bindings), and owns the
@@ -35,6 +36,7 @@ import Templates from 'core/templates';
 import Notification from 'core/notification';
 import {getStrings, getString} from 'core/str';
 import * as Search from 'local_profilephoto/search';
+import * as Queue from 'local_profilephoto/queue';
 import * as Camera from 'local_profilephoto/camera';
 import * as Shortcuts from 'local_profilephoto/shortcuts';
 
@@ -55,6 +57,8 @@ const SELECTORS = {
     PREVIEW_CONTROLS: '[data-region="lpp-controls-preview"]',
     REPEAT_BTN: '#lpp-repeat-btn',
     SAVE_BTN: '#lpp-save-btn',
+    SKIP_BTN: '#lpp-skip-btn',
+    ABSENT_BTN: '#lpp-absent-btn',
     MANUAL_FALLBACK: '[data-region="lpp-manual-fallback"]',
     MANUAL_FILE: '#lpp-manual-file',
 };
@@ -65,11 +69,12 @@ const SELECTORS = {
  * @param {Number} userid
  * @param {String} imagedata base64-encoded JPEG/PNG, no data: prefix
  * @param {String} operationid idempotency token
+ * @param {Number} sessionid 0 if this capture is not part of a queue session.
  * @return {Promise}
  */
-const savePicture = (userid, imagedata, operationid) => Ajax.call([{
+const savePicture = (userid, imagedata, operationid, sessionid) => Ajax.call([{
     methodname: 'local_profilephoto_save_picture',
-    args: {userid, imagedata, operationid},
+    args: {userid, imagedata, operationid, sessionid},
 }])[0];
 
 /**
@@ -122,6 +127,8 @@ export const init = (config) => {
     const previewControls = document.querySelector(SELECTORS.PREVIEW_CONTROLS);
     const repeatBtn = document.querySelector(SELECTORS.REPEAT_BTN);
     const saveBtn = document.querySelector(SELECTORS.SAVE_BTN);
+    const skipBtn = document.querySelector(SELECTORS.SKIP_BTN);
+    const absentBtn = document.querySelector(SELECTORS.ABSENT_BTN);
     const manualFallback = document.querySelector(SELECTORS.MANUAL_FALLBACK);
     const manualFile = document.querySelector(SELECTORS.MANUAL_FILE);
 
@@ -135,8 +142,10 @@ export const init = (config) => {
     // matching browser/context support, but is permanently downgraded to
     // the manual fallback the first time an actual start() attempt fails
     // (denied permission, no device, insecure context...), so the
-    // fallback stays visible on every later showLive() call too.
-    let useCameraUi = Camera.isSupported();
+    // fallback stays visible on every later showLive() call too. Forced
+    // off under Behat (see index.php), which cannot reliably drive a
+    // real/fake webcam.
+    let useCameraUi = !config.forceManualCapture && Camera.isSupported();
 
     const updateCaptureButtonState = () => {
         captureBtn.disabled = !(selectedUser && cameraReady) || saving;
@@ -144,6 +153,14 @@ export const init = (config) => {
 
     const updateSaveButtonState = () => {
         saveBtn.disabled = !(selectedUser && capturedBlob) || saving;
+    };
+
+    const updateQueueButtonsState = () => {
+        const inQueue = Boolean(queueHandle.getSessionId());
+        skipBtn.hidden = !inQueue;
+        absentBtn.hidden = !inQueue;
+        skipBtn.disabled = !selectedUser || saving;
+        absentBtn.disabled = !selectedUser || saving;
     };
 
     /**
@@ -221,34 +238,84 @@ export const init = (config) => {
         runCountdownThenCapture();
     };
 
+    /**
+     * Select a student, whichever source picked them (manual search or
+     * queue auto-advance). Always discards any unsaved capture first, so
+     * a pending photo can never end up attributed to the wrong person.
+     *
+     * @param {Object} user
+     */
+    const selectUser = (user) => {
+        if (capturedBlob) {
+            discardCapture();
+        }
+
+        selectedUser = user;
+        updateCaptureButtonState();
+        updateQueueButtonsState();
+
+        Templates.renderForPromise('local_profilephoto/user_card', user).then(({html, js}) => {
+            Templates.replaceNodeContents(userPanel, html, js);
+            return null;
+        }).catch(Notification.exception);
+    };
+
+    /**
+     * Clear the current selection (queue finished, or session ended).
+     */
+    const clearSelection = () => {
+        if (capturedBlob) {
+            discardCapture();
+        }
+        selectedUser = null;
+        userPanel.innerHTML = '';
+        updateCaptureButtonState();
+        updateQueueButtonsState();
+    };
+
     const doSave = () => {
         if (saveBtn.disabled || saving) {
             return;
         }
 
         const targetUser = selectedUser;
+        const sessionid = queueHandle.getSessionId() || 0;
         saving = true;
         updateSaveButtonState();
+        updateQueueButtonsState();
 
         blobToBase64(capturedBlob).then((imagedata) => {
-            return savePicture(targetUser.id, imagedata, generateOperationId());
+            return savePicture(targetUser.id, imagedata, generateOperationId(), sessionid);
         }).then((result) => {
             return getStrings([
                 {key: 'save_success', component: 'local_profilephoto', param: result.fullname},
             ]);
         }).then(([message]) => {
             status.textContent = message;
-            selectedUser = null;
-            userPanel.innerHTML = '';
             discardCapture();
             manualFile.value = '';
+
+            if (sessionid) {
+                // Auto-advances via queueHandle's onNext callback (selectUser or clearSelection).
+                return queueHandle.loadNext();
+            }
+
+            clearSelection();
             searchHandle.focus();
             return null;
         }).catch(Notification.exception).finally(() => {
             saving = false;
             updateCaptureButtonState();
             updateSaveButtonState();
+            updateQueueButtonsState();
         });
+    };
+
+    const doQueueAction = (queuestatus) => {
+        if (!selectedUser || saving) {
+            return;
+        }
+        queueHandle.updateCurrentItem(selectedUser.id, queuestatus);
     };
 
     // Camera setup (or manual fallback if unsupported).
@@ -266,7 +333,7 @@ export const init = (config) => {
                 devices.forEach((device, index) => {
                     const option = document.createElement('option');
                     option.value = device.deviceId;
-                    option.textContent = device.label || `${index + 1}`;
+                    option.textContent = device.label || String(index + 1);
                     if (device.deviceId === camera.getCurrentDeviceId()) {
                         option.selected = true;
                     }
@@ -304,6 +371,8 @@ export const init = (config) => {
     captureBtn.addEventListener('click', doCapture);
     repeatBtn.addEventListener('click', discardCapture);
     saveBtn.addEventListener('click', doSave);
+    skipBtn.addEventListener('click', () => doQueueAction('skipped'));
+    absentBtn.addEventListener('click', () => doQueueAction('absent'));
 
     manualFile.addEventListener('change', () => {
         const file = manualFile.files[0];
@@ -312,20 +381,17 @@ export const init = (config) => {
         }
     });
 
-    const searchHandle = Search.init((user) => {
-        // Never let an unsaved capture from a previous student silently
-        // attach itself to whoever is selected next.
-        if (capturedBlob) {
-            discardCapture();
-        }
+    const searchHandle = Search.init(selectUser);
 
-        selectedUser = user;
-        updateCaptureButtonState();
-
-        Templates.renderForPromise('local_profilephoto/user_card', user).then(({html, js}) => {
-            Templates.replaceNodeContents(userPanel, html, js);
-            return null;
-        }).catch(Notification.exception);
+    const queueHandle = Queue.init({
+        onProgress: updateQueueButtonsState,
+        onNext: (user) => {
+            if (user) {
+                selectUser(user);
+            } else {
+                clearSelection();
+            }
+        },
     });
 
     if (config.shortcutsEnabled !== false) {
@@ -351,6 +417,7 @@ export const init = (config) => {
                     discardCapture();
                 }
             },
+            's': () => doQueueAction('skipped'),
         });
     }
 

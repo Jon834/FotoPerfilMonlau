@@ -19,6 +19,43 @@
     margin: 0 auto;
 }
 
+.lpp-export-link {
+    text-align: right;
+    margin-bottom: 0.5rem;
+}
+
+.lpp-session-bar {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.lpp-session-setup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lpp-session-setup select {
+    max-width: 220px;
+}
+
+.lpp-session-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.lpp-queue-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
 .lpp-searchbar {
     position: relative;
     margin-bottom: 1rem;
@@ -244,4 +281,24 @@
 #lpp-save-btn {
     font-size: 1.1rem;
     padding: 0.6rem 1.5rem;
+}
+
+.local-profilephoto-export {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.lpp-export-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.lpp-export-status {
+    min-height: 1.5rem;
+    font-weight: 600;
+    margin-top: 1rem;
 }

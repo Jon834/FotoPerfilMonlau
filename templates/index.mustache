@@ -21,10 +21,50 @@
     with the Entrega 1 manual file input kept as an automatic fallback for
     browsers/contexts where the camera API is unavailable).
 
-    This template has no context variables of its own - all state is
-    applied client-side by amd/src/capture.js after render.
+    Context variables:
+    * canexport - bool, whether to show the export screen link.
+    * exporturl - string, URL to export.php.
 }}
 <div class="local-profilephoto-app" data-region="lpp-app">
+
+    {{#canexport}}
+    <p class="lpp-export-link">
+        <a href="{{exporturl}}">{{#str}}export_link, local_profilephoto{{/str}}</a>
+    </p>
+    {{/canexport}}
+
+    <div class="lpp-session-bar">
+        <div data-region="lpp-session-setup" class="lpp-session-setup">
+            <label for="lpp-session-filtertype">{{#str}}session_filtertype, local_profilephoto{{/str}}</label>
+            <select id="lpp-session-filtertype" class="form-control">
+                <option value="course">{{#str}}session_filter_course, local_profilephoto{{/str}}</option>
+                <option value="cohort">{{#str}}session_filter_cohort, local_profilephoto{{/str}}</option>
+            </select>
+
+            <select id="lpp-session-course" class="form-control"></select>
+            <select id="lpp-session-cohort" class="form-control" hidden></select>
+
+            <label for="lpp-session-order">{{#str}}session_order, local_profilephoto{{/str}}</label>
+            <select id="lpp-session-order" class="form-control">
+                <option value="lastname">{{#str}}order_lastname, local_profilephoto{{/str}}</option>
+                <option value="firstname">{{#str}}order_firstname, local_profilephoto{{/str}}</option>
+                <option value="email">{{#str}}order_email, local_profilephoto{{/str}}</option>
+                <option value="idnumber">{{#str}}order_idnumber, local_profilephoto{{/str}}</option>
+                <option value="username">{{#str}}order_username, local_profilephoto{{/str}}</option>
+            </select>
+
+            <button type="button" id="lpp-session-start-btn" class="btn btn-secondary">
+                {{#str}}session_start, local_profilephoto{{/str}}
+            </button>
+        </div>
+
+        <div data-region="lpp-session-progress" class="lpp-session-progress" hidden>
+            <span id="lpp-session-progress-text"></span>
+            <button type="button" id="lpp-session-end-btn" class="btn btn-link btn-sm">
+                {{#str}}session_end, local_profilephoto{{/str}}
+            </button>
+        </div>
+    </div>
 
     <div class="lpp-searchbar">
         <label for="lpp-search-input" class="sr-only">{{#str}}search_label, local_profilephoto{{/str}}</label>
@@ -79,6 +119,15 @@
                 </button>
             </div>
 
+            <div class="lpp-queue-controls">
+                <button type="button" id="lpp-skip-btn" class="btn btn-outline-secondary btn-sm" hidden>
+                    {{#str}}queue_skip, local_profilephoto{{/str}}
+                </button>
+                <button type="button" id="lpp-absent-btn" class="btn btn-outline-secondary btn-sm" hidden>
+                    {{#str}}queue_absent, local_profilephoto{{/str}}
+                </button>
+            </div>
+
             <div data-region="lpp-manual-fallback" class="lpp-manual-fallback" hidden>
                 <p class="text-muted">{{#str}}manual_fallback_desc, local_profilephoto{{/str}}</p>
                 <label for="lpp-manual-file">{{#str}}manual_fallback_label, local_profilephoto{{/str}}</label>
@@ -93,6 +142,7 @@
                     <li><kbd>R</kbd> — {{#str}}shortcut_repeat, local_profilephoto{{/str}}</li>
                     <li><kbd>B</kbd> — {{#str}}shortcut_search, local_profilephoto{{/str}}</li>
                     <li><kbd>{{#str}}key_esc, local_profilephoto{{/str}}</kbd> — {{#str}}shortcut_cancel, local_profilephoto{{/str}}</li>
+                    <li><kbd>S</kbd> — {{#str}}shortcut_skip, local_profilephoto{{/str}}</li>
                 </ul>
             </details>
         </div>

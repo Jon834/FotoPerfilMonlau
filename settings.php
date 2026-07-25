@@ -17,10 +17,10 @@
 /**
  * Admin settings for local_profilephoto.
  *
- * Only settings actually consulted by Entrega 1 code are declared here.
- * Later entregas (camera defaults, QR, countdown, autosave, export, scope
- * selector, retention...) add their own settings alongside the features
- * that use them, per docs/technical-design.md.
+ * Only settings actually consulted by plugin code are declared here - no
+ * dead configuration for unimplemented features (e.g. there is no
+ * "restore previous picture" setting, since that feature is not built in
+ * this version; see docs/technical-design.md).
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -103,6 +103,52 @@ if ($hassiteconfig) {
         get_string('settings_countdownseconds', 'local_profilephoto'),
         get_string('settings_countdownseconds_desc', 'local_profilephoto'),
         3,
+        PARAM_INT
+    ));
+
+    $settings->add(new admin_setting_heading(
+        'local_profilephoto/exportheading',
+        get_string('settings_exportheading', 'local_profilephoto'),
+        ''
+    ));
+
+    $filenamechoices = [
+        'idnumber' => 'idnumber',
+        'username' => 'username',
+        'email' => 'email',
+        'userid' => 'userid',
+        'fullname' => 'fullname',
+    ];
+
+    $settings->add(new admin_setting_configselect(
+        'local_profilephoto/exportfilenamestrategy',
+        get_string('settings_exportfilenamestrategy', 'local_profilephoto'),
+        get_string('settings_exportfilenamestrategy_desc', 'local_profilephoto'),
+        'idnumber',
+        $filenamechoices
+    ));
+
+    $settings->add(new admin_setting_configselect(
+        'local_profilephoto/exportfallbackstrategy',
+        get_string('settings_exportfallbackstrategy', 'local_profilephoto'),
+        get_string('settings_exportfallbackstrategy_desc', 'local_profilephoto'),
+        'username',
+        $filenamechoices
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_profilephoto/maxsyncexportusers',
+        get_string('settings_maxsyncexportusers', 'local_profilephoto'),
+        get_string('settings_maxsyncexportusers_desc', 'local_profilephoto'),
+        300,
+        PARAM_INT
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_profilephoto/exportretentionminutes',
+        get_string('settings_exportretentionminutes', 'local_profilephoto'),
+        get_string('settings_exportretentionminutes_desc', 'local_profilephoto'),
+        60,
         PARAM_INT
     ));
 }

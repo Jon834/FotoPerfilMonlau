@@ -26,9 +26,12 @@ use core_external\external_single_structure;
 use core_external\external_value;
 use local_profilephoto\event\picture_updated;
 use local_profilephoto\local\access\scope;
+use local_profilephoto\local\audit\logger;
 use local_profilephoto\local\image\processor;
 use local_profilephoto\local\image\updater;
+use local_profilephoto\local\session\manager;
 use moodle_exception;
+use Throwable;
 use user_picture;
 
 defined('MOODLE_INTERNAL') || die();
@@ -59,6 +62,8 @@ class save_picture extends external_api {
                 VALUE_DEFAULT,
                 ''
             ),
+            'sessionid' => new external_value(PARAM_INT, 'Photography session this capture belongs to, 0 if none',
+                VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -68,15 +73,17 @@ class save_picture extends external_api {
      * @param int $userid
      * @param string $imagedata
      * @param string $operationid
+     * @param int $sessionid
      * @return array
      */
-    public static function execute(int $userid, string $imagedata, string $operationid = ''): array {
+    public static function execute(int $userid, string $imagedata, string $operationid = '', int $sessionid = 0): array {
         global $USER, $PAGE;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'userid' => $userid,
             'imagedata' => $imagedata,
             'operationid' => $operationid,
+            'sessionid' => $sessionid,
         ]);
 
         $context = context_system::instance();
@@ -87,43 +94,64 @@ class save_picture extends external_api {
 
         self::guard_against_duplicate_submission($USER->id, $params['userid'], $params['operationid']);
 
-        $user = core_user_class::get_user($params['userid'], 'id, firstname, lastname, picture, suspended, deleted',
-            MUST_EXIST);
-
-        // Re-check authorization on the actual target right before writing,
-        // never trust that the earlier search/get_user check still applies.
-        if (!scope::can_operate_on_user($USER->id, $user)) {
-            throw new moodle_exception('error_outofscope', 'local_profilephoto');
+        $session = null;
+        if ($params['sessionid'] > 0) {
+            $session = manager::get_session($params['sessionid']);
+            manager::require_owner($session, $USER->id);
         }
 
-        if (((int) $user->picture) > 0 && !has_capability('local/profilephoto:replaceexisting', $context)) {
-            throw new moodle_exception('error_replacenotallowed', 'local_profilephoto');
+        try {
+            $user = core_user_class::get_user($params['userid'], 'id, firstname, lastname, picture, suspended, deleted',
+                MUST_EXIST);
+
+            // Re-check authorization on the actual target right before writing,
+            // never trust that the earlier search/get_user check still applies.
+            if (!scope::can_operate_on_user($USER->id, $user)) {
+                throw new moodle_exception('error_outofscope', 'local_profilephoto');
+            }
+
+            $wasreplace = ((int) $user->picture) > 0;
+            if ($wasreplace && !has_capability('local/profilephoto:replaceexisting', $context)) {
+                throw new moodle_exception('error_replacenotallowed', 'local_profilephoto');
+            }
+
+            $maxsourcebytes = (int) get_config('local_profilephoto', 'maxsourcebytes') ?: 8 * 1024 * 1024;
+            $targetsize = (int) get_config('local_profilephoto', 'targetsize') ?: 500;
+            $jpegquality = (int) get_config('local_profilephoto', 'jpegquality') ?: 88;
+
+            // Reject grossly oversized base64 payloads before spending memory decoding them.
+            if (strlen($params['imagedata']) > (int) ($maxsourcebytes * 1.4)) {
+                throw new moodle_exception('error_imagetoolarge', 'local_profilephoto');
+            }
+
+            $binary = base64_decode($params['imagedata'], true);
+            if ($binary === false) {
+                throw new moodle_exception('error_invalidimage', 'local_profilephoto');
+            }
+
+            $jpeg = processor::process($binary, $maxsourcebytes, $targetsize, $jpegquality);
+
+            $changed = updater::update_user_picture($USER->id, $user->id, $jpeg);
+        } catch (Throwable $e) {
+            logger::log('picture_updated', $USER->id, $params['userid'], $session->id ?? null, 'error', $e->getMessage());
+            if ($session !== null) {
+                manager::set_status($session->id, $params['userid'], 'error', $e->getMessage());
+            }
+            throw $e;
         }
 
-        $maxsourcebytes = (int) get_config('local_profilephoto', 'maxsourcebytes') ?: 8 * 1024 * 1024;
-        $targetsize = (int) get_config('local_profilephoto', 'targetsize') ?: 500;
-        $jpegquality = (int) get_config('local_profilephoto', 'jpegquality') ?: 88;
-
-        // Reject grossly oversized base64 payloads before spending memory decoding them.
-        if (strlen($params['imagedata']) > (int) ($maxsourcebytes * 1.4)) {
-            throw new moodle_exception('error_imagetoolarge', 'local_profilephoto');
-        }
-
-        $binary = base64_decode($params['imagedata'], true);
-        if ($binary === false) {
-            throw new moodle_exception('error_invalidimage', 'local_profilephoto');
-        }
-
-        $jpeg = processor::process($binary, $maxsourcebytes, $targetsize, $jpegquality);
-
-        $changed = updater::update_user_picture($USER->id, $user->id, $jpeg);
-
-        $event = picture_updated::create([
+        picture_updated::create([
             'objectid' => $user->id,
             'relateduserid' => $user->id,
             'context' => context_user::instance($user->id),
-        ]);
-        $event->trigger();
+            'other' => ['replaced' => $wasreplace],
+        ])->trigger();
+
+        logger::log('picture_updated', $USER->id, $user->id, $session->id ?? null, 'success');
+
+        if ($session !== null) {
+            manager::mark_captured($session->id, $user->id, $USER->id);
+        }
 
         $freshuser = core_user_class::get_user($user->id, 'id, firstname, lastname, picture, imagealt', MUST_EXIST);
         $picture = new user_picture($freshuser);
@@ -156,10 +184,9 @@ class save_picture extends external_api {
     /**
      * Reject a resubmission of the same client-generated operation id.
      *
-     * Cheap, self-contained double-submit guard (encargo sections 12/20)
-     * that does not depend on the session/queue tables introduced in a
-     * later entrega: a short-lived session cache entry keyed by operator +
-     * target + operation id.
+     * Cheap, self-contained double-submit guard (encargo sections 12/20): a
+     * short-lived session cache entry keyed by operator + target +
+     * operation id, independent of the session/queue tables.
      *
      * @param int $operatorid
      * @param int $targetuserid

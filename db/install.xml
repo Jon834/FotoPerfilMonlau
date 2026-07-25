@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/profilephoto/db" VERSION="20260726" COMMENT="XMLDB file for Moodle local/profilephoto"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_profilephoto_session" COMMENT="A photography session: an operator working through an ordered queue of students built from a filter (course, cohort...).">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="operatorid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User who opened this session."/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Optional operator-facing label."/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Context the session was opened in (system, in this entrega)."/>
+        <FIELD NAME="filtertype" TYPE="char" LENGTH="30" NOTNULL="true" SEQUENCE="false" COMMENT="course | cohort"/>
+        <FIELD NAME="filterdata" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON describing the filter used to build the queue (e.g. {&quot;courseid&quot;:123})."/>
+        <FIELD NAME="ordertype" TYPE="char" LENGTH="30" NOTNULL="true" DEFAULT="lastname" SEQUENCE="false" COMMENT="lastname | firstname | email | idnumber | username"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active | completed | abandoned"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timefinished" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="operatorid" TYPE="foreign" FIELDS="operatorid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="operatorid_status" UNIQUE="false" FIELDS="operatorid, status"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_profilephoto_session_user" COMMENT="One queue entry: a student within a photography session, and its capture status.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="pending" SEQUENCE="false" COMMENT="pending | captured | skipped | absent | error"/>
+        <FIELD NAME="attempts" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="capturedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Operator who actually captured this student picture."/>
+        <FIELD NAME="timecaptured" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="lasterror" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sessionid" TYPE="foreign" FIELDS="sessionid" REFTABLE="local_profilephoto_session" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="capturedby" TYPE="foreign" FIELDS="capturedby" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="sessionid_userid" UNIQUE="true" FIELDS="sessionid, userid"/>
+        <INDEX NAME="sessionid_status_sortorder" UNIQUE="false" FIELDS="sessionid, status, sortorder"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_profilephoto_log" COMMENT="Audit trail. Never stores image binary/base64 data, tokens or passwords.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="operatorid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="targetuserid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Null for actions with no single target student (e.g. export)."/>
+        <FIELD NAME="action" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="result" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="success" SEQUENCE="false" COMMENT="success | error"/>
+        <FIELD NAME="details" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Short technical message only - never image data, tokens or passwords."/>
+        <FIELD NAME="ipaddress" TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sessionid" TYPE="foreign" FIELDS="sessionid" REFTABLE="local_profilephoto_session" REFFIELDS="id"/>
+        <KEY NAME="operatorid" TYPE="foreign" FIELDS="operatorid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="targetuserid" TYPE="foreign" FIELDS="targetuserid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="operatorid_timecreated" UNIQUE="false" FIELDS="operatorid, timecreated"/>
+        <INDEX NAME="targetuserid" UNIQUE="false" FIELDS="targetuserid"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

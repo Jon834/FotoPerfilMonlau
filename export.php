@@ -1,0 +1,78 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Export screen (Entrega 4): filter selection page, plus the one-time,
+ * token-protected download endpoint for a ZIP already built by
+ * classes/external/create_export.php.
+ *
+ * The token is unguessable (20 random bytes) and single-use: it is
+ * deleted from cache the moment it is consumed, whether the download
+ * succeeds or the entry has already expired (encargo section 15:
+ * "impedir acceso mediante URL pública predecible").
+ *
+ * @package    local_profilephoto
+ * @copyright  2026 Centre Educatiu
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+require(__DIR__ . '/../../config.php');
+
+require_login();
+
+$context = context_system::instance();
+if (!has_capability('local/profilephoto:exportsession', $context)
+        && !has_capability('local/profilephoto:exportall', $context)) {
+    require_capability('local/profilephoto:exportsession', $context);
+}
+
+if (!get_config('local_profilephoto', 'enabled')) {
+    throw new moodle_exception('error_plugindisabled', 'local_profilephoto');
+}
+
+$token = optional_param('token', '', PARAM_ALPHANUM);
+
+if ($token !== '') {
+    $cache = cache::make('local_profilephoto', 'exports');
+    $entry = $cache->get($token);
+    $cache->delete($token);
+
+    if ($entry === false || !file_exists($entry['path'])) {
+        throw new moodle_exception('error_exportexpired', 'local_profilephoto');
+    }
+
+    if ((int) $entry['operatorid'] !== (int) $USER->id && !has_capability('local/profilephoto:exportall', $context)) {
+        throw new moodle_exception('error_outofscope', 'local_profilephoto');
+    }
+
+    \local_profilephoto\local\audit\logger::log('export_downloaded', $USER->id);
+    \local_profilephoto\event\export_downloaded::create(['context' => $context])->trigger();
+
+    send_temp_file($entry['path'], $entry['filename']);
+    // send_temp_file() does not return.
+}
+
+$PAGE->set_url(new moodle_url('/local/profilephoto/export.php'));
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('standard');
+$PAGE->set_title(get_string('export_title', 'local_profilephoto'));
+$PAGE->set_heading(get_string('export_title', 'local_profilephoto'));
+
+$PAGE->requires->js_call_amd('local_profilephoto/export', 'init');
+
+echo $OUTPUT->header();
+echo $OUTPUT->render_from_template('local_profilephoto/export', []);
+echo $OUTPUT->footer();

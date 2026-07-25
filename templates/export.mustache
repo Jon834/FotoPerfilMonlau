@@ -1,0 +1,52 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_profilephoto/export
+
+    Export filter screen (Entrega 4). No context variables of its own -
+    all state is applied client-side by amd/src/export.js after render.
+}}
+<div class="local-profilephoto-export" data-region="lpp-export-app">
+
+    <div class="lpp-export-filters">
+        <label for="lpp-export-filtertype">{{#str}}export_filtertype, local_profilephoto{{/str}}</label>
+        <select id="lpp-export-filtertype" class="form-control">
+            <option value="session">{{#str}}export_filter_session, local_profilephoto{{/str}}</option>
+            <option value="course">{{#str}}export_filter_course, local_profilephoto{{/str}}</option>
+            <option value="cohort">{{#str}}export_filter_cohort, local_profilephoto{{/str}}</option>
+        </select>
+
+        <select id="lpp-export-session" class="form-control"></select>
+        <select id="lpp-export-course" class="form-control" hidden></select>
+        <select id="lpp-export-cohort" class="form-control" hidden></select>
+
+        <label for="lpp-export-filenamestrategy">{{#str}}export_filenamestrategy, local_profilephoto{{/str}}</label>
+        <select id="lpp-export-filenamestrategy" class="form-control">
+            <option value="idnumber">idnumber</option>
+            <option value="username">username</option>
+            <option value="email">email</option>
+            <option value="userid">userid</option>
+            <option value="fullname">fullname</option>
+        </select>
+
+        <button type="button" id="lpp-export-btn" class="btn btn-primary">
+            {{#str}}export_generate, local_profilephoto{{/str}}
+        </button>
+    </div>
+
+    <p id="lpp-export-status" class="lpp-export-status" role="status" aria-live="polite"></p>
+</div>

@@ -52,8 +52,10 @@ $string['settings_maxsearchresults_desc'] = 'Límite superior de resultados devu
 $string['opencapturescreen'] = 'Abrir pantalla de captura';
 
 $string['event_picture_updated'] = 'Fotografía de perfil actualizada';
-
-$string['privacy:metadata:null_reason'] = 'Este plugin no almacena datos personales propios: la fotografía capturada se procesa en memoria y se guarda únicamente a través del mecanismo oficial de Moodle (componente "user"), ya cubierto por el proveedor de privacidad del núcleo. Los ficheros temporales de borrador se eliminan mediante los mecanismos estándar de Moodle.';
+$string['event_session_started'] = 'Sesión fotográfica iniciada';
+$string['event_session_completed'] = 'Sesión fotográfica completada';
+$string['event_export_created'] = 'Exportación de fotografías generada';
+$string['event_export_downloaded'] = 'Exportación de fotografías descargada';
 
 $string['error_emptyimage'] = 'No se ha recibido ninguna imagen.';
 $string['error_imagetoolarge'] = 'La imagen recibida supera el tamaño máximo permitido.';
@@ -94,6 +96,7 @@ $string['shortcut_save'] = 'Guardar y siguiente';
 $string['shortcut_repeat'] = 'Repetir fotografía';
 $string['shortcut_search'] = 'Ir al buscador';
 $string['shortcut_cancel'] = 'Cancelar previsualización';
+$string['shortcut_skip'] = 'Saltar alumno (en sesión)';
 
 $string['camera_error_insecure'] = 'Este sitio no usa HTTPS: el navegador no permite acceder a la cámara. Suba una fotografía manualmente.';
 $string['camera_error_permission'] = 'Ha denegado el acceso a la cámara. Revise los permisos del navegador para este sitio, o suba una fotografía manualmente.';
@@ -107,3 +110,67 @@ $string['settings_enablecountdown'] = 'Activar cuenta atrás';
 $string['settings_enablecountdown_desc'] = 'Si está activado, al pulsar «Hacer foto» se inicia una cuenta atrás antes de capturar, en lugar de capturar inmediatamente. Desactivado por defecto.';
 $string['settings_countdownseconds'] = 'Duración de la cuenta atrás (segundos)';
 $string['settings_countdownseconds_desc'] = 'Solo se aplica si la cuenta atrás está activada.';
+
+$string['settings_exportheading'] = 'Exportación';
+$string['settings_exportfilenamestrategy'] = 'Formato del nombre de archivo';
+$string['settings_exportfilenamestrategy_desc'] = 'Campo usado para nombrar cada fotografía dentro del ZIP exportado.';
+$string['settings_exportfallbackstrategy'] = 'Formato alternativo';
+$string['settings_exportfallbackstrategy_desc'] = 'Campo usado cuando el formato principal está vacío para un alumno (por ejemplo, sin idnumber).';
+$string['settings_maxsyncexportusers'] = 'Máximo de alumnos por exportación';
+$string['settings_maxsyncexportusers_desc'] = 'Si el filtro seleccionado incluye más alumnos que este número, se pide acotar la selección en lugar de generar la exportación (esta entrega genera los ZIP de forma síncrona, sin tarea en segundo plano).';
+$string['settings_exportretentionminutes'] = 'Retención de los ZIP temporales (minutos)';
+$string['settings_exportretentionminutes_desc'] = 'Los archivos ZIP generados y no descargados se eliminan automáticamente pasado este tiempo mediante una tarea programada.';
+
+$string['task_cleanup_exports'] = 'Eliminar exportaciones ZIP caducadas';
+
+$string['session_filtertype'] = 'Ámbito de la sesión';
+$string['session_filter_course'] = 'Curso';
+$string['session_filter_cohort'] = 'Cohorte';
+$string['session_order'] = 'Orden';
+$string['order_lastname'] = 'Apellidos';
+$string['order_firstname'] = 'Nombre';
+$string['order_email'] = 'Correo electrónico';
+$string['order_idnumber'] = 'ID';
+$string['order_username'] = 'Nombre de usuario';
+$string['session_start'] = 'Iniciar sesión de fotos';
+$string['session_end'] = 'Finalizar sesión';
+$string['session_progress_template'] = '{$a->captured}/{$a->total} fotografiados — {$a->pending} pendientes';
+$string['queue_skip'] = 'Saltar';
+$string['queue_absent'] = 'Ausente';
+
+$string['export_title'] = 'Exportar fotografías';
+$string['export_link'] = 'Exportar fotografías descargables';
+$string['export_filtertype'] = 'Exportar por';
+$string['export_filter_session'] = 'Sesión fotográfica';
+$string['export_filter_course'] = 'Curso';
+$string['export_filter_cohort'] = 'Cohorte';
+$string['export_filenamestrategy'] = 'Nombrar archivos por';
+$string['export_generate'] = 'Generar ZIP';
+$string['export_generating'] = 'Generando la exportación…';
+$string['export_ready'] = 'Exportación lista con {$a} fotografías. Descargando…';
+
+$string['error_exportexpired'] = 'Este enlace de descarga ha caducado o ya se ha utilizado. Genera la exportación de nuevo.';
+$string['error_exporttoobig'] = 'La selección supera el máximo de {$a} alumnos para una exportación. Acota el filtro (curso, cohorte o sesión más pequeños).';
+$string['error_invalidexportfilter'] = 'Filtro de exportación no válido.';
+$string['error_invalidstatus'] = 'Estado de cola no válido.';
+
+$string['privacy:metadata:session'] = 'Datos de cada sesión fotográfica abierta por un operador.';
+$string['privacy:metadata:session:operatorid'] = 'El usuario que abrió la sesión.';
+$string['privacy:metadata:session:filtertype'] = 'Si la sesión se generó a partir de un curso o de una cohorte.';
+$string['privacy:metadata:session:filterdata'] = 'El identificador del curso o la cohorte usado como filtro.';
+$string['privacy:metadata:session:timecreated'] = 'Cuándo se creó la sesión.';
+$string['privacy:metadata:session_user'] = 'El estado de captura de cada alumno dentro de una sesión fotográfica.';
+$string['privacy:metadata:session_user:userid'] = 'El alumno en cola.';
+$string['privacy:metadata:session_user:capturedby'] = 'El operador que realizó la captura.';
+$string['privacy:metadata:session_user:status'] = 'Estado de la captura (pendiente, capturado, saltado, ausente, error).';
+$string['privacy:metadata:session_user:timecaptured'] = 'Cuándo se capturó la fotografía.';
+$string['privacy:metadata:log'] = 'Registro de auditoría de las acciones realizadas con el plugin.';
+$string['privacy:metadata:log:operatorid'] = 'El usuario que realizó la acción.';
+$string['privacy:metadata:log:targetuserid'] = 'El alumno afectado por la acción, si corresponde.';
+$string['privacy:metadata:log:action'] = 'El tipo de acción registrada.';
+$string['privacy:metadata:log:ipaddress'] = 'La dirección IP desde la que se realizó la acción.';
+$string['privacy:metadata:log:timecreated'] = 'Cuándo se registró la acción.';
+$string['privacy:metadata:corefiles'] = 'La fotografía de perfil en sí se almacena íntegramente mediante el componente "user" del núcleo de Moodle, no por este plugin.';
+$string['privacy:path:sessions'] = 'Captura de fotografías de perfil/Sesiones';
+$string['privacy:path:queueentries'] = 'Captura de fotografías de perfil/Cola';
+$string['privacy:path:logs'] = 'Captura de fotografías de perfil/Registro de auditoría';

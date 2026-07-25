@@ -9,11 +9,12 @@ dónde lo copia el instalador).
 > Este documento se entrega como Fase 1 y se actualiza en cada entrega. El
 > desarrollo se realiza de forma iterativa (sección 33 del encargo).
 > **Entrega 1** (esqueleto instalable, permisos, búsqueda AJAX, actualización
-> real de la foto de perfil, captura manual de prueba) y **Entrega 2**
-> (cámara en directo, atajos de teclado, doble-envío) ya están cubiertas por
-> el código de este repositorio — ver sección 11. Las entregas 3-5
-> (cohortes/colas/sesiones, exportación ZIP, batería de pruebas completa) se
-> construyen sobre esta base sin romper la API pública ya fijada aquí.
+> real de la foto de perfil, captura manual de prueba), **Entrega 2** (cámara
+> en directo, atajos de teclado, doble-envío) y **Entregas 3+4+5** (colas y
+> sesiones por curso/cohorte, exportación ZIP, Privacy API completa, pruebas
+> automatizadas y documentación de cierre — combinadas en una sola entrega a
+> petición explícita, ver sección 12) ya están cubiertas por el código de
+> este repositorio.
 
 ## 1. Resumen de la solución
 
@@ -307,14 +308,17 @@ previsualización (no avanza automáticamente), tal como exige la sección 13.
 ### 11.4. Atajos de teclado (encargo sección 6)
 
 Implementados: `Espacio` (hacer foto), `Enter` (guardar y siguiente), `R`
-(repetir), `B` (ir al buscador), `Esc` (cancelar previsualización).
-`ArrowLeft`/`ArrowRight`/`S` (navegación de cola, saltar/pendiente) se
-reservan para la Entrega 3, cuando exista una cola real que navegar - no se
-vinculan todavía para no ofrecer atajos que no hacen nada. Un disparador
-USB que emule Espacio o Enter funciona automáticamente, sin código
-adicional, siempre que el foco no esté en un campo de texto (comprobado en
-`shortcuts.js`). Activable/desactivable por configuración
-(`local_profilephoto/enableshortcuts`).
+(repetir), `B` (ir al buscador), `Esc` (cancelar previsualización) y, desde
+que existe una cola real (sección 12), `S` (saltar al siguiente pendiente
+dentro de una sesión). `ArrowLeft`/`ArrowRight` (alumno anterior/siguiente,
+en el sentido de "navegar libremente por toda la cola") **no** están
+implementados: la cola solo ofrece avance automático al siguiente
+pendiente más las acciones explícitas saltar/ausente, no una lista
+completa navegable con un cursor de posición - ver sección 12.7 para el
+detalle de esta limitación consciente. Un disparador USB que emule
+Espacio o Enter funciona automáticamente, sin código adicional, siempre
+que el foco no esté en un campo de texto (comprobado en `shortcuts.js`).
+Activable/desactivable por configuración (`local_profilephoto/enableshortcuts`).
 
 ### 11.5. Doble-envío
 
@@ -354,3 +358,162 @@ cuando haya toolchain de Node disponible.
 * **Reproducción automática bloqueada por el navegador**: el `<video>` se
   marca `muted` y `playsinline` precisamente para maximizar que
   `video.play()` no sea bloqueado por las políticas de autoplay.
+
+## 12. Entregas 3+4+5 combinadas — colas/sesiones, exportación y cierre
+
+Entregadas juntas a petición explícita ("pasa directamente a la entrega 5,
+haciendo los pasos de la 3 y 4 pero haz solo una entrega"). El alcance es
+el de las tres fases, pero con los recortes conscientes que se detallan en
+12.7 - preferible a simular una profundidad que no da tiempo a construir
+de verdad.
+
+### 12.1. Modelo de datos (por fin necesario)
+
+Ahora sí se crean las tablas descritas en la sección 25 del encargo
+(`db/install.xml` + `db/upgrade.php`, savepoint `2026072700`):
+
+* `local_profilephoto_session` - una sesión = un operador + un filtro
+  (`course` o `cohort`) + un orden. `filterdata` guarda el id filtrado
+  como JSON (`{"courseid":5}`) en vez de columnas separadas por tipo de
+  filtro, para no tener que ampliar el esquema cada vez que se añada un
+  tipo de filtro nuevo.
+* `local_profilephoto_session_user` - una fila por alumno en la cola,
+  con `status` (`pending|captured|skipped|absent|error`), `sortorder` y
+  quién/cuándo la capturó. Índice único `(sessionid, userid)` y
+  `(sessionid, status, sortorder)` para que "siguiente pendiente" sea una
+  consulta indexada, no un escaneo.
+* `local_profilephoto_log` - auditoría. `sessionid` es opcional (una
+  exportación no pertenece necesariamente a una sesión concreta).
+
+`classes/local/session/manager.php` concentra toda la lógica: construir
+la cola respetando el ámbito del operador (`scope::can_use_course()` para
+csos por curso - un único chequeo cubre a todos los matriculados, en vez
+de comprobar usuario a usuario; cohortes sí necesitan chequeo por alumno,
+porque una cohorte puede abarcar varios cursos), ordenarla
+(`lastname|firstname|email|idnumber|username`), avanzar, saltar, marcar
+ausente y auto-completar la sesión cuando no queda nada pendiente.
+
+### 12.2. Cola en la pantalla de captura
+
+`amd/src/queue.js` añade un panel de configuración de sesión (curso o
+cohorte + orden) encima del buscador existente, y un panel de progreso
+(`X/Y capturados, Z pendientes`) que lo sustituye una vez iniciada. La
+búsqueda manual sigue funcionando en paralelo dentro de una sesión activa
+(para saltarse el orden y localizar a alguien concreto), y ambos caminos
+convergen en la misma función `selectUser()` de `capture.js`, que sigue
+aplicando la regla de la Entrega 2: cualquier captura pendiente sin
+guardar se descarta al cambiar de alumno, sea cual sea el origen de la
+selección.
+
+Al guardar con éxito dentro de una sesión, `save_picture` recibe el
+`sessionid` y marca la entrada como `captured`; `capture.js` entonces pide
+el siguiente pendiente automáticamente (`queueHandle.loadNext()`) en vez
+de volver a un estado "sin selección" - así se cumple el flujo
+"foto → guardar → carga el siguiente" sin que el operador tenga que volver
+a tocar el buscador.
+
+### 12.3. Auditoría y eventos
+
+`classes/local/audit/logger.php` escribe en `local_profilephoto_log` desde
+`save_picture.php` (éxito y error), `create_session.php`,
+`update_queue_item.php` y `create_export.php`/`export.php`. Nunca se
+registra la imagen, base64, tokens ni contraseñas (encargo sección 18) -
+solo identificadores, la acción y un mensaje corto.
+
+Eventos nuevos: `session_started`, `session_completed` (se dispara solo
+internamente al auto-completarse, sin `trigger()` explícito adicional -
+ver nota más abajo), `export_created`, `export_downloaded`. El evento
+`picture_updated` de la Entrega 1 ahora lleva `other.replaced` (booleano)
+en vez de duplicarse en una clase `picture_replaced` separada: una única
+clase de evento con un dato adicional es más simple que dos clases casi
+idénticas, y sigue permitiendo diferenciar "primera foto" de "sustitución"
+para quien consuma el log de eventos. **No implementados**: `picture_restored`
+(no existe función de restaurar, ver 12.7).
+
+### 12.4. Exportación ZIP (encargo sección 15)
+
+`classes/local/export/filename_strategy.php` construye el nombre de cada
+archivo reutilizando el saneador `PARAM_FILE` de Moodle (en vez de un
+regex propio) y desambigua duplicados como `nombre_2.jpg`, `nombre_3.jpg`.
+`classes/local/export/zip_builder.php` construye el ZIP leyendo
+directamente el archivo `f3.jpg`/`f3.png` que `process_new_icon()` generó
+en su momento (nunca una copia propia del plugin) y añade `manifest.csv`
+con las columnas exactas del encargo.
+
+El flujo de descarga es de un solo uso y sin URL predecible: `create_export`
+guarda el ZIP en un directorio temporal con nombre aleatorio
+(`bin2hex(random_bytes(16))`), registra un token igualmente aleatorio (20
+bytes) en una caché de sesión (`local_profilephoto/exports`) que asocia
+`token → {ruta, operatorid, nombre de descarga}`, y `export.php?token=...`
+lo consume una única vez (`$cache->delete($token)` antes de servir el
+archivo) llamando a `send_temp_file()`, que Moodle ya se encarga de
+transmitir y borrar. Un `scheduled_task` (`cleanup_exports`, cada 15
+minutos) barre el directorio temporal por si un ZIP se generó y nunca se
+descargó.
+
+**Simplificación consciente**: la exportación es siempre síncrona. En vez
+de construir una tarea ad-hoc con sondeo de estado (`prepare_export` +
+`get_export_status` de la sección 24 del encargo), se limita el número de
+alumnos por exportación (`local_profilephoto/maxsyncexportusers`, 300 por
+defecto) y se pide acotar el filtro si se supera. Es una degradación
+razonable para el volumen objetivo (encargo sección 28: "exportación de
+500 fotografías"), pero no es lo mismo que una tarea en segundo plano
+para volúmenes mayores - ver 12.7.
+
+### 12.5. Ámbito de curso/cohorte
+
+`get_session_options.php` y `get_export_options.php` listan cursos vía
+`scope::get_allowed_courseids()` (o los cursos del propio operador,
+`enrol_get_users_courses()`, si tiene `viewallusers`) y cohortes **solo**
+si el operador tiene `viewallusers` - el modelo de ámbito de la Entrega 1
+no tiene noción de "cohortes autorizadas" por operador (encargo sección 17
+lo lista como una posible configuración de ámbito, pero implementarla
+habría exigido una tabla de asignación cohorte↔operador que no existía y
+que no ha dado tiempo a diseñar con cuidado en esta entrega combinada) -
+ver 12.7.
+
+### 12.6. Privacy API completa
+
+Ahora que existen tablas propias con datos personales,
+`classes/privacy/provider.php` deja de ser un `null_provider` y pasa a
+implementar `metadata\provider`, `request\plugin\provider` y
+`core_userlist_provider`. Todo el dato vive en `CONTEXT_SYSTEM` (el plugin
+no tiene almacenamiento por curso), lo que simplifica
+`get_contexts_for_userid()` a un único `SELECT :contextid ... WHERE
+EXISTS (...)`. `delete_data_for_user()` borra la cola donde el usuario es
+alumno, sus propias sesiones como operador (y la cola/log asociados a
+ellas), y las filas de log donde aparece como operador o como alumno.
+
+### 12.7. Recortes conscientes de esta entrega combinada
+
+Documentados aquí en vez de simulados, para que quien retome el proyecto
+sepa exactamente qué falta:
+
+* **Sin "deshacer" / copia temporal de la foto anterior** (Opción B de la
+  sección 14 del encargo). Solo existe la Opción A (sustitución directa).
+  No hay evento `picture_restored`, capacidad `restoreprevious` sin uso
+  real, ni configuración de retención de copias.
+* **Sin navegación libre "alumno anterior/siguiente" por toda la cola**:
+  solo avance automático al siguiente pendiente, más saltar/ausente. No
+  hay una lista completa de la cola clicable en pantalla, así que
+  `ArrowLeft` no está vinculado (ver 11.4).
+* **Exportación siempre síncrona**, sin tarea ad-hoc en segundo plano ni
+  `get_export_status`; ver 12.4.
+* **Ámbito de cohortes solo para operadores con `viewallusers`**, no hay
+  "cohortes autorizadas" por operador; ver 12.5.
+* **QR/código de barras** (encargo sección 4.3): no implementado. Es
+  priority 9 ("funciones avanzadas") en la propia lista de prioridades del
+  encargo (sección 32), y no bloquea ningún criterio de aceptación.
+* **Pruebas automatizadas escritas pero no ejecutadas aquí**: este entorno
+  de desarrollo no tiene un checkout de Moodle core, por lo que ni
+  PHPUnit ni Behat se han podido correr de verdad contra el plugin. Los
+  archivos en `tests/` siguen las convenciones estándar de Moodle
+  (`advanced_testcase`, generadores de datos, pasos Behat habituales) pero
+  deben verificarse en un entorno real antes de darlas por buenas -
+  tratarlas como "listas para revisar", no como "verificadas en verde".
+* **Modo de prueba Behat**: como Behat no puede accionar una cámara real,
+  `index.php` fuerza `forceManualCapture` cuando
+  `defined('BEHAT_SITE_RUNNING')`, reutilizando el flujo de subida manual
+  (ya existente para navegadores sin cámara) como mecanismo determinista
+  de captura en los tests, tal como pide la sección 27 del encargo. Ese
+  flag no tiene efecto fuera de una ejecución Behat real.

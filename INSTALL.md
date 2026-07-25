@@ -1,4 +1,4 @@
-# Instalación — local_profilephoto (Entregas 1 y 2)
+# Instalación — local_profilephoto (Entregas 1, 2 y 3+4+5)
 
 ## Requisitos
 
@@ -6,10 +6,14 @@
   Moodle 5.x sirve el código desde una carpeta `public/`; este plugin se
   copia en `public/local/profilephoto/`.
 * PHP con extensión **GD** compilada con soporte JPEG y PNG (usada tanto
-  por este plugin como por el propio `process_new_icon()` de Moodle).
+  por este plugin como por el propio `process_new_icon()` de Moodle) y
+  extensión **Zip** (para la exportación).
 * **HTTPS** (o `localhost`) para que el navegador conceda acceso a la
   cámara. Sin HTTPS la pantalla sigue siendo utilizable: cae
   automáticamente a la subida manual de archivo.
+* **Cron de Moodle en ejecución** para que la tarea programada de
+  limpieza de exportaciones (`local_profilephoto\task\cleanup_exports`,
+  cada 15 minutos) elimine los ZIP temporales no descargados.
 
 ## Pasos
 
@@ -90,11 +94,20 @@ En ambos casos, continúa con estos pasos:
 10. Selecciona un alumno, haz una foto (sin guardar) y luego busca y
     selecciona a otro alumno distinto: la captura pendiente del primero
     debe descartarse automáticamente, nunca guardarse contra el segundo.
+11. En el panel superior, elige un curso e **Iniciar sesión de fotos**: el
+    primer alumno pendiente debe cargarse solo. Guarda una foto y
+    comprueba que el siguiente se carga automáticamente y que el
+    contador de progreso se actualiza.
+12. Pulsa **Saltar** (o `S`) y **Ausente** sobre un alumno de la cola y
+    comprueba que el contador refleja el cambio.
+13. Ve a **Exportar fotografías descargables**, elige el curso/sesión
+    usado en la prueba anterior, genera el ZIP y comprueba que contiene
+    las fotos guardadas más un `manifest.csv` coherente.
 
 ## Nota sobre los módulos AMD
 
-Los cuatro módulos AMD del plugin (`search`, `camera`, `shortcuts`,
-`capture`) se distribuyen como un puerto manual (no minificado,
+Los seis módulos AMD del plugin (`search`, `camera`, `shortcuts`,
+`capture`, `queue`, `export`) se distribuyen como un puerto manual (no minificado,
 funcionalmente idéntico) de sus fuentes en `amd/src/`, escrito así porque
 este entorno de desarrollo no dispone del toolchain `grunt`/Node de un
 checkout completo de Moodle core. Antes de una entrega a producción a gran

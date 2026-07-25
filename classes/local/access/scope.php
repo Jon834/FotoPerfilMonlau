@@ -117,6 +117,31 @@ class scope {
     }
 
     /**
+     * Whether the operator may build a session from this course.
+     *
+     * Cheap single check used by session creation: if the course itself is
+     * within the operator's allowed courses, every actively enrolled user
+     * in it is automatically in scope, without needing a per-user
+     * is_enrolled() check (encargo section 28 performance goals).
+     *
+     * @param int $operatorid
+     * @param int $courseid
+     * @return bool
+     */
+    public static function can_use_course(int $operatorid, int $courseid): bool {
+        if (!has_capability('local/profilephoto:capture', context_system::instance(), $operatorid)) {
+            return false;
+        }
+
+        if (self::has_unrestricted_scope($operatorid)) {
+            return true;
+        }
+
+        $courseids = self::get_allowed_courseids($operatorid);
+        return $courseids !== null && in_array($courseid, $courseids, true);
+    }
+
+    /**
      * Whether the operator is allowed to see suspended accounts.
      *
      * @param int $operatorid

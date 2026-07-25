@@ -21,6 +21,12 @@
  * classes/external/save_picture.php: a short-lived, per-session record of
  * client-generated operation ids that have already been processed.
  *
+ * 'exports' maps a one-time download token (classes/external/create_export.php)
+ * to the temp ZIP path and the operator allowed to download it
+ * (export.php). If this cache entry is evicted before download, the link
+ * simply stops working (the scheduled cleanup task removes the orphaned
+ * file separately) - never a security exposure.
+ *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -34,5 +40,10 @@ $definitions = [
         'simplekeys' => true,
         'simpledata' => true,
         'ttl' => 30,
+    ],
+    'exports' => [
+        'mode' => cache_store::MODE_SESSION,
+        'simplekeys' => true,
+        'ttl' => 3600,
     ],
 ];

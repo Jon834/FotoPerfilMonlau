@@ -52,8 +52,10 @@ $string['settings_maxsearchresults_desc'] = 'Límit superior de resultats retorn
 $string['opencapturescreen'] = 'Obrir pantalla de captura';
 
 $string['event_picture_updated'] = 'Fotografia de perfil actualitzada';
-
-$string['privacy:metadata:null_reason'] = 'Aquest connector no emmagatzema dades personals pròpies: la fotografia capturada es processa en memòria i es desa únicament mitjançant el mecanisme oficial de Moodle (component "user"), ja cobert pel proveïdor de privadesa del nucli. Els fitxers temporals d\'esborrany s\'eliminen mitjançant els mecanismes estàndard de Moodle.';
+$string['event_session_started'] = 'Sessió fotogràfica iniciada';
+$string['event_session_completed'] = 'Sessió fotogràfica completada';
+$string['event_export_created'] = 'Exportació de fotografies generada';
+$string['event_export_downloaded'] = 'Exportació de fotografies descarregada';
 
 $string['error_emptyimage'] = 'No s\'ha rebut cap imatge.';
 $string['error_imagetoolarge'] = 'La imatge rebuda supera la mida màxima permesa.';
@@ -94,6 +96,7 @@ $string['shortcut_save'] = 'Desar i següent';
 $string['shortcut_repeat'] = 'Repetir fotografia';
 $string['shortcut_search'] = 'Anar al cercador';
 $string['shortcut_cancel'] = 'Cancel·lar la previsualització';
+$string['shortcut_skip'] = 'Saltar alumne (en sessió)';
 
 $string['camera_error_insecure'] = 'Aquest lloc no fa servir HTTPS: el navegador no permet accedir a la càmera. Pugeu una fotografia manualment.';
 $string['camera_error_permission'] = 'Heu denegat l\'accés a la càmera. Reviseu els permisos del navegador per a aquest lloc, o pugeu una fotografia manualment.';
@@ -107,3 +110,67 @@ $string['settings_enablecountdown'] = 'Activar compte enrere';
 $string['settings_enablecountdown_desc'] = 'Si està activat, en prémer «Fer foto» s\'inicia un compte enrere abans de capturar, en lloc de capturar immediatament. Desactivat per defecte.';
 $string['settings_countdownseconds'] = 'Durada del compte enrere (segons)';
 $string['settings_countdownseconds_desc'] = 'Només s\'aplica si el compte enrere està activat.';
+
+$string['settings_exportheading'] = 'Exportació';
+$string['settings_exportfilenamestrategy'] = 'Format del nom de fitxer';
+$string['settings_exportfilenamestrategy_desc'] = 'Camp usat per anomenar cada fotografia dins del ZIP exportat.';
+$string['settings_exportfallbackstrategy'] = 'Format alternatiu';
+$string['settings_exportfallbackstrategy_desc'] = 'Camp usat quan el format principal és buit per a un alumne (per exemple, sense idnumber).';
+$string['settings_maxsyncexportusers'] = 'Màxim d\'alumnes per exportació';
+$string['settings_maxsyncexportusers_desc'] = 'Si el filtre seleccionat inclou més alumnes que aquest número, es demana acotar la selecció en lloc de generar l\'exportació (aquest lliurament genera els ZIP de forma síncrona, sense tasca en segon pla).';
+$string['settings_exportretentionminutes'] = 'Retenció dels ZIP temporals (minuts)';
+$string['settings_exportretentionminutes_desc'] = 'Els fitxers ZIP generats i no descarregats s\'eliminen automàticament passat aquest temps mitjançant una tasca programada.';
+
+$string['task_cleanup_exports'] = 'Eliminar exportacions ZIP caducades';
+
+$string['session_filtertype'] = 'Àmbit de la sessió';
+$string['session_filter_course'] = 'Curs';
+$string['session_filter_cohort'] = 'Cohort';
+$string['session_order'] = 'Ordre';
+$string['order_lastname'] = 'Cognoms';
+$string['order_firstname'] = 'Nom';
+$string['order_email'] = 'Correu electrònic';
+$string['order_idnumber'] = 'ID';
+$string['order_username'] = 'Nom d\'usuari';
+$string['session_start'] = 'Iniciar sessió de fotos';
+$string['session_end'] = 'Finalitzar sessió';
+$string['session_progress_template'] = '{$a->captured}/{$a->total} fotografiats — {$a->pending} pendents';
+$string['queue_skip'] = 'Saltar';
+$string['queue_absent'] = 'Absent';
+
+$string['export_title'] = 'Exportar fotografies';
+$string['export_link'] = 'Exportar fotografies descarregables';
+$string['export_filtertype'] = 'Exportar per';
+$string['export_filter_session'] = 'Sessió fotogràfica';
+$string['export_filter_course'] = 'Curs';
+$string['export_filter_cohort'] = 'Cohort';
+$string['export_filenamestrategy'] = 'Anomenar fitxers per';
+$string['export_generate'] = 'Generar ZIP';
+$string['export_generating'] = 'Generant l\'exportació…';
+$string['export_ready'] = 'Exportació llesta amb {$a} fotografies. Descarregant…';
+
+$string['error_exportexpired'] = 'Aquest enllaç de descàrrega ha caducat o ja s\'ha utilitzat. Genera l\'exportació de nou.';
+$string['error_exporttoobig'] = 'La selecció supera el màxim de {$a} alumnes per a una exportació. Acota el filtre (curs, cohort o sessió més petits).';
+$string['error_invalidexportfilter'] = 'Filtre d\'exportació no vàlid.';
+$string['error_invalidstatus'] = 'Estat de cua no vàlid.';
+
+$string['privacy:metadata:session'] = 'Dades de cada sessió fotogràfica oberta per un operador.';
+$string['privacy:metadata:session:operatorid'] = 'L\'usuari que va obrir la sessió.';
+$string['privacy:metadata:session:filtertype'] = 'Si la sessió es va generar a partir d\'un curs o d\'una cohort.';
+$string['privacy:metadata:session:filterdata'] = 'L\'identificador del curs o la cohort usat com a filtre.';
+$string['privacy:metadata:session:timecreated'] = 'Quan es va crear la sessió.';
+$string['privacy:metadata:session_user'] = 'L\'estat de captura de cada alumne dins d\'una sessió fotogràfica.';
+$string['privacy:metadata:session_user:userid'] = 'L\'alumne en cua.';
+$string['privacy:metadata:session_user:capturedby'] = 'L\'operador que va realitzar la captura.';
+$string['privacy:metadata:session_user:status'] = 'Estat de la captura (pendent, capturat, saltat, absent, error).';
+$string['privacy:metadata:session_user:timecaptured'] = 'Quan es va capturar la fotografia.';
+$string['privacy:metadata:log'] = 'Registre d\'auditoria de les accions realitzades amb el connector.';
+$string['privacy:metadata:log:operatorid'] = 'L\'usuari que va realitzar l\'acció.';
+$string['privacy:metadata:log:targetuserid'] = 'L\'alumne afectat per l\'acció, si escau.';
+$string['privacy:metadata:log:action'] = 'El tipus d\'acció registrada.';
+$string['privacy:metadata:log:ipaddress'] = 'L\'adreça IP des de la qual es va realitzar l\'acció.';
+$string['privacy:metadata:log:timecreated'] = 'Quan es va registrar l\'acció.';
+$string['privacy:metadata:corefiles'] = 'La fotografia de perfil en si s\'emmagatzema íntegrament mitjançant el component "user" del nucli de Moodle, no per aquest connector.';
+$string['privacy:path:sessions'] = 'Captura de fotografies de perfil/Sessions';
+$string['privacy:path:queueentries'] = 'Captura de fotografies de perfil/Cua';
+$string['privacy:path:logs'] = 'Captura de fotografies de perfil/Registre d\'auditoria';

@@ -47,10 +47,20 @@ $PAGE->requires->js_call_amd('local_profilephoto/capture', 'init', [[
     'countdownEnabled' => (bool) get_config('local_profilephoto', 'enablecountdown'),
     'countdownSeconds' => (int) get_config('local_profilephoto', 'countdownseconds'),
     'shortcutsEnabled' => (bool) get_config('local_profilephoto', 'enableshortcuts'),
+    // Behat cannot reliably drive a real/fake webcam; force the
+    // deterministic manual file-upload path during automated tests only
+    // (encargo section 27). This flag has no effect outside Behat runs.
+    'forceManualCapture' => defined('BEHAT_SITE_RUNNING'),
 ]]);
+
+$canexport = has_capability('local/profilephoto:exportsession', $context)
+    || has_capability('local/profilephoto:exportall', $context);
 
 echo $OUTPUT->header();
 
-echo $OUTPUT->render_from_template('local_profilephoto/index', []);
+echo $OUTPUT->render_from_template('local_profilephoto/index', [
+    'canexport' => $canexport,
+    'exporturl' => (new moodle_url('/local/profilephoto/export.php'))->out(false),
+]);
 
 echo $OUTPUT->footer();

@@ -52,8 +52,10 @@ $string['settings_maxsearchresults_desc'] = 'Upper bound on results returned per
 $string['opencapturescreen'] = 'Open capture screen';
 
 $string['event_picture_updated'] = 'Profile picture updated';
-
-$string['privacy:metadata:null_reason'] = 'This plugin does not store any personal data of its own: the captured photo is processed in memory and saved only through Moodle official mechanism (the "user" component), already covered by core_user own privacy provider. Temporary draft files are removed through Moodle standard mechanisms.';
+$string['event_session_started'] = 'Photography session started';
+$string['event_session_completed'] = 'Photography session completed';
+$string['event_export_created'] = 'Photo export created';
+$string['event_export_downloaded'] = 'Photo export downloaded';
 
 $string['error_emptyimage'] = 'No image was received.';
 $string['error_imagetoolarge'] = 'The received image exceeds the maximum allowed size.';
@@ -94,6 +96,7 @@ $string['shortcut_save'] = 'Save and next';
 $string['shortcut_repeat'] = 'Retake photo';
 $string['shortcut_search'] = 'Focus the search box';
 $string['shortcut_cancel'] = 'Cancel preview';
+$string['shortcut_skip'] = 'Skip student (in a session)';
 
 $string['camera_error_insecure'] = 'This site does not use HTTPS: the browser will not allow camera access. Upload a photo manually.';
 $string['camera_error_permission'] = 'You denied camera access. Check this site\'s browser permissions, or upload a photo manually.';
@@ -107,3 +110,67 @@ $string['settings_enablecountdown'] = 'Enable countdown';
 $string['settings_enablecountdown_desc'] = 'When enabled, clicking "Take photo" starts a countdown before capturing, instead of capturing immediately. Disabled by default.';
 $string['settings_countdownseconds'] = 'Countdown duration (seconds)';
 $string['settings_countdownseconds_desc'] = 'Only applies when the countdown is enabled.';
+
+$string['settings_exportheading'] = 'Export';
+$string['settings_exportfilenamestrategy'] = 'Filename format';
+$string['settings_exportfilenamestrategy_desc'] = 'Field used to name each photo inside the exported ZIP.';
+$string['settings_exportfallbackstrategy'] = 'Fallback format';
+$string['settings_exportfallbackstrategy_desc'] = 'Field used when the primary format is empty for a student (e.g. no idnumber).';
+$string['settings_maxsyncexportusers'] = 'Maximum students per export';
+$string['settings_maxsyncexportusers_desc'] = 'If the selected filter includes more students than this, the operator is asked to narrow it instead of generating the export (this delivery builds ZIPs synchronously, with no background task).';
+$string['settings_exportretentionminutes'] = 'Temporary ZIP retention (minutes)';
+$string['settings_exportretentionminutes_desc'] = 'Generated ZIPs that are never downloaded are automatically deleted after this time by a scheduled task.';
+
+$string['task_cleanup_exports'] = 'Delete expired export ZIPs';
+
+$string['session_filtertype'] = 'Session scope';
+$string['session_filter_course'] = 'Course';
+$string['session_filter_cohort'] = 'Cohort';
+$string['session_order'] = 'Order';
+$string['order_lastname'] = 'Last name';
+$string['order_firstname'] = 'First name';
+$string['order_email'] = 'Email';
+$string['order_idnumber'] = 'ID';
+$string['order_username'] = 'Username';
+$string['session_start'] = 'Start photo session';
+$string['session_end'] = 'End session';
+$string['session_progress_template'] = '{$a->captured}/{$a->total} captured — {$a->pending} pending';
+$string['queue_skip'] = 'Skip';
+$string['queue_absent'] = 'Absent';
+
+$string['export_title'] = 'Export photos';
+$string['export_link'] = 'Export downloadable photos';
+$string['export_filtertype'] = 'Export by';
+$string['export_filter_session'] = 'Photography session';
+$string['export_filter_course'] = 'Course';
+$string['export_filter_cohort'] = 'Cohort';
+$string['export_filenamestrategy'] = 'Name files by';
+$string['export_generate'] = 'Generate ZIP';
+$string['export_generating'] = 'Generating the export…';
+$string['export_ready'] = 'Export ready with {$a} photos. Downloading…';
+
+$string['error_exportexpired'] = 'This download link has expired or has already been used. Generate the export again.';
+$string['error_exporttoobig'] = 'The selection exceeds the maximum of {$a} students for one export. Narrow the filter (a smaller course, cohort or session).';
+$string['error_invalidexportfilter'] = 'Invalid export filter.';
+$string['error_invalidstatus'] = 'Invalid queue status.';
+
+$string['privacy:metadata:session'] = 'Data about each photography session opened by an operator.';
+$string['privacy:metadata:session:operatorid'] = 'The user who opened the session.';
+$string['privacy:metadata:session:filtertype'] = 'Whether the session was built from a course or a cohort.';
+$string['privacy:metadata:session:filterdata'] = 'The course or cohort id used as the filter.';
+$string['privacy:metadata:session:timecreated'] = 'When the session was created.';
+$string['privacy:metadata:session_user'] = 'The capture status of each student within a photography session.';
+$string['privacy:metadata:session_user:userid'] = 'The queued student.';
+$string['privacy:metadata:session_user:capturedby'] = 'The operator who performed the capture.';
+$string['privacy:metadata:session_user:status'] = 'Capture status (pending, captured, skipped, absent, error).';
+$string['privacy:metadata:session_user:timecaptured'] = 'When the photo was captured.';
+$string['privacy:metadata:log'] = 'Audit trail of actions performed with the plugin.';
+$string['privacy:metadata:log:operatorid'] = 'The user who performed the action.';
+$string['privacy:metadata:log:targetuserid'] = 'The student affected by the action, if any.';
+$string['privacy:metadata:log:action'] = 'The type of action logged.';
+$string['privacy:metadata:log:ipaddress'] = 'The IP address the action was performed from.';
+$string['privacy:metadata:log:timecreated'] = 'When the action was logged.';
+$string['privacy:metadata:corefiles'] = 'The profile picture itself is stored entirely through Moodle core\'s "user" component, not by this plugin.';
+$string['privacy:path:sessions'] = 'Profile photo capture/Sessions';
+$string['privacy:path:queueentries'] = 'Profile photo capture/Queue';
+$string['privacy:path:logs'] = 'Profile photo capture/Audit log';

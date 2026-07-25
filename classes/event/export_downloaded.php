@@ -14,20 +14,42 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace local_profilephoto\event;
+
+defined('MOODLE_INTERNAL') || die();
+
 /**
- * Plugin version information.
+ * Event triggered when a generated ZIP export is downloaded.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class export_downloaded extends \core\event\base {
 
-defined('MOODLE_INTERNAL') || die();
+    /**
+     * Init method.
+     */
+    protected function init() {
+        $this->data['crud'] = 'r';
+        $this->data['edulevel'] = self::LEVEL_OTHER;
+    }
 
-$plugin->component = 'local_profilephoto';
-$plugin->version   = 2026072700;
-// Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
-// against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
-$plugin->requires  = 2025100600;
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.5.0 (Entrega 3+4+5 combinadas)';
+    /**
+     * Returns localised event name.
+     *
+     * @return string
+     */
+    public static function get_name() {
+        return get_string('event_export_downloaded', 'local_profilephoto');
+    }
+
+    /**
+     * Returns non-localised event description with id's for admin use only.
+     *
+     * @return string
+     */
+    public function get_description() {
+        return "The user with id '{$this->userid}' downloaded a photo export ZIP.";
+    }
+}
