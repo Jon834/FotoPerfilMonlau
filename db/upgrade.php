@@ -95,7 +95,10 @@ function xmldb_local_profilephoto_upgrade($oldversion) {
         $table->add_key('operatorid', XMLDB_KEY_FOREIGN, ['operatorid'], 'user', ['id']);
         $table->add_key('targetuserid', XMLDB_KEY_FOREIGN, ['targetuserid'], 'user', ['id']);
         $table->add_index('operatorid_timecreated', XMLDB_INDEX_NOTUNIQUE, ['operatorid', 'timecreated']);
-        $table->add_index('targetuserid_idx', XMLDB_INDEX_NOTUNIQUE, ['targetuserid']);
+        // No separate index on targetuserid alone: the foreign key above
+        // already covers that exact single-column lookup, and Moodle's
+        // xmldb_table::addIndex() rejects an index whose field set exactly
+        // duplicates an existing key's, regardless of what it is named.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
         }
