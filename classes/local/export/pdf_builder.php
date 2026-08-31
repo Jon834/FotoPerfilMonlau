@@ -100,6 +100,9 @@ class pdf_builder {
         // Render header.
         self::render_header($pdf, $title, $layout, $language, $stage, $heading);
 
+        // Render optional heading/comment.
+        self::render_heading($pdf, $heading);
+
         // Render content based on layout.
         if ($layout === 'grid6') {
             self::render_grid_6col($pdf, $users);
@@ -131,39 +134,52 @@ class pdf_builder {
     private static function render_header(\TCPDF &$pdf, string $title, string $layout, string $language, string $stage, string $heading): void {
         $brand = self::brand_colors($stage);
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
-        $pdf->Rect(0, 0, 210, 28, 'F');
+        $pdf->Rect(0, 0, 210, 30, 'F');
 
+        // Logo: constrain to fit without distortion.
         $logo = self::resolve_logo_path($stage);
+        $logosize = 16;
         if ($logo !== null && preg_match('/\.svg$/i', $logo)) {
-            $pdf->ImageSVG($logo, 10, 7, 28, 14, '', '', 'T', false);
+            $pdf->ImageSVG($logo, 10, 7, $logosize, '', '', '', 'T', false);
         } else if ($logo !== null) {
-            $pdf->Image($logo, 10, 7, 28, 14, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            // Use Image with max height, let width scale proportionally.
+            $pdf->Image($logo, 10, 7, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
         } else {
-            $pdf->Image('@' . self::monlau_logo($stage), 10, 7, 28, 14, 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            $pdf->Image('@' . self::monlau_logo($stage), 10, 7, $logosize, '', 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
         }
 
         $pdf->SetTextColor(255, 255, 255);
-        $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->SetXY(42, 8);
-        $pdf->Cell(0, 7, $title, 0, 1, 'L');
-        $pdf->SetFont('helvetica', '', 9);
-        $pdf->SetXY(42, 17);
-        $pdf->Cell(0, 5, self::translate_title($layout, $language), 0, 1, 'L');
+        $pdf->SetFont('helvetica', 'B', 18);
+        $pdf->SetXY(40, 6);
+        $pdf->Cell(0, 8, $title, 0, 0, 'L');
 
-        if ($heading !== '') {
-            $pdf->SetTextColor(40, 40, 40);
-            $pdf->SetFillColor(245, 247, 251);
-            $pdf->SetFont('helvetica', 'B', 10);
-            $pdf->Cell(0, 8, $heading, 0, 1, 'L', true);
-            $pdf->Ln(2);
-        }
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetXY(40, 16);
+        $pdf->Cell(0, 6, self::translate_title($layout, $language), 0, 1, 'L');
 
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->SetFont('helvetica', '', 10);
     }
 
     /**
-     * Render a 4-column grid layout (orla classic).
+     * Render optional heading/comment section.
+     *
+     * @param \TCPDF $pdf
+     * @param string $heading
+     */
+    private static function render_heading(\TCPDF &$pdf, string $heading): void {
+        if ($heading === '') {
+            return;
+        }
+
+        $pdf->SetTextColor(40, 40, 40);
+        $pdf->SetFillColor(245, 247, 251);
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->Cell(0, 6, $heading, 0, 1, 'L', true);
+        $pdf->Ln(3);
+    }
+
+    /**
+     * Render a 4-column grid layout (orla classic) with proper pagination.
      *
      * @param \TCPDF $pdf
      * @param array $users
@@ -178,16 +194,33 @@ class pdf_builder {
         $imgh = 34;
         $rowgap = 6;
         $textheight = 12;
-        $starty = $pdf->GetY() + 8;
+        $rowheight = $imgh + $rowgap + $textheight;
+        $basestarty = $pdf->GetY() + 3;
+        $maxrows = 8;
+        $usersperpage = $columns * $maxrows;
 
         foreach ($users as $index => $user) {
-            $col = $index % $columns;
-            $row = intdiv($index, $columns);
+            $pageno = intdiv($index, $usersperpage);
+            $useronpage = $index % $usersperpage;
+            $col = $useronpage % $columns;
+            $row = intdiv($useronpage, $columns);
+
+            // Add new page if needed.
+            if ($index > 0 && $useronpage === 0) {
+                $pdf->AddPage();
+                $basestarty = $pdf->GetY() + 3;
+            }
+
             $x = $left + ($col * ($cellw + $gutter));
-            $y = $starty + ($row * ($imgh + $rowgap + $textheight));
+            $y = $basestarty + ($row * $rowheight);
             $xpos = $x + (($cellw - $imgw) / 2);
 
             $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+
+            // Number.
+            $pdf->SetFont('helvetica', 'B', 7);
+            $pdf->SetXY($x, $y - 4);
+            $pdf->Cell(5, 4, (string) ($index + 1), 0, 0, 'C');
 
             $pdf->SetFont('helvetica', 'B', 8);
             $pdf->SetXY($x, $y + $imgh + 2);
@@ -197,7 +230,7 @@ class pdf_builder {
     }
 
     /**
-     * Render a 6-column grid layout (compact).
+     * Render a 6-column grid layout (compact) with proper pagination.
      *
      * @param \TCPDF $pdf
      * @param array $users
@@ -212,16 +245,33 @@ class pdf_builder {
         $imgh = 20;
         $rowgap = 4;
         $textheight = 8;
-        $starty = $pdf->GetY() + 6;
+        $rowheight = $imgh + $rowgap + $textheight;
+        $basestarty = $pdf->GetY() + 3;
+        $maxrows = 10;
+        $usersperpage = $columns * $maxrows;
 
         foreach ($users as $index => $user) {
-            $col = $index % $columns;
-            $row = intdiv($index, $columns);
+            $pageno = intdiv($index, $usersperpage);
+            $useronpage = $index % $usersperpage;
+            $col = $useronpage % $columns;
+            $row = intdiv($useronpage, $columns);
+
+            // Add new page if needed.
+            if ($index > 0 && $useronpage === 0) {
+                $pdf->AddPage();
+                $basestarty = $pdf->GetY() + 3;
+            }
+
             $x = $left + ($col * ($cellw + $gutter));
-            $y = $starty + ($row * ($imgh + $rowgap + $textheight));
+            $y = $basestarty + ($row * $rowheight);
             $xpos = $x + (($cellw - $imgw) / 2);
 
             $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+
+            // Number.
+            $pdf->SetFont('helvetica', 'B', 5);
+            $pdf->SetXY($x, $y - 3);
+            $pdf->Cell(4, 3, (string) ($index + 1), 0, 0, 'C');
 
             $pdf->SetFont('helvetica', 'B', 6);
             $pdf->SetXY($x, $y + $imgh + 1);
@@ -231,7 +281,7 @@ class pdf_builder {
     }
 
     /**
-     * Render a directory table layout (photo + name + email).
+     * Render a directory table layout (photo + name + email) with 2 columns.
      *
      * @param \TCPDF $pdf
      * @param array $users
@@ -247,36 +297,40 @@ class pdf_builder {
         $colw = ($pagew - $left * 2 - $gutter) / $columns;
         $rowheight = 20;
         $maxrows = 12;
-        $starty = $pdf->GetY() + 5;
+        $usersperpage = $columns * $maxrows;
+        $basestarty = $pdf->GetY() + 3;
 
         $userindex = 0;
-        $pagerow = 0;
-
         foreach ($users as $user) {
-            $col = $userindex % $columns;
-            $row = intdiv($userindex, $columns);
+            // Calculate which page and position this user should be on.
+            $pageno = intdiv($userindex, $usersperpage);
+            $useronpage = $userindex % $usersperpage;
+            $col = $useronpage % $columns;
+            $pagerow = intdiv($useronpage, $columns);
 
-            // Check if we need a new page (max rows exceeded).
-            if ($pagerow >= $maxrows) {
+            // Add new page if needed.
+            if ($userindex > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $pagerow = 0;
-                $col = 0;
-                $row = 0;
-                $userindex = 0;
+                $basestarty = $pdf->GetY() + 3;
             }
 
             $x = $left + ($col * ($colw + $gutter));
-            $y = $starty + ($pagerow * $rowheight);
+            $y = $basestarty + ($pagerow * $rowheight);
 
             // Photo (18mm width, scaled to row height).
             $photow = 18;
             $photoh = $rowheight - 2;
             $pdf->Image('@' . $user->photo, $x, $y, $photow, $photoh, '', '', 'L', false, 300, '', false, false, 0, false, false, false);
 
+            // Number.
+            $pdf->SetFont('helvetica', 'B', 7);
+            $pdf->SetXY($x + 20, $y);
+            $pdf->Cell(5, 4, (string) ($userindex + 1), 0, 0, 'L');
+
             // Name.
-            $pdf->SetXY($x + $photow + 2, $y + 2);
+            $pdf->SetXY($x + $photow + 8, $y + 2);
             $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->Cell($colw - $photow - 4, 5, self::format_student_name($user), 0, 1, 'L');
+            $pdf->Cell($colw - $photow - 10, 5, self::format_student_name($user), 0, 1, 'L');
 
             // Email.
             $pdf->SetXY($x + $photow + 2, $y + 8);
@@ -284,9 +338,6 @@ class pdf_builder {
             $pdf->Cell($colw - $photow - 4, 4, (string) ($user->email ?? ''), 0, 1, 'L');
 
             $userindex++;
-            if (($userindex % $columns) === 0) {
-                $pagerow++;
-            }
         }
     }
 
