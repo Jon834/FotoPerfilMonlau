@@ -214,13 +214,16 @@ class pdf_builder {
             // Add new page if needed.
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $basestarty = 15;
+                // Explicitly reset to top after page break.
+                $pdf->SetY(12);
+                $basestarty = 12 + 2;
             }
 
             $x = $left + ($col * ($cellw + $gutter));
             $y = $basestarty + ($row * $rowheight);
             $xpos = $x + (($cellw - $imgw) / 2);
 
+            // Use absolute positioning to avoid auto-breaking issues.
             $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
 
             // Number.
@@ -230,7 +233,7 @@ class pdf_builder {
 
             $pdf->SetFont('helvetica', 'B', 8);
             $pdf->SetXY($x, $y + $imgh + 2);
-            $pdf->MultiCell($cellw, 4, self::format_student_name($user), 0, 'C', false, 1);
+            $pdf->Cell($cellw, 4, self::format_student_name($user), 0, 1, 'C');
             $pdf->SetFont('helvetica', '', 8);
         }
     }
@@ -266,7 +269,9 @@ class pdf_builder {
             // Add new page if needed.
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $basestarty = 15;
+                // Explicitly reset to top after page break.
+                $pdf->SetY(12);
+                $basestarty = 12 + 2;
             }
 
             $x = $left + ($col * ($cellw + $gutter));
@@ -282,7 +287,7 @@ class pdf_builder {
 
             $pdf->SetFont('helvetica', 'B', 6);
             $pdf->SetXY($x, $y + $imgh + 1);
-            $pdf->MultiCell($cellw, 3, self::format_student_name($user), 0, 'C', false, 1);
+            $pdf->Cell($cellw, 3, self::format_student_name($user), 0, 1, 'C');
             $pdf->SetFont('helvetica', '', 6);
         }
     }
@@ -319,7 +324,9 @@ class pdf_builder {
             // Add new page if needed.
             if ($userindex > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $basestarty = 15;
+                // Explicitly reset to top after page break.
+                $pdf->SetY(12);
+                $basestarty = 12 + 2;
             }
 
             $x = $left + ($col * ($colw + $gutter));
