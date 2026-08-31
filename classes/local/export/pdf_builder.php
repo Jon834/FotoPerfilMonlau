@@ -100,16 +100,16 @@ class pdf_builder {
         // Render header.
         self::render_header($pdf, $title, $layout, $language, $stage, $heading);
 
-        // Render optional heading/comment.
-        self::render_heading($pdf, $heading);
+        // Render optional heading/comment and get final Y position.
+        $firstpagebaseY = self::render_heading($pdf, $heading);
 
-        // Render content based on layout.
+        // Render content based on layout, passing first-page Y position.
         if ($layout === 'grid6') {
-            self::render_grid_6col($pdf, $users);
+            self::render_grid_6col($pdf, $users, $firstpagebaseY);
         } else if ($layout === 'directory') {
-            self::render_directory($pdf, $users);
+            self::render_directory($pdf, $users, $firstpagebaseY);
         } else {
-            self::render_grid_4col($pdf, $users);
+            self::render_grid_4col($pdf, $users, $firstpagebaseY);
         }
 
         $pdf->Output($path, 'F');
@@ -158,24 +158,29 @@ class pdf_builder {
         $pdf->Cell(0, 6, self::translate_title($layout, $language), 0, 1, 'L');
 
         $pdf->SetTextColor(0, 0, 0);
+        // Position below header blue bar to prevent overlap with heading.
+        $pdf->SetY(31);
     }
 
     /**
-     * Render optional heading/comment section.
+     * Render optional heading/comment section (first page only).
      *
      * @param \TCPDF $pdf
      * @param string $heading
+     * @return float The Y position after heading
      */
-    private static function render_heading(\TCPDF &$pdf, string $heading): void {
+    private static function render_heading(\TCPDF &$pdf, string $heading): float {
         if ($heading === '') {
-            return;
+            return $pdf->GetY();
         }
 
         $pdf->SetTextColor(40, 40, 40);
         $pdf->SetFillColor(245, 247, 251);
         $pdf->SetFont('helvetica', '', 9);
-        $pdf->Cell(0, 6, $heading, 0, 1, 'L', true);
-        $pdf->Ln(3);
+        $pdf->MultiCell(0, 5, $heading, 0, 'L', true);
+        $endY = $pdf->GetY();
+        $pdf->SetY($endY + 3);
+        return $pdf->GetY();
     }
 
     /**
@@ -183,8 +188,9 @@ class pdf_builder {
      *
      * @param \TCPDF $pdf
      * @param array $users
+     * @param float $firstpagebaseY Y position after header+heading on first page
      */
-    private static function render_grid_4col(\TCPDF &$pdf, array $users): void {
+    private static function render_grid_4col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35): void {
         $columns = 4;
         $pagew = 210;
         $left = 12;
@@ -195,9 +201,9 @@ class pdf_builder {
         $rowgap = 6;
         $textheight = 12;
         $rowheight = $imgh + $rowgap + $textheight;
-        $basestarty = $pdf->GetY() + 3;
         $maxrows = 8;
         $usersperpage = $columns * $maxrows;
+        $basestarty = $firstpagebaseY;
 
         foreach ($users as $index => $user) {
             $pageno = intdiv($index, $usersperpage);
@@ -208,7 +214,7 @@ class pdf_builder {
             // Add new page if needed.
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $basestarty = $pdf->GetY() + 3;
+                $basestarty = 15;
             }
 
             $x = $left + ($col * ($cellw + $gutter));
@@ -234,8 +240,9 @@ class pdf_builder {
      *
      * @param \TCPDF $pdf
      * @param array $users
+     * @param float $firstpagebaseY Y position after header+heading on first page
      */
-    private static function render_grid_6col(\TCPDF &$pdf, array $users): void {
+    private static function render_grid_6col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35): void {
         $columns = 6;
         $pagew = 210;
         $left = 8;
@@ -246,9 +253,9 @@ class pdf_builder {
         $rowgap = 4;
         $textheight = 8;
         $rowheight = $imgh + $rowgap + $textheight;
-        $basestarty = $pdf->GetY() + 3;
         $maxrows = 10;
         $usersperpage = $columns * $maxrows;
+        $basestarty = $firstpagebaseY;
 
         foreach ($users as $index => $user) {
             $pageno = intdiv($index, $usersperpage);
@@ -259,7 +266,7 @@ class pdf_builder {
             // Add new page if needed.
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $basestarty = $pdf->GetY() + 3;
+                $basestarty = 15;
             }
 
             $x = $left + ($col * ($cellw + $gutter));
@@ -285,8 +292,9 @@ class pdf_builder {
      *
      * @param \TCPDF $pdf
      * @param array $users
+     * @param float $firstpagebaseY Y position after header+heading on first page
      */
-    private static function render_directory(\TCPDF &$pdf, array $users): void {
+    private static function render_directory(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35): void {
         $pdf->SetFont('helvetica', '', 9);
         $pdf->SetTextColor(0, 0, 0);
 
@@ -298,7 +306,7 @@ class pdf_builder {
         $rowheight = 20;
         $maxrows = 12;
         $usersperpage = $columns * $maxrows;
-        $basestarty = $pdf->GetY() + 3;
+        $basestarty = $firstpagebaseY;
 
         $userindex = 0;
         foreach ($users as $user) {
@@ -311,7 +319,7 @@ class pdf_builder {
             // Add new page if needed.
             if ($userindex > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                $basestarty = $pdf->GetY() + 3;
+                $basestarty = 15;
             }
 
             $x = $left + ($col * ($colw + $gutter));
