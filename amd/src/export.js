@@ -31,6 +31,10 @@ const SELECTORS = {
     COURSE: '#lpp-export-course',
     COHORT: '#lpp-export-cohort',
     FILENAME_STRATEGY: '#lpp-export-filenamestrategy',
+    EXPORT_TYPE: '#lpp-export-type',
+    LANGUAGE: '#lpp-export-language',
+    STAGE: '#lpp-export-stage',
+    HEADING: '#lpp-export-heading',
     GENERATE_BTN: '#lpp-export-btn',
     STATUS: '#lpp-export-status',
 };
@@ -49,9 +53,9 @@ const getExportOptions = () => Ajax.call([{
  * @param {string} filenamestrategy
  * @return {Promise}
  */
-const createExport = (filtertype, filterid, filenamestrategy) => Ajax.call([{
+const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading) => Ajax.call([{
     methodname: 'local_profilephoto_create_export',
-    args: {filtertype, filterid, filenamestrategy, fallbackstrategy: 'username'},
+    args: {filtertype, filterid, filenamestrategy, fallbackstrategy: 'username', exporttype, language, stage, heading},
 }])[0];
 
 /**
@@ -78,6 +82,10 @@ export const init = () => {
     const courseSelect = document.querySelector(SELECTORS.COURSE);
     const cohortSelect = document.querySelector(SELECTORS.COHORT);
     const filenameStrategy = document.querySelector(SELECTORS.FILENAME_STRATEGY);
+    const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
+    const language = document.querySelector(SELECTORS.LANGUAGE);
+    const stage = document.querySelector(SELECTORS.STAGE);
+    const heading = document.querySelector(SELECTORS.HEADING);
     const generateBtn = document.querySelector(SELECTORS.GENERATE_BTN);
     const status = document.querySelector(SELECTORS.STATUS);
 
@@ -109,7 +117,15 @@ export const init = () => {
         generateBtn.disabled = true;
         getString('export_generating', 'local_profilephoto').then((message) => {
             status.textContent = message;
-            return createExport(filtertype, filterid, filenameStrategy.value);
+            return createExport(
+                filtertype,
+                filterid,
+                filenameStrategy.value,
+                exportType.value,
+                language.value,
+                stage.value,
+                heading.value.trim()
+            );
         }).then((result) => {
             return getString('export_ready', 'local_profilephoto', result.count).then((message) => {
                 status.textContent = message;

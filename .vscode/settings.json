@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /c/Users/alonsoj/Desktop/appflutter/FotoperfilMonlau ; php -l classes/external/create_export\\.php ; php -l classes/local/export/pdf_builder\\.php ; php -l tests/pdf_builder_test\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Set-Location 'c:\\\\Users\\\\alonsoj\\\\Desktop\\\\appflutter\\\\FotoperfilMonlau'; php -l classes/external/create_export\\.php; php -l classes/local/export/pdf_builder\\.php; php -l tests/pdf_builder_test\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

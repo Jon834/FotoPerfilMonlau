@@ -26,6 +26,7 @@ use core_external\external_value;
 use local_profilephoto\event\export_created;
 use local_profilephoto\local\audit\logger;
 use local_profilephoto\local\export\filename_strategy;
+use local_profilephoto\local\export\pdf_builder;
 use local_profilephoto\local\export\zip_builder;
 use local_profilephoto\local\session\manager;
 use moodle_exception;
@@ -56,6 +57,10 @@ class create_export extends external_api {
             'filterid' => new external_value(PARAM_INT, 'sessionid, courseid or cohortid, matching filtertype'),
             'filenamestrategy' => new external_value(PARAM_ALPHA, 'Primary filename strategy', VALUE_DEFAULT, ''),
             'fallbackstrategy' => new external_value(PARAM_ALPHA, 'Fallback filename strategy', VALUE_DEFAULT, ''),
+            'exporttype' => new external_value(PARAM_ALPHA, 'zip | roster | orla', VALUE_DEFAULT, 'zip'),
+            'language' => new external_value(PARAM_ALPHA, 'ca | es | en', VALUE_DEFAULT, 'ca'),
+            'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx', VALUE_DEFAULT, 'fp'),
+            'heading' => new external_value(PARAM_TEXT, 'Optional heading text', VALUE_DEFAULT, ''),
         ]);
     }
 
@@ -72,7 +77,11 @@ class create_export extends external_api {
         string $filtertype,
         int $filterid,
         string $filenamestrategy = '',
-        string $fallbackstrategy = ''
+        string $fallbackstrategy = '',
+        string $exporttype = 'zip',
+        string $language = 'ca',
+        string $stage = 'fp',
+        string $heading = ''
     ): array {
         global $DB, $USER;
 
@@ -81,6 +90,10 @@ class create_export extends external_api {
             'filterid' => $filterid,
             'filenamestrategy' => $filenamestrategy,
             'fallbackstrategy' => $fallbackstrategy,
+            'exporttype' => $exporttype,
+            'language' => $language,
+            'stage' => $stage,
+            'heading' => $heading,
         ]);
 
         $context = context_system::instance();
@@ -127,7 +140,17 @@ class create_export extends external_api {
             throw new moodle_exception('error_exporttoobig', 'local_profilephoto', '', $maxsync);
         }
 
-        $built = zip_builder::build($userids, $strategy, $fallback, $sessionid);
+        $layout = in_array($params['exporttype'], ['roster', 'orla'], true) ? $params['exporttype'] : 'zip';
+        if ($layout === 'zip') {
+            $built = zip_builder::build($userids, $strategy, $fallback, $sessionid);
+        } else {
+            $title = self::resolve_export_title($params['filtertype'], $params['filterid']);
+            $built = pdf_builder::build($userids, $title, $layout, [
+                'language' => $params['language'],
+                'stage' => $params['stage'],
+                'heading' => $params['heading'],
+            ]);
+        }
 
         $token = bin2hex(random_bytes(20));
         $cache = cache::make('local_profilephoto', 'exports');
@@ -150,6 +173,46 @@ class create_export extends external_api {
             'filename' => $built['filename'],
             'count' => $built['count'],
         ];
+    }
+
+    /**
+     * Resolve the visible title for PDF roster exports.
+     *
+     * @param string $filtertype
+     * @param int $filterid
+     * @return string
+     */
+    private static function resolve_export_title(string $filtertype, int $filterid): string {
+        global $DB;
+
+        if ($filtertype === 'course') {
+            $course = $DB->get_record('course', ['id' => $filterid], 'id, fullname', MUST_EXIST);
+            return format_string($course->fullname);
+        }
+
+        if ($filtertype === 'cohort') {
+            $cohort = $DB->get_record('cohort', ['id' => $filterid], 'id, name', MUST_EXIST);
+            return format_string($cohort->name);
+        }
+
+        $session = manager::get_session($filterid);
+        $filterdata = json_decode($session->filterdata ?? '{}', true);
+        if (($session->filtertype ?? '') === 'course') {
+            $courseid = (int) ($filterdata['courseid'] ?? 0);
+            if ($courseid) {
+                $course = $DB->get_record('course', ['id' => $courseid], 'id, fullname', MUST_EXIST);
+                return format_string($course->fullname);
+            }
+        }
+        if (($session->filtertype ?? '') === 'cohort') {
+            $cohortid = (int) ($filterdata['cohortid'] ?? 0);
+            if ($cohortid) {
+                $cohort = $DB->get_record('cohort', ['id' => $cohortid], 'id, name', MUST_EXIST);
+                return format_string($cohort->name);
+            }
+        }
+
+        return get_string('export_pdf_title_default', 'local_profilephoto');
     }
 
     /**

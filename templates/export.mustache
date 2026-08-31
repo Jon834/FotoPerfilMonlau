@@ -43,6 +43,30 @@
             <option value="fullname">fullname</option>
         </select>
 
+        <label for="lpp-export-type">{{#str}}export_filetype, local_profilephoto{{/str}}</label>
+        <select id="lpp-export-type" class="form-control">
+            <option value="zip">{{#str}}export_filetype_zip, local_profilephoto{{/str}}</option>
+            <option value="roster">{{#str}}export_filetype_roster, local_profilephoto{{/str}}</option>
+            <option value="orla">{{#str}}export_filetype_orla, local_profilephoto{{/str}}</option>
+        </select>
+
+        <label for="lpp-export-stage">{{#str}}export_stage, local_profilephoto{{/str}}</label>
+        <select id="lpp-export-stage" class="form-control">
+            <option value="fp">{{#str}}export_stage_fp, local_profilephoto{{/str}}</option>
+            <option value="eso">{{#str}}export_stage_eso, local_profilephoto{{/str}}</option>
+            <option value="batx">{{#str}}export_stage_batx, local_profilephoto{{/str}}</option>
+        </select>
+
+        <label for="lpp-export-language">{{#str}}export_language, local_profilephoto{{/str}}</label>
+        <select id="lpp-export-language" class="form-control">
+            <option value="ca">{{#str}}export_language_ca, local_profilephoto{{/str}}</option>
+            <option value="es">{{#str}}export_language_es, local_profilephoto{{/str}}</option>
+            <option value="en">{{#str}}export_language_en, local_profilephoto{{/str}}</option>
+        </select>
+
+        <label for="lpp-export-heading">{{#str}}export_heading, local_profilephoto{{/str}}</label>
+        <input id="lpp-export-heading" class="form-control" type="text" placeholder="{{#str}}export_heading_placeholder, local_profilephoto{{/str}}">
+
         <button type="button" id="lpp-export-btn" class="btn btn-primary">
             {{#str}}export_generate, local_profilephoto{{/str}}
         </button>
