@@ -214,23 +214,21 @@ class pdf_builder {
         // Disable auto page break to prevent TCPDF from interfering with manual grid pagination.
         $pdf->SetAutoPageBreak(false);
 
+        $indexOnCurrentPage = 0;
         foreach ($users as $index => $user) {
-            $pageno = intdiv($index, $usersperpage);
-            $useronpage = $index % $usersperpage;
-            $col = $useronpage % $columns;
-            $row = intdiv($useronpage, $columns);
-
-            // Add new page if needed.
-            if ($index > 0 && $useronpage === 0) {
+            // Check if we need a new page based on position within current page.
+            if ($index > 0 && $indexOnCurrentPage >= $usersperpage) {
                 $pdf->AddPage();
                 $basestarty = 12 + 2;
                 // Recalculate maxrows for subsequent pages (no header/heading).
                 $availableheight = $pageheight - $basestarty - $bottommargin;
                 $maxrows = (int) floor($availableheight / $rowheight);
                 $usersperpage = $columns * $maxrows;
-                $useronpage = 0;
-                $row = 0;
+                $indexOnCurrentPage = 0;  // Reset counter for new page
             }
+
+            $col = $indexOnCurrentPage % $columns;
+            $row = intdiv($indexOnCurrentPage, $columns);
 
             $x = $left + ($col * ($cellw + $gutter));
             $y = $basestarty + ($row * $rowheight);
@@ -249,6 +247,8 @@ class pdf_builder {
             $pdf->SetXY($x, $y + $imgh + 2);
             $pdf->Cell($cellw, 4, self::format_student_name($user), 0, 0, 'C');
             $pdf->SetFont('helvetica', '', 8);
+
+            $indexOnCurrentPage++;
         }
 
         // Re-enable auto page break after grid rendering.
@@ -286,23 +286,21 @@ class pdf_builder {
         // Disable auto page break to prevent TCPDF from interfering with manual grid pagination.
         $pdf->SetAutoPageBreak(false);
 
+        $indexOnCurrentPage = 0;
         foreach ($users as $index => $user) {
-            $pageno = intdiv($index, $usersperpage);
-            $useronpage = $index % $usersperpage;
-            $col = $useronpage % $columns;
-            $row = intdiv($useronpage, $columns);
-
-            // Add new page if needed.
-            if ($index > 0 && $useronpage === 0) {
+            // Check if we need a new page based on position within current page.
+            if ($index > 0 && $indexOnCurrentPage >= $usersperpage) {
                 $pdf->AddPage();
                 $basestarty = 12 + 2;
                 // Recalculate maxrows for subsequent pages (no header/heading).
                 $availableheight = $pageheight - $basestarty - $bottommargin;
                 $maxrows = (int) floor($availableheight / $rowheight);
                 $usersperpage = $columns * $maxrows;
-                $useronpage = 0;
-                $row = 0;
+                $indexOnCurrentPage = 0;  // Reset counter for new page
             }
+
+            $col = $indexOnCurrentPage % $columns;
+            $row = intdiv($indexOnCurrentPage, $columns);
 
             $x = $left + ($col * ($cellw + $gutter));
             $y = $basestarty + ($row * $rowheight);
@@ -319,6 +317,8 @@ class pdf_builder {
             $pdf->SetXY($x, $y + $imgh + 1);
             $pdf->Cell($cellw, 3, self::format_student_name($user), 0, 0, 'C');
             $pdf->SetFont('helvetica', '', 6);
+
+            $indexOnCurrentPage++;
         }
 
         // Re-enable auto page break after grid rendering.
@@ -355,25 +355,21 @@ class pdf_builder {
         // Disable auto page break to prevent TCPDF from interfering with manual pagination.
         $pdf->SetAutoPageBreak(false);
 
-        $userindex = 0;
+        $indexOnCurrentPage = 0;
         foreach ($users as $user) {
-            // Calculate which page and position this user should be on.
-            $pageno = intdiv($userindex, $usersperpage);
-            $useronpage = $userindex % $usersperpage;
-            $col = $useronpage % $columns;
-            $pagerow = intdiv($useronpage, $columns);
-
-            // Add new page if needed.
-            if ($userindex > 0 && $useronpage === 0) {
+            // Check if we need a new page based on position within current page.
+            if ($indexOnCurrentPage > 0 && $indexOnCurrentPage >= $usersperpage) {
                 $pdf->AddPage();
                 $basestarty = 12 + 2;
                 // Recalculate maxrows for subsequent pages (no header/heading).
                 $availableheight = $pageheight - $basestarty - $bottommargin;
                 $maxrows = (int) floor($availableheight / $rowheight);
                 $usersperpage = $columns * $maxrows;
-                $useronpage = 0;
-                $pagerow = 0;
+                $indexOnCurrentPage = 0;  // Reset counter for new page
             }
+
+            $col = $indexOnCurrentPage % $columns;
+            $pagerow = intdiv($indexOnCurrentPage, $columns);
 
             $x = $left + ($col * ($colw + $gutter));
             $y = $basestarty + ($pagerow * $rowheight);
@@ -386,7 +382,7 @@ class pdf_builder {
             // Number.
             $pdf->SetFont('helvetica', 'B', 7);
             $pdf->SetXY($x + 20, $y);
-            $pdf->Cell(5, 4, (string) ($userindex + 1), 0, 0, 'L');
+            $pdf->Cell(5, 4, (string) ($indexOnCurrentPage + 1), 0, 0, 'L');
 
             // Name.
             $pdf->SetXY($x + $photow + 8, $y + 2);
@@ -398,7 +394,7 @@ class pdf_builder {
             $pdf->SetFont('helvetica', '', 7);
             $pdf->Cell($colw - $photow - 4, 4, (string) ($user->email ?? ''), 0, 0, 'L');
 
-            $userindex++;
+            $indexOnCurrentPage++;
         }
 
         // Re-enable auto page break after directory rendering.
