@@ -205,6 +205,9 @@ class pdf_builder {
         $usersperpage = $columns * $maxrows;
         $basestarty = $firstpagebaseY;
 
+        // Disable auto page break to prevent TCPDF from interfering with manual grid pagination.
+        $pdf->SetAutoPageBreak(false);
+
         foreach ($users as $index => $user) {
             $pageno = intdiv($index, $usersperpage);
             $useronpage = $index % $usersperpage;
@@ -214,8 +217,6 @@ class pdf_builder {
             // Add new page if needed.
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                // Explicitly reset to top after page break.
-                $pdf->SetY(12);
                 $basestarty = 12 + 2;
             }
 
@@ -223,19 +224,23 @@ class pdf_builder {
             $y = $basestarty + ($row * $rowheight);
             $xpos = $x + (($cellw - $imgw) / 2);
 
-            // Use absolute positioning to avoid auto-breaking issues.
+            // Image with absolute positioning.
             $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
 
-            // Number.
+            // Number label.
             $pdf->SetFont('helvetica', 'B', 7);
             $pdf->SetXY($x, $y - 4);
             $pdf->Cell(5, 4, (string) ($index + 1), 0, 0, 'C');
 
+            // Student name - use ln=0 to NOT advance Y position in TCPDF's internal tracking.
             $pdf->SetFont('helvetica', 'B', 8);
             $pdf->SetXY($x, $y + $imgh + 2);
-            $pdf->Cell($cellw, 4, self::format_student_name($user), 0, 1, 'C');
+            $pdf->Cell($cellw, 4, self::format_student_name($user), 0, 0, 'C');
             $pdf->SetFont('helvetica', '', 8);
         }
+
+        // Re-enable auto page break after grid rendering.
+        $pdf->SetAutoPageBreak(true, 9);
     }
 
     /**
@@ -260,6 +265,9 @@ class pdf_builder {
         $usersperpage = $columns * $maxrows;
         $basestarty = $firstpagebaseY;
 
+        // Disable auto page break to prevent TCPDF from interfering with manual grid pagination.
+        $pdf->SetAutoPageBreak(false);
+
         foreach ($users as $index => $user) {
             $pageno = intdiv($index, $usersperpage);
             $useronpage = $index % $usersperpage;
@@ -269,8 +277,6 @@ class pdf_builder {
             // Add new page if needed.
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                // Explicitly reset to top after page break.
-                $pdf->SetY(12);
                 $basestarty = 12 + 2;
             }
 
@@ -287,9 +293,12 @@ class pdf_builder {
 
             $pdf->SetFont('helvetica', 'B', 6);
             $pdf->SetXY($x, $y + $imgh + 1);
-            $pdf->Cell($cellw, 3, self::format_student_name($user), 0, 1, 'C');
+            $pdf->Cell($cellw, 3, self::format_student_name($user), 0, 0, 'C');
             $pdf->SetFont('helvetica', '', 6);
         }
+
+        // Re-enable auto page break after grid rendering.
+        $pdf->SetAutoPageBreak(true, 9);
     }
 
     /**
@@ -313,6 +322,9 @@ class pdf_builder {
         $usersperpage = $columns * $maxrows;
         $basestarty = $firstpagebaseY;
 
+        // Disable auto page break to prevent TCPDF from interfering with manual pagination.
+        $pdf->SetAutoPageBreak(false);
+
         $userindex = 0;
         foreach ($users as $user) {
             // Calculate which page and position this user should be on.
@@ -324,8 +336,6 @@ class pdf_builder {
             // Add new page if needed.
             if ($userindex > 0 && $useronpage === 0) {
                 $pdf->AddPage();
-                // Explicitly reset to top after page break.
-                $pdf->SetY(12);
                 $basestarty = 12 + 2;
             }
 
@@ -345,15 +355,18 @@ class pdf_builder {
             // Name.
             $pdf->SetXY($x + $photow + 8, $y + 2);
             $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->Cell($colw - $photow - 10, 5, self::format_student_name($user), 0, 1, 'L');
+            $pdf->Cell($colw - $photow - 10, 5, self::format_student_name($user), 0, 0, 'L');
 
             // Email.
             $pdf->SetXY($x + $photow + 2, $y + 8);
             $pdf->SetFont('helvetica', '', 7);
-            $pdf->Cell($colw - $photow - 4, 4, (string) ($user->email ?? ''), 0, 1, 'L');
+            $pdf->Cell($colw - $photow - 4, 4, (string) ($user->email ?? ''), 0, 0, 'L');
 
             $userindex++;
         }
+
+        // Re-enable auto page break after directory rendering.
+        $pdf->SetAutoPageBreak(true, 9);
     }
 
     /**
