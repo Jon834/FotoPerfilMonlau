@@ -57,7 +57,7 @@ class create_export extends external_api {
             'filterid' => new external_value(PARAM_INT, 'sessionid, courseid or cohortid, matching filtertype'),
             'filenamestrategy' => new external_value(PARAM_ALPHA, 'Primary filename strategy', VALUE_DEFAULT, ''),
             'fallbackstrategy' => new external_value(PARAM_ALPHA, 'Fallback filename strategy', VALUE_DEFAULT, ''),
-            'exporttype' => new external_value(PARAM_ALPHA, 'zip | roster | orla', VALUE_DEFAULT, 'zip'),
+            'exporttype' => new external_value(PARAM_ALPHA, 'zip | orla | grid6 | directory', VALUE_DEFAULT, 'zip'),
             'language' => new external_value(PARAM_ALPHA, 'ca | es | en', VALUE_DEFAULT, 'ca'),
             'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx', VALUE_DEFAULT, 'fp'),
             'heading' => new external_value(PARAM_TEXT, 'Optional heading text', VALUE_DEFAULT, ''),
@@ -140,7 +140,7 @@ class create_export extends external_api {
             throw new moodle_exception('error_exporttoobig', 'local_profilephoto', '', $maxsync);
         }
 
-        $layout = in_array($params['exporttype'], ['roster', 'orla'], true) ? $params['exporttype'] : 'zip';
+        $layout = in_array($params['exporttype'], ['roster', 'orla', 'grid6', 'directory'], true) ? $params['exporttype'] : 'zip';
         if ($layout === 'zip') {
             $built = zip_builder::build($userids, $strategy, $fallback, $sessionid);
         } else {

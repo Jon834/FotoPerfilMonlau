@@ -22,7 +22,7 @@ use core\user as core_user_class;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Build a PDF roster/orla with A4 portrait layout and names under each photo.
+ * Build a PDF photographic listing with A4 portrait layout and names under each photo.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -35,13 +35,18 @@ class pdf_builder {
      *
      * @param int[] $userids
      * @param string $title course/cohort title shown at the top of the sheet.
-     * @param string $layout roster or orla.
+     * @param string $layout orla|grid6|directory (roster kept as alias for orla).
      * @return array{path: string, filename: string, count: int}
      */
-    public static function build(array $userids, string $title, string $layout = 'roster', array $options = []): array {
+    public static function build(array $userids, string $title, string $layout = 'orla', array $options = []): array {
         global $CFG;
 
         require_once($CFG->libdir . '/tcpdf/tcpdf.php');
+
+        // Normalize layout aliases.
+        if ($layout === 'roster') {
+            $layout = 'orla';
+        }
 
         $language = in_array($options['language'] ?? 'ca', ['ca', 'es', 'en'], true) ? $options['language'] : 'ca';
         $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx'], true) ? $options['stage'] : 'fp';
@@ -49,7 +54,7 @@ class pdf_builder {
 
         $users = [];
         foreach ($userids as $userid) {
-            $user = core_user_class::get_user((int) $userid, 'id, firstname, lastname, picture', IGNORE_MISSING);
+            $user = core_user_class::get_user((int) $userid, 'id, firstname, lastname, picture, email', IGNORE_MISSING);
             if (!$user || ((int) $user->picture) <= 0) {
                 continue;
             }
@@ -72,7 +77,13 @@ class pdf_builder {
         });
 
         $tempdir = make_temp_directory('local_profilephoto/exports');
-        $filename = 'profilephoto_' . ($layout === 'orla' ? 'orla' : 'roster') . '_' . userdate(time(), '%Y%m%d_%H%M') . '.pdf';
+        $layoutname = match($layout) {
+            'grid6' => 'orla6',
+            'directory' => 'directorio',
+            default => 'orla',
+        };
+        $coursename = self::sanitize_filename($title);
+        $filename = $coursename . '_' . $layoutname . '_' . userdate(time(), '%Y%m%d_%H%M') . '.pdf';
         $path = $tempdir . '/' . $filename;
 
         $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
@@ -86,25 +97,58 @@ class pdf_builder {
 
         $pdf->AddPage();
 
+        // Render header.
+        self::render_header($pdf, $title, $layout, $language, $stage, $heading);
+
+        // Render content based on layout.
+        if ($layout === 'grid6') {
+            self::render_grid_6col($pdf, $users);
+        } else if ($layout === 'directory') {
+            self::render_directory($pdf, $users);
+        } else {
+            self::render_grid_4col($pdf, $users);
+        }
+
+        $pdf->Output($path, 'F');
+
+        return [
+            'path' => $path,
+            'filename' => $filename,
+            'count' => count($users),
+        ];
+    }
+
+    /**
+     * Render the PDF header with logo and title.
+     *
+     * @param \TCPDF $pdf
+     * @param string $title
+     * @param string $layout
+     * @param string $language
+     * @param string $stage
+     * @param string $heading
+     */
+    private static function render_header(\TCPDF &$pdf, string $title, string $layout, string $language, string $stage, string $heading): void {
         $brand = self::brand_colors($stage);
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, 210, 28, 'F');
 
         $logo = self::resolve_logo_path($stage);
         if ($logo !== null && preg_match('/\.svg$/i', $logo)) {
-            $pdf->ImageSVG($logo, 10, 6, 28, 14, '', '', 'T', false);
+            $pdf->ImageSVG($logo, 10, 7, 28, 14, '', '', 'T', false);
         } else if ($logo !== null) {
-            $pdf->Image($logo, 10, 6, 28, 14, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            $pdf->Image($logo, 10, 7, 28, 14, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
         } else {
-            $pdf->Image('@' . self::monlau_logo($stage), 10, 6, 28, 14, 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            $pdf->Image('@' . self::monlau_logo($stage), 10, 7, 28, 14, 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
         }
+
         $pdf->SetTextColor(255, 255, 255);
         $pdf->SetFont('helvetica', 'B', 16);
         $pdf->SetXY(42, 8);
-        $pdf->Cell(0, 7, self::translate_title($layout, $language), 0, 1, 'L');
+        $pdf->Cell(0, 7, $title, 0, 1, 'L');
         $pdf->SetFont('helvetica', '', 9);
-        $pdf->SetXY(42, 16);
-        $pdf->Cell(0, 5, $title, 0, 1, 'L');
+        $pdf->SetXY(42, 17);
+        $pdf->Cell(0, 5, self::translate_title($layout, $language), 0, 1, 'L');
 
         if ($heading !== '') {
             $pdf->SetTextColor(40, 40, 40);
@@ -116,42 +160,106 @@ class pdf_builder {
 
         $pdf->SetTextColor(0, 0, 0);
         $pdf->SetFont('helvetica', '', 10);
+    }
 
+    /**
+     * Render a 4-column grid layout (orla classic).
+     *
+     * @param \TCPDF $pdf
+     * @param array $users
+     */
+    private static function render_grid_4col(\TCPDF &$pdf, array $users): void {
         $columns = 4;
         $pagew = 210;
         $left = 12;
-        $gutter = 5;
+        $gutter = 7;
         $cellw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
-        $imgw = 32;
-        $imgh = 32;
+        $imgw = 34;
+        $imgh = 34;
+        $rowgap = 16;
+        $starty = $pdf->GetY() + 10;
 
         foreach ($users as $index => $user) {
             $col = $index % $columns;
             $row = intdiv($index, $columns);
             $x = $left + ($col * ($cellw + $gutter));
-            $y = $pdf->GetY() + ($row > 0 ? 0 : 0);
-
-            if ($row > 0 && $col === 0) {
-                $pdf->Ln(42);
-            }
-
+            $y = $starty + ($row * ($imgh + $rowgap + 18));
             $xpos = $x + (($cellw - $imgw) / 2);
-            $ypos = $pdf->GetY();
-            $pdf->Image('@' . $user->photo, $xpos, $ypos, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
-            $pdf->SetY($ypos + $imgh + 2);
+
+            $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+
             $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->MultiCell($cellw, 4, fullname($user), 0, 'C', false, 1, $x, $pdf->GetY(), true, 0, false, true, 0, 'M');
-            $pdf->SetY($pdf->GetY() + 2);
+            $pdf->SetXY($x, $y + $imgh + 3);
+            $pdf->MultiCell($cellw, 4, self::format_student_name($user), 0, 'C', false, 1);
             $pdf->SetFont('helvetica', '', 8);
         }
+    }
 
-        $pdf->Output($path, 'F');
+    /**
+     * Render a 6-column grid layout (compact).
+     *
+     * @param \TCPDF $pdf
+     * @param array $users
+     */
+    private static function render_grid_6col(\TCPDF &$pdf, array $users): void {
+        $columns = 6;
+        $pagew = 210;
+        $left = 8;
+        $gutter = 4;
+        $cellw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
+        $imgw = 20;
+        $imgh = 20;
+        $rowgap = 10;
+        $starty = $pdf->GetY() + 8;
 
-        return [
-            'path' => $path,
-            'filename' => $filename,
-            'count' => count($users),
-        ];
+        foreach ($users as $index => $user) {
+            $col = $index % $columns;
+            $row = intdiv($index, $columns);
+            $x = $left + ($col * ($cellw + $gutter));
+            $y = $starty + ($row * ($imgh + $rowgap + 12));
+            $xpos = $x + (($cellw - $imgw) / 2);
+
+            $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+
+            $pdf->SetFont('helvetica', 'B', 6);
+            $pdf->SetXY($x, $y + $imgh + 2);
+            $pdf->MultiCell($cellw, 3, self::format_student_name($user), 0, 'C', false, 1);
+            $pdf->SetFont('helvetica', '', 6);
+        }
+    }
+
+    /**
+     * Render a directory table layout (photo + name + email).
+     *
+     * @param \TCPDF $pdf
+     * @param array $users
+     */
+    private static function render_directory(\TCPDF &$pdf, array $users): void {
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->SetTextColor(0, 0, 0);
+
+        $colwidths = [20, 50, 80];
+        $rowheight = 22;
+
+        foreach ($users as $user) {
+            $startx = $pdf->GetX();
+            $starty = $pdf->GetY();
+
+            // Photo.
+            $pdf->Image('@' . $user->photo, $startx, $starty, $colwidths[0] - 2, $rowheight, '', '', 'L', false, 300, '', false, false, 0, false, false, false);
+
+            // Name and email.
+            $pdf->SetXY($startx + $colwidths[0], $starty + 3);
+            $pdf->SetFont('helvetica', 'B', 9);
+            $pdf->Cell($colwidths[1] + $colwidths[2] - 2, 6, self::format_student_name($user), 0, 1, 'L');
+
+            $pdf->SetXY($startx + $colwidths[0], $starty + 9);
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->Cell($colwidths[1] + $colwidths[2] - 2, 5, (string) ($user->email ?? ''), 0, 1, 'L');
+
+            // Move to next row.
+            $pdf->SetXY($startx, $starty + $rowheight);
+        }
     }
 
     /**
@@ -225,6 +333,27 @@ class pdf_builder {
     }
 
     /**
+     * Format a student name as "Apellido1 Apellido2, Nombre".
+     *
+     * @param object $user
+     * @return string
+     */
+    private static function format_student_name($user): string {
+        $lastname = trim((string) ($user->lastname ?? ''));
+        $firstname = trim((string) ($user->firstname ?? ''));
+        if ($lastname === '' && $firstname === '') {
+            return '';
+        }
+        if ($lastname === '') {
+            return $firstname;
+        }
+        if ($firstname === '') {
+            return $lastname;
+        }
+        return $lastname . ', ' . $firstname;
+    }
+
+    /**
      * Translate the page header based on the selected language.
      *
      * @param string $layout
@@ -233,11 +362,26 @@ class pdf_builder {
      */
     private static function translate_title(string $layout, string $language): string {
         $map = [
-            'ca' => ['roster' => 'Roster', 'orla' => 'Orla'],
-            'es' => ['roster' => 'Lista', 'orla' => 'Orla'],
-            'en' => ['roster' => 'Roster', 'orla' => 'Class photo'],
+            'ca' => [
+                'orla' => 'Listado fotográfico',
+                'grid6' => 'Listado fotográfico (6 columnas)',
+                'directory' => 'Directorio de alumnos',
+                'roster' => 'Listado fotográfico',
+            ],
+            'es' => [
+                'orla' => 'Listado fotográfico',
+                'grid6' => 'Listado fotográfico (6 columnas)',
+                'directory' => 'Directorio de alumnos',
+                'roster' => 'Listado fotográfico',
+            ],
+            'en' => [
+                'orla' => 'Photo list',
+                'grid6' => 'Photo list (6 columns)',
+                'directory' => 'Student directory',
+                'roster' => 'Photo list',
+            ],
         ];
-        return $map[$language][$layout] ?? $map['ca'][$layout];
+        return $map[$language][$layout] ?? $map['ca']['orla'];
     }
 
     /**
@@ -261,5 +405,23 @@ class pdf_builder {
         }
 
         return null;
+    }
+
+    /**
+     * Sanitize a course/cohort name for use in a filename.
+     *
+     * @param string $name
+     * @return string
+     */
+    private static function sanitize_filename(string $name): string {
+        // Remove or replace problematic characters.
+        $name = preg_replace('/[^a-zA-Z0-9_-]/', '_', trim($name));
+        // Replace multiple underscores with single.
+        $name = preg_replace('/_+/', '_', $name);
+        // Remove leading/trailing underscores.
+        $name = trim($name, '_');
+        // Limit to 50 chars to keep filenames reasonable.
+        $name = substr($name, 0, 50);
+        return $name ?: 'export';
     }
 }
