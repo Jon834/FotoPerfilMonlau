@@ -1,5 +1,17 @@
 # Changelog — local_profilephoto
 
+## 0.5.3 (cámara frontal/trasera en móvil)
+
+* En móviles y tablets (detectados por puntero táctil), la pantalla de
+  captura ahora ofrece un botón para alternar entre cámara frontal y
+  trasera, usando la restricción estándar `facingMode` en lugar del
+  selector de dispositivo por `deviceId` (poco fiable para este propósito
+  en navegadores móviles, especialmente iOS Safari). Empieza por defecto
+  en la cámara trasera, ya que el operador fotografía a otra persona, no
+  se hace un selfie; recuerda la última cámara usada.
+* El selector de dispositivo por nombre (pensado para varias webcams de
+  escritorio) sigue igual en ordenadores de sobremesa/portátiles.
+
 ## 0.5.2 (menú de administración)
 
 * La página de ajustes y "Abrir pantalla de captura" ahora aparecen agrupadas

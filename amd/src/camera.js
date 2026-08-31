@@ -24,6 +24,7 @@
  */
 
 const STORAGE_KEY = 'local_profilephoto_camera_device';
+const FACING_STORAGE_KEY = 'local_profilephoto_camera_facing';
 const IDEAL_DIMENSION = 1280;
 const MAX_CAPTURE_DIMENSION = 1600;
 const JPEG_QUALITY = 0.92;
@@ -63,6 +64,24 @@ export const isSupported = () => {
 };
 
 /**
+ * Whether this browser understands the facingMode constraint, i.e. whether
+ * requesting the front ('user') or back ('environment') camera specifically
+ * is meaningful here. This is the reliable cross-browser way to switch
+ * cameras on phones/tablets: enumerateDevices() labels and deviceId
+ * switching are inconsistently supported on mobile (notably iOS Safari),
+ * while facingMode is the standard mechanism those browsers do support.
+ *
+ * @return {Boolean}
+ */
+export const isFacingModeSupported = () => {
+    return Boolean(
+        navigator.mediaDevices &&
+        navigator.mediaDevices.getSupportedConstraints &&
+        navigator.mediaDevices.getSupportedConstraints().facingMode
+    );
+};
+
+/**
  * Create a camera controller bound to a given <video> element.
  *
  * @param {HTMLVideoElement} videoEl
@@ -71,6 +90,7 @@ export const isSupported = () => {
 export const createController = (videoEl) => {
     let stream = null;
     let currentDeviceId = null;
+    let currentFacingMode = null;
 
     const stop = () => {
         if (stream) {
@@ -98,10 +118,16 @@ export const createController = (videoEl) => {
     /**
      * Start (or restart, if already running) the camera stream.
      *
-     * @param {String|null} deviceId explicit device to use, or null for the default/remembered one.
+     * deviceId and facingMode are mutually exclusive: pass at most one. Use
+     * facingMode ('user' for front/selfie, 'environment' for back) to switch
+     * cameras on a phone/tablet, since deviceId-based switching is
+     * unreliable there; use deviceId to pick a specific webcam on desktop.
+     *
+     * @param {String|null} deviceId explicit device to use, or null.
+     * @param {String|null} facingMode 'user' or 'environment', or null.
      * @return {Promise} resolves once the stream is attached and playing.
      */
-    const start = (deviceId) => {
+    const start = (deviceId, facingMode) => {
         stop();
 
         const videoConstraints = {
@@ -110,16 +136,29 @@ export const createController = (videoEl) => {
         };
         if (deviceId) {
             videoConstraints.deviceId = {exact: deviceId};
+        } else if (facingMode) {
+            // ideal (not exact): a soft preference the browser falls back
+            // from gracefully instead of throwing OverconstrainedError on a
+            // device that only has one camera (e.g. most laptops).
+            videoConstraints.facingMode = {ideal: facingMode};
         }
 
         return navigator.mediaDevices.getUserMedia({video: videoConstraints, audio: false}).then((mediastream) => {
             stream = mediastream;
             currentDeviceId = deviceId || null;
+            currentFacingMode = deviceId ? null : (facingMode || null);
             videoEl.srcObject = stream;
 
             if (deviceId) {
                 try {
                     window.localStorage.setItem(STORAGE_KEY, deviceId);
+                } catch (ignored) {
+                    // Storage may be unavailable (private browsing); not critical.
+                    // eslint-disable-line no-empty
+                }
+            } else if (facingMode) {
+                try {
+                    window.localStorage.setItem(FACING_STORAGE_KEY, facingMode);
                 } catch (ignored) {
                     // Storage may be unavailable (private browsing); not critical.
                     // eslint-disable-line no-empty
@@ -140,6 +179,20 @@ export const createController = (videoEl) => {
     const getRememberedDeviceId = () => {
         try {
             return window.localStorage.getItem(STORAGE_KEY);
+        } catch (ignored) {
+            return null;
+        }
+    };
+
+    /**
+     * The facing mode ('user'/'environment') remembered from a previous
+     * session, if any.
+     *
+     * @return {String|null}
+     */
+    const getRememberedFacingMode = () => {
+        try {
+            return window.localStorage.getItem(FACING_STORAGE_KEY);
         } catch (ignored) {
             return null;
         }
@@ -188,9 +241,11 @@ export const createController = (videoEl) => {
         listDevices,
         captureFrame,
         getRememberedDeviceId,
+        getRememberedFacingMode,
         isActive: () => stream !== null,
         getCurrentDeviceId: () => currentDeviceId,
+        getCurrentFacingMode: () => currentFacingMode,
     };
 };
 
-export default {isSupported, createController};
+export default {isSupported, isFacingModeSupported, createController};

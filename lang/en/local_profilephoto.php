@@ -83,6 +83,8 @@ $string['label_idnumber'] = 'ID';
 
 $string['camera_unsupported'] = 'This browser or connection does not allow camera access (HTTPS is required). Upload a test photo manually instead.';
 $string['camera_select'] = 'Select camera';
+$string['camera_switch_to_front'] = 'Use front camera';
+$string['camera_switch_to_back'] = 'Use back camera';
 $string['camera_activate'] = 'Activate camera';
 $string['take_photo'] = 'Take photo';
 $string['repeat_photo'] = 'Retake';

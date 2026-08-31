@@ -48,6 +48,7 @@ const SELECTORS = {
     VIDEO: '#lpp-video',
     CAMERA_PLACEHOLDER: '#lpp-camera-placeholder',
     CAMERA_SELECT: '#lpp-camera-select',
+    CAMERA_FLIP_BTN: '#lpp-camera-flip-btn',
     CAMERA_START_BTN: '#lpp-camera-start-btn',
     CAPTURE_BTN: '#lpp-capture-btn',
     COUNTDOWN: '#lpp-countdown',
@@ -119,6 +120,7 @@ export const init = (config) => {
     const video = document.querySelector(SELECTORS.VIDEO);
     const cameraPlaceholder = document.querySelector(SELECTORS.CAMERA_PLACEHOLDER);
     const cameraSelect = document.querySelector(SELECTORS.CAMERA_SELECT);
+    const cameraFlipBtn = document.querySelector(SELECTORS.CAMERA_FLIP_BTN);
     const cameraStartBtn = document.querySelector(SELECTORS.CAMERA_START_BTN);
     const captureBtn = document.querySelector(SELECTORS.CAPTURE_BTN);
     const countdownEl = document.querySelector(SELECTORS.COUNTDOWN);
@@ -140,6 +142,14 @@ export const init = (config) => {
     let cameraReady = false;
     let countdownTimer = null;
     const camera = Camera.createController(video);
+    // Coarse pointer (touch, no hover) is how phones/tablets are
+    // distinguished from laptops/desktops with a mouse or trackpad: on
+    // these devices the front/back flip button is offered instead of the
+    // device-id dropdown, because enumerateDevices()/deviceId switching is
+    // unreliable there (notably iOS Safari), while facingMode is the
+    // mechanism they do support reliably.
+    const isTouchPrimary = Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    const useFacingModeUi = isTouchPrimary && Camera.isFacingModeSupported();
     // Whether the live-camera UI should be offered at all: starts out
     // matching browser/context support, but is permanently downgraded to
     // the manual fallback the first time an actual start() attempt fails
@@ -320,17 +330,36 @@ export const init = (config) => {
         queueHandle.updateCurrentItem(selectedUser.id, queuestatus);
     };
 
+    // Label the flip button with the side pressing it will switch TO (not
+    // the side currently active), which reads more clearly than a static
+    // "switch camera" label.
+    const updateFlipButtonLabel = () => {
+        const switchingToFront = camera.getCurrentFacingMode() === 'environment';
+        const stringkey = switchingToFront ? 'camera_switch_to_front' : 'camera_switch_to_back';
+        return getString(stringkey, 'local_profilephoto').then((label) => {
+            cameraFlipBtn.textContent = label;
+            cameraFlipBtn.title = label;
+            return null;
+        });
+    };
+
     // Camera setup (or manual fallback if unsupported).
-    const startCamera = (deviceId) => {
+    const startCamera = (deviceId, facingMode) => {
         cameraStatus.textContent = '';
-        return camera.start(deviceId).then(() => {
+        return camera.start(deviceId, facingMode).then(() => {
             cameraReady = true;
             cameraStatus.textContent = '';
             cameraPlaceholder.hidden = true;
             updateCaptureButtonState();
+
+            if (useFacingModeUi) {
+                cameraFlipBtn.hidden = false;
+                return updateFlipButtonLabel();
+            }
+
             return camera.listDevices();
         }).then((devices) => {
-            if (devices.length > 1) {
+            if (!useFacingModeUi && devices && devices.length > 1) {
                 cameraSelect.hidden = false;
                 cameraSelect.innerHTML = '';
                 devices.forEach((device, index) => {
@@ -359,10 +388,22 @@ export const init = (config) => {
 
     if (useCameraUi) {
         cameraStartBtn.addEventListener('click', () => {
-            startCamera(camera.getRememberedDeviceId());
+            if (useFacingModeUi) {
+                // Students are being photographed by someone else, not
+                // taking a selfie, so the back ('environment') camera is
+                // the sensible default the first time; the flip button
+                // remembers whichever side was used last after that.
+                startCamera(null, camera.getRememberedFacingMode() || 'environment');
+            } else {
+                startCamera(camera.getRememberedDeviceId());
+            }
         });
         cameraSelect.addEventListener('change', () => {
             startCamera(cameraSelect.value);
+        });
+        cameraFlipBtn.addEventListener('click', () => {
+            const next = camera.getCurrentFacingMode() === 'environment' ? 'user' : 'environment';
+            startCamera(null, next);
         });
     } else {
         cameraWarning.hidden = false;

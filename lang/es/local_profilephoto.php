@@ -83,6 +83,8 @@ $string['label_idnumber'] = 'ID';
 
 $string['camera_unsupported'] = 'Este navegador o esta conexión no permiten acceder a la cámara (se requiere HTTPS). Suba una fotografía de prueba manualmente.';
 $string['camera_select'] = 'Seleccionar cámara';
+$string['camera_switch_to_front'] = 'Usar cámara frontal';
+$string['camera_switch_to_back'] = 'Usar cámara trasera';
 $string['camera_activate'] = 'Activar cámara';
 $string['take_photo'] = 'Hacer foto';
 $string['repeat_photo'] = 'Repetir';
