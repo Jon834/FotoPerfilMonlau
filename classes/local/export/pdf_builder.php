@@ -176,20 +176,21 @@ class pdf_builder {
         $cellw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
         $imgw = 34;
         $imgh = 34;
-        $rowgap = 16;
-        $starty = $pdf->GetY() + 10;
+        $rowgap = 6;
+        $textheight = 12;
+        $starty = $pdf->GetY() + 8;
 
         foreach ($users as $index => $user) {
             $col = $index % $columns;
             $row = intdiv($index, $columns);
             $x = $left + ($col * ($cellw + $gutter));
-            $y = $starty + ($row * ($imgh + $rowgap + 18));
+            $y = $starty + ($row * ($imgh + $rowgap + $textheight));
             $xpos = $x + (($cellw - $imgw) / 2);
 
             $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
 
             $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->SetXY($x, $y + $imgh + 3);
+            $pdf->SetXY($x, $y + $imgh + 2);
             $pdf->MultiCell($cellw, 4, self::format_student_name($user), 0, 'C', false, 1);
             $pdf->SetFont('helvetica', '', 8);
         }
@@ -209,20 +210,21 @@ class pdf_builder {
         $cellw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
         $imgw = 20;
         $imgh = 20;
-        $rowgap = 10;
-        $starty = $pdf->GetY() + 8;
+        $rowgap = 4;
+        $textheight = 8;
+        $starty = $pdf->GetY() + 6;
 
         foreach ($users as $index => $user) {
             $col = $index % $columns;
             $row = intdiv($index, $columns);
             $x = $left + ($col * ($cellw + $gutter));
-            $y = $starty + ($row * ($imgh + $rowgap + 12));
+            $y = $starty + ($row * ($imgh + $rowgap + $textheight));
             $xpos = $x + (($cellw - $imgw) / 2);
 
             $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
 
             $pdf->SetFont('helvetica', 'B', 6);
-            $pdf->SetXY($x, $y + $imgh + 2);
+            $pdf->SetXY($x, $y + $imgh + 1);
             $pdf->MultiCell($cellw, 3, self::format_student_name($user), 0, 'C', false, 1);
             $pdf->SetFont('helvetica', '', 6);
         }
@@ -238,27 +240,53 @@ class pdf_builder {
         $pdf->SetFont('helvetica', '', 9);
         $pdf->SetTextColor(0, 0, 0);
 
-        $colwidths = [20, 50, 80];
-        $rowheight = 22;
+        $columns = 2;
+        $pagew = 210;
+        $left = 10;
+        $gutter = 8;
+        $colw = ($pagew - $left * 2 - $gutter) / $columns;
+        $rowheight = 20;
+        $maxrows = 12;
+        $starty = $pdf->GetY() + 5;
+
+        $userindex = 0;
+        $pagerow = 0;
 
         foreach ($users as $user) {
-            $startx = $pdf->GetX();
-            $starty = $pdf->GetY();
+            $col = $userindex % $columns;
+            $row = intdiv($userindex, $columns);
 
-            // Photo.
-            $pdf->Image('@' . $user->photo, $startx, $starty, $colwidths[0] - 2, $rowheight, '', '', 'L', false, 300, '', false, false, 0, false, false, false);
+            // Check if we need a new page (max rows exceeded).
+            if ($pagerow >= $maxrows) {
+                $pdf->AddPage();
+                $pagerow = 0;
+                $col = 0;
+                $row = 0;
+                $userindex = 0;
+            }
 
-            // Name and email.
-            $pdf->SetXY($startx + $colwidths[0], $starty + 3);
-            $pdf->SetFont('helvetica', 'B', 9);
-            $pdf->Cell($colwidths[1] + $colwidths[2] - 2, 6, self::format_student_name($user), 0, 1, 'L');
+            $x = $left + ($col * ($colw + $gutter));
+            $y = $starty + ($pagerow * $rowheight);
 
-            $pdf->SetXY($startx + $colwidths[0], $starty + 9);
-            $pdf->SetFont('helvetica', '', 8);
-            $pdf->Cell($colwidths[1] + $colwidths[2] - 2, 5, (string) ($user->email ?? ''), 0, 1, 'L');
+            // Photo (18mm width, scaled to row height).
+            $photow = 18;
+            $photoh = $rowheight - 2;
+            $pdf->Image('@' . $user->photo, $x, $y, $photow, $photoh, '', '', 'L', false, 300, '', false, false, 0, false, false, false);
 
-            // Move to next row.
-            $pdf->SetXY($startx, $starty + $rowheight);
+            // Name.
+            $pdf->SetXY($x + $photow + 2, $y + 2);
+            $pdf->SetFont('helvetica', 'B', 8);
+            $pdf->Cell($colw - $photow - 4, 5, self::format_student_name($user), 0, 1, 'L');
+
+            // Email.
+            $pdf->SetXY($x + $photow + 2, $y + 8);
+            $pdf->SetFont('helvetica', '', 7);
+            $pdf->Cell($colw - $photow - 4, 4, (string) ($user->email ?? ''), 0, 1, 'L');
+
+            $userindex++;
+            if (($userindex % $columns) === 0) {
+                $pagerow++;
+            }
         }
     }
 
