@@ -201,7 +201,13 @@ class pdf_builder {
         $rowgap = 6;
         $textheight = 12;
         $rowheight = $imgh + $rowgap + $textheight;
-        $maxrows = 8;
+
+        // A4 height = 297mm, bottom margin = 9mm.
+        $pageheight = 297;
+        $bottommargin = 9;
+        // Calculate max rows that fit on first page (accounting for header+heading).
+        $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
+        $maxrows = (int) floor($availableheight / $rowheight);
         $usersperpage = $columns * $maxrows;
         $basestarty = $firstpagebaseY;
 
@@ -218,6 +224,12 @@ class pdf_builder {
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
                 $basestarty = 12 + 2;
+                // Recalculate maxrows for subsequent pages (no header/heading).
+                $availableheight = $pageheight - $basestarty - $bottommargin;
+                $maxrows = (int) floor($availableheight / $rowheight);
+                $usersperpage = $columns * $maxrows;
+                $useronpage = 0;
+                $row = 0;
             }
 
             $x = $left + ($col * ($cellw + $gutter));
@@ -261,7 +273,13 @@ class pdf_builder {
         $rowgap = 4;
         $textheight = 8;
         $rowheight = $imgh + $rowgap + $textheight;
-        $maxrows = 10;
+
+        // A4 height = 297mm, bottom margin = 9mm.
+        $pageheight = 297;
+        $bottommargin = 9;
+        // Calculate max rows that fit on first page (accounting for header+heading).
+        $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
+        $maxrows = (int) floor($availableheight / $rowheight);
         $usersperpage = $columns * $maxrows;
         $basestarty = $firstpagebaseY;
 
@@ -278,6 +296,12 @@ class pdf_builder {
             if ($index > 0 && $useronpage === 0) {
                 $pdf->AddPage();
                 $basestarty = 12 + 2;
+                // Recalculate maxrows for subsequent pages (no header/heading).
+                $availableheight = $pageheight - $basestarty - $bottommargin;
+                $maxrows = (int) floor($availableheight / $rowheight);
+                $usersperpage = $columns * $maxrows;
+                $useronpage = 0;
+                $row = 0;
             }
 
             $x = $left + ($col * ($cellw + $gutter));
@@ -318,7 +342,13 @@ class pdf_builder {
         $gutter = 8;
         $colw = ($pagew - $left * 2 - $gutter) / $columns;
         $rowheight = 20;
-        $maxrows = 12;
+
+        // A4 height = 297mm, bottom margin = 9mm.
+        $pageheight = 297;
+        $bottommargin = 9;
+        // Calculate max rows that fit on first page (accounting for header+heading).
+        $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
+        $maxrows = (int) floor($availableheight / $rowheight);
         $usersperpage = $columns * $maxrows;
         $basestarty = $firstpagebaseY;
 
@@ -337,6 +367,12 @@ class pdf_builder {
             if ($userindex > 0 && $useronpage === 0) {
                 $pdf->AddPage();
                 $basestarty = 12 + 2;
+                // Recalculate maxrows for subsequent pages (no header/heading).
+                $availableheight = $pageheight - $basestarty - $bottommargin;
+                $maxrows = (int) floor($availableheight / $rowheight);
+                $usersperpage = $columns * $maxrows;
+                $useronpage = 0;
+                $pagerow = 0;
             }
 
             $x = $left + ($col * ($colw + $gutter));
