@@ -1,5 +1,15 @@
 # Changelog — local_profilephoto
 
+## 0.5.2 (menú de administración)
+
+* La página de ajustes y "Abrir pantalla de captura" ahora aparecen agrupadas
+  bajo una categoría "Captura de fotografías de perfil" en Site
+  administration > Plugins > Local plugins, indentadas igual que otras
+  integraciones con sub-páginas (p. ej. Office 365).
+* La página de ajustes se renombra a "Configuración captura de fotografías de
+  perfil" para distinguirla del enlace de acceso directo a la pantalla de
+  captura.
+
 ## 0.5.0 — Entregas 3+4+5 (combinadas)
 
 * Sesiones fotográficas por curso o cohorte, con cola ordenada

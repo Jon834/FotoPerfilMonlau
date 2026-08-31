@@ -50,6 +50,7 @@ $string['settings_maxsourcebytes_desc'] = 'Incoming images larger than this are 
 $string['settings_maxsearchresults'] = 'Maximum search results';
 $string['settings_maxsearchresults_desc'] = 'Upper bound on results returned per search, regardless of what the client requests.';
 $string['opencapturescreen'] = 'Open capture screen';
+$string['settingspagetitle'] = 'Profile photo capture settings';
 
 $string['event_picture_updated'] = 'Profile picture updated';
 $string['event_session_started'] = 'Photography session started';

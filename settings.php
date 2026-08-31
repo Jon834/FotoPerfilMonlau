@@ -30,20 +30,30 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
+    // Group the launch page and the settings page under their own category so
+    // both show indented under a single "Captura de fotografías de perfil"
+    // heading in Site administration > Plugins > Local plugins, the same
+    // pattern other suites (e.g. the Office 365 integration) use for their
+    // own settings/sync sub-pages.
+    $ADMIN->add('localplugins', new admin_category(
+        'local_profilephoto_category',
+        get_string('pluginname', 'local_profilephoto')
+    ));
+
     // Direct entry point to the capture screen itself, listed alongside the
     // settings page under Site administration > Plugins > Local plugins,
     // since photographers otherwise have no reason to browse Site
     // administration and would only find index.php via the primary
     // navigation node added in lib.php (easy to miss in the Boost drawer).
-    $ADMIN->add('localplugins', new admin_externalpage(
+    $ADMIN->add('local_profilephoto_category', new admin_externalpage(
         'local_profilephoto_launch',
         get_string('opencapturescreen', 'local_profilephoto'),
         new moodle_url('/local/profilephoto/index.php'),
         'local/profilephoto:view'
     ));
 
-    $settings = new admin_settingpage('local_profilephoto', get_string('pluginname', 'local_profilephoto'));
-    $ADMIN->add('localplugins', $settings);
+    $settings = new admin_settingpage('local_profilephoto', get_string('settingspagetitle', 'local_profilephoto'));
+    $ADMIN->add('local_profilephoto_category', $settings);
 
     $settings->add(new admin_setting_configcheckbox(
         'local_profilephoto/enabled',

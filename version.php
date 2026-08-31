@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_profilephoto';
-$plugin->version   = 2026072800;
+$plugin->version   = 2026082600;
 // Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
 // against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
 $plugin->requires  = 2025100600;
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.5.1 (correcciones + UX)';
+$plugin->release   = '0.5.2 (menú de administración)';

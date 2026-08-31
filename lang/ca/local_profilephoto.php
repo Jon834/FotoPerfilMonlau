@@ -50,6 +50,7 @@ $string['settings_maxsourcebytes_desc'] = 'Les imatges rebudes que superin aques
 $string['settings_maxsearchresults'] = 'Nombre màxim de resultats de cerca';
 $string['settings_maxsearchresults_desc'] = 'Límit superior de resultats retornats per cada cerca, independentment del que sol·liciti el client.';
 $string['opencapturescreen'] = 'Obrir pantalla de captura';
+$string['settingspagetitle'] = 'Configuració captura de fotografies de perfil';
 
 $string['event_picture_updated'] = 'Fotografia de perfil actualitzada';
 $string['event_session_started'] = 'Sessió fotogràfica iniciada';
