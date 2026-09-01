@@ -274,9 +274,9 @@ class pdf_builder {
         $textheight = 8;
         $rowheight = $imgh + $rowgap + $textheight;
 
-        // A4 height = 297mm, bottom margin = 9mm.
+        // A4 height = 297mm, minimal bottom margin = 3mm (SetAutoPageBreak disabled).
         $pageheight = 297;
-        $bottommargin = 9;
+        $bottommargin = 3;
         // Calculate max rows that fit on first page (accounting for header+heading).
         $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
         $maxrows = (int) floor($availableheight / $rowheight);
@@ -343,9 +343,9 @@ class pdf_builder {
         $colw = ($pagew - $left * 2 - $gutter) / $columns;
         $rowheight = 20;
 
-        // A4 height = 297mm, bottom margin = 9mm.
+        // A4 height = 297mm, minimal bottom margin = 3mm (SetAutoPageBreak disabled).
         $pageheight = 297;
-        $bottommargin = 9;
+        $bottommargin = 3;
         // Calculate max rows that fit on first page (accounting for header+heading).
         $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
         $maxrows = (int) floor($availableheight / $rowheight);
