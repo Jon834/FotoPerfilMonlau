@@ -69,4 +69,40 @@ final class pdf_builder_test extends advanced_testcase {
         $this->assertFileExists($result['path']);
         $this->assertStringContainsString('%PDF', file_get_contents($result['path']));
     }
+
+    public function test_build_includes_students_without_photo_across_layouts(): void {
+        $this->resetAfterTest();
+
+        $img = imagecreatetruecolor(10, 10);
+        imagefill($img, 0, 0, imagecolorallocate($img, 255, 255, 255));
+        ob_start();
+        imagejpeg($img);
+        $imagebytes = ob_get_clean();
+        imagedestroy($img);
+
+        $withphoto = $this->getDataGenerator()->create_user(['firstname' => 'Ada', 'lastname' => 'Bravo']);
+        $nophoto = $this->getDataGenerator()->create_user(['firstname' => 'Cyril', 'lastname' => 'Duarte']);
+
+        $usercontext = context_user::instance($withphoto->id, IGNORE_MISSING);
+        get_file_storage()->create_file_from_string([
+            'contextid' => $usercontext->id,
+            'component' => 'user',
+            'filearea' => 'icon',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => 'f3.jpg',
+        ], $imagebytes);
+
+        foreach (['orla', 'grid6', 'directory', 'signatures'] as $layout) {
+            $result = pdf_builder::build([$withphoto->id, $nophoto->id], 'Grupo X', $layout, [
+                'density' => 'compact',
+                'generatedby' => 'Tester',
+            ]);
+
+            // The student without a photo is still listed (initials avatar).
+            $this->assertSame(2, $result['count'], "count for {$layout}");
+            $this->assertFileExists($result['path']);
+            $this->assertStringContainsString('%PDF', file_get_contents($result['path']));
+        }
+    }
 }

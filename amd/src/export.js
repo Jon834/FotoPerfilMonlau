@@ -32,6 +32,7 @@ const SELECTORS = {
     COHORT: '#lpp-export-cohort',
     FILENAME_STRATEGY: '#lpp-export-filenamestrategy',
     EXPORT_TYPE: '#lpp-export-type',
+    DENSITY: '#lpp-export-density',
     LANGUAGE: '#lpp-export-language',
     STAGE: '#lpp-export-stage',
     HEADING: '#lpp-export-heading',
@@ -53,9 +54,12 @@ const getExportOptions = () => Ajax.call([{
  * @param {string} filenamestrategy
  * @return {Promise}
  */
-const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading) => Ajax.call([{
+const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading, density) => Ajax.call([{
     methodname: 'local_profilephoto_create_export',
-    args: {filtertype, filterid, filenamestrategy, fallbackstrategy: 'username', exporttype, language, stage, heading},
+    args: {
+        filtertype, filterid, filenamestrategy, fallbackstrategy: 'username',
+        exporttype, language, stage, heading, density,
+    },
 }])[0];
 
 /**
@@ -83,6 +87,7 @@ export const init = () => {
     const cohortSelect = document.querySelector(SELECTORS.COHORT);
     const filenameStrategy = document.querySelector(SELECTORS.FILENAME_STRATEGY);
     const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
+    const density = document.querySelector(SELECTORS.DENSITY);
     const language = document.querySelector(SELECTORS.LANGUAGE);
     const stage = document.querySelector(SELECTORS.STAGE);
     const heading = document.querySelector(SELECTORS.HEADING);
@@ -124,7 +129,8 @@ export const init = () => {
                 exportType.value,
                 language.value,
                 stage.value,
-                heading.value.trim()
+                heading.value.trim(),
+                density.value
             );
         }).then((result) => {
             return getString('export_ready', 'local_profilephoto', result.count).then((message) => {

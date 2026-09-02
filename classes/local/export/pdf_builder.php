@@ -24,18 +24,31 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Build a PDF photographic listing with A4 portrait layout and names under each photo.
  *
+ * Supported layouts: orla (card grid), grid6 (dense card grid), directory
+ * (photo + name + email) and signatures (attendance / sign-off sheet). Every
+ * layout gets an informative header, a footer with "page x / total" and an
+ * initials avatar for students without a profile photo. The card grids honour
+ * a density option (compact | normal | large).
+ *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class pdf_builder {
 
+    /** @var float Y coordinate content starts at on pages after the first. */
+    private const CONTINUATION_TOP = 16.0;
+
+    /** @var float Space reserved at the bottom of every page for the footer. */
+    private const BOTTOM_MARGIN = 16.0;
+
     /**
      * Build the PDF document.
      *
      * @param int[] $userids
      * @param string $title course/cohort title shown at the top of the sheet.
-     * @param string $layout orla|grid6|directory (roster kept as alias for orla).
+     * @param string $layout orla|grid6|directory|signatures (roster kept as alias for orla).
+     * @param array $options language, stage, density, heading, generatedby.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $userids, string $title, string $layout = 'orla', array $options = []): array {
@@ -43,28 +56,29 @@ class pdf_builder {
 
         require_once($CFG->libdir . '/tcpdf/tcpdf.php');
 
-        // Normalize layout aliases.
+        // Normalize layout aliases and guard against unknown values.
         if ($layout === 'roster') {
+            $layout = 'orla';
+        }
+        if (!in_array($layout, ['orla', 'grid6', 'directory', 'signatures'], true)) {
             $layout = 'orla';
         }
 
         $language = in_array($options['language'] ?? 'ca', ['ca', 'es', 'en'], true) ? $options['language'] : 'ca';
         $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx'], true) ? $options['stage'] : 'fp';
+        $density = in_array($options['density'] ?? 'normal', ['compact', 'normal', 'large'], true)
+            ? $options['density'] : 'normal';
         $heading = trim((string) ($options['heading'] ?? ''));
+        $generatedby = trim((string) ($options['generatedby'] ?? ''));
 
         $users = [];
         foreach ($userids as $userid) {
             $user = core_user_class::get_user((int) $userid, 'id, firstname, lastname, picture, email', IGNORE_MISSING);
-            if (!$user || ((int) $user->picture) <= 0) {
+            if (!$user) {
                 continue;
             }
-
-            $content = self::get_icon_content((int) $user->id);
-            if ($content === null) {
-                continue;
-            }
-
-            $user->photo = $content;
+            // Students without an official photo are still listed, with an initials avatar.
+            $user->photo = ((int) $user->picture) > 0 ? self::get_icon_content((int) $user->id) : null;
             $users[] = $user;
         }
 
@@ -76,41 +90,70 @@ class pdf_builder {
             return strcmp((string) ($a->firstname ?? ''), (string) ($b->firstname ?? ''));
         });
 
+        $count = count($users);
+
         $tempdir = make_temp_directory('local_profilephoto/exports');
         $layoutname = match($layout) {
             'grid6' => 'orla6',
             'directory' => 'directorio',
+            'signatures' => 'firmas',
             default => 'orla',
         };
         $coursename = self::sanitize_filename($title);
         $filename = $coursename . '_' . $layoutname . '_' . userdate(time(), '%Y%m%d_%H%M') . '.pdf';
         $path = $tempdir . '/' . $filename;
 
-        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $brand = self::brand_colors($stage);
+
+        // TCPDF subclass so every page gets a "title .... page x / total" footer.
+        $pdf = new class('P', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
+
+            /** @var string Left-aligned footer caption (document title). */
+            public $footercaption = '';
+
+            /** @var string Right-aligned footer caption ("Page x / y" already localised). */
+            public $footerpagelabel = 'Pág.';
+
+            /**
+             * Print the page footer.
+             */
+            public function Footer() { // phpcs:ignore moodle.NamingConventions.ValidFunctionName.LowercaseMethod
+                $this->SetY(-12);
+                $this->SetFont('helvetica', '', 8);
+                $this->SetTextColor(140, 140, 140);
+                $this->SetDrawColor(220, 224, 230);
+                $this->Line($this->GetX(), $this->GetY(), $this->getPageWidth() - $this->original_rMargin, $this->GetY());
+                $this->Ln(1);
+                $this->Cell(0, 6, $this->footercaption, 0, 0, 'L', false, '', 0, false, 'T', 'M');
+                $this->Cell(0, 6, $this->footerpagelabel . ' ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages(),
+                    0, 0, 'R', false, '', 0, false, 'T', 'M');
+                $this->SetTextColor(0, 0, 0);
+                $this->SetDrawColor(0, 0, 0);
+            }
+        };
+
         $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
+        $pdf->setPrintFooter(true);
+        $pdf->setFooterMargin(12);
         $pdf->SetMargins(10, 12, 10);
-        $pdf->SetAutoPageBreak(true, 9);
+        $pdf->SetAutoPageBreak(true, self::BOTTOM_MARGIN);
         $pdf->SetCreator('Moodle local_profilephoto');
         $pdf->SetAuthor('Moodle local_profilephoto');
         $pdf->SetTitle($title);
+        $pdf->footercaption = $title;
+        $pdf->footerpagelabel = self::translate_word('page', $language);
 
         $pdf->AddPage();
 
-        // Render header.
-        self::render_header($pdf, $title, $layout, $language, $stage, $heading);
+        self::render_header($pdf, $title, $layout, $language, $stage, $count, $generatedby);
+        $firstpagebasey = self::render_heading($pdf, $heading);
 
-        // Render optional heading/comment and get final Y position.
-        $firstpagebaseY = self::render_heading($pdf, $heading);
-
-        // Render content based on layout, passing first-page Y position.
-        $brand = self::brand_colors($stage);
-        if ($layout === 'grid6') {
-            self::render_grid_6col($pdf, $users, $firstpagebaseY, $brand);
+        if ($layout === 'signatures') {
+            self::render_signatures($pdf, $users, $firstpagebasey, $brand, $language);
         } else if ($layout === 'directory') {
-            self::render_directory($pdf, $users, $firstpagebaseY, $brand);
+            self::render_directory($pdf, $users, $firstpagebasey, $brand, $density);
         } else {
-            self::render_grid_4col($pdf, $users, $firstpagebaseY, $brand);
+            self::render_grid($pdf, $users, $firstpagebasey, $brand, self::grid_columns($layout, $density));
         }
 
         $pdf->Output($path, 'F');
@@ -118,21 +161,38 @@ class pdf_builder {
         return [
             'path' => $path,
             'filename' => $filename,
-            'count' => count($users),
+            'count' => $count,
         ];
     }
 
     /**
-     * Render the PDF header with logo and title.
+     * Number of columns for a card grid, given the layout and the density option.
+     *
+     * @param string $layout orla|grid6
+     * @param string $density compact|normal|large
+     * @return int
+     */
+    private static function grid_columns(string $layout, string $density): int {
+        if ($layout === 'grid6') {
+            return ['compact' => 8, 'normal' => 6, 'large' => 5][$density] ?? 6;
+        }
+        return ['compact' => 5, 'normal' => 4, 'large' => 3][$density] ?? 4;
+    }
+
+    /**
+     * Render the PDF header with logo, title and an informative line
+     * (student count, generation date and, optionally, who generated it).
      *
      * @param \TCPDF $pdf
      * @param string $title
      * @param string $layout
      * @param string $language
      * @param string $stage
-     * @param string $heading
+     * @param int $count
+     * @param string $generatedby
      */
-    private static function render_header(\TCPDF &$pdf, string $title, string $layout, string $language, string $stage, string $heading): void {
+    private static function render_header(\TCPDF &$pdf, string $title, string $layout, string $language,
+            string $stage, int $count, string $generatedby): void {
         $brand = self::brand_colors($stage);
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, 210, 30, 'F');
@@ -146,21 +206,32 @@ class pdf_builder {
             // Use Image with max height, let width scale proportionally.
             $pdf->Image($logo, 10, 7, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
         } else {
-            $pdf->Image('@' . self::monlau_logo($stage), 10, 7, $logosize, '', 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            $pdf->Image('@' . self::monlau_logo($stage), 10, 7, $logosize, '', 'PNG', '', 'T', false, 300, '',
+                false, false, 0, false, false, false);
         }
 
         $pdf->SetTextColor(255, 255, 255);
-        $pdf->SetFont('helvetica', 'B', 18);
-        $pdf->SetXY(40, 6);
+        $pdf->SetFont('helvetica', 'B', 17);
+        $pdf->SetXY(40, 4.5);
         $pdf->Cell(0, 8, $title, 0, 0, 'L');
 
         $pdf->SetFont('helvetica', '', 10);
-        $pdf->SetXY(40, 16);
+        $pdf->SetXY(40, 13.5);
         $pdf->Cell(0, 6, self::translate_title($layout, $language), 0, 1, 'L');
 
+        // Informative line: "34 alumnos  ·  03/09/2026  ·  Nombre operador".
+        $info = $count . ' ' . self::translate_word('students', $language)
+            . '   ·   ' . userdate(time(), self::translate_word('dateformat', $language));
+        if ($generatedby !== '') {
+            $info .= '   ·   ' . $generatedby;
+        }
+        $pdf->SetFont('helvetica', '', 8.5);
+        $pdf->SetXY(40, 21.5);
+        $pdf->Cell(0, 5, $info, 0, 1, 'L');
+
         $pdf->SetTextColor(0, 0, 0);
-        // Position below header blue bar to prevent overlap with heading.
-        $pdf->SetY(31);
+        // Position below the coloured header bar to prevent overlap with the heading.
+        $pdf->SetY(34);
     }
 
     /**
@@ -179,174 +250,105 @@ class pdf_builder {
         $pdf->SetFillColor(245, 247, 251);
         $pdf->SetFont('helvetica', '', 9);
         $pdf->MultiCell(0, 5, $heading, 0, 'L', true);
-        $endY = $pdf->GetY();
-        $pdf->SetY($endY + 3);
+        $endy = $pdf->GetY();
+        $pdf->SetY($endy + 3);
         return $pdf->GetY();
     }
 
     /**
-     * Render a 4-column grid layout (orla classic) with proper pagination.
+     * Render a card grid with an arbitrary number of columns and manual pagination.
      *
      * @param \TCPDF $pdf
      * @param array $users
-     * @param float $firstpagebaseY Y position after header+heading on first page
+     * @param float $firstpagebasey Y position after header+heading on first page
+     * @param array{r:int,g:int,b:int} $brand
+     * @param int $columns
      */
-    private static function render_grid_4col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35, array $brand = ['r' => 12, 'g' => 80, 'b' => 160]): void {
-        $columns = 4;
+    private static function render_grid(\TCPDF &$pdf, array $users, float $firstpagebasey, array $brand, int $columns): void {
         $pagew = 210;
-        $left = 12;
-        $gutter = 6;
+        $left = $columns >= 7 ? 8.0 : ($columns >= 5 ? 9.0 : 11.0);
+        $gutter = $columns >= 7 ? 2.5 : ($columns >= 5 ? 3.5 : 6.0);
         $cardw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
-        $cardh = 40;
-        $rowgap = 3;
+        $cardh = $cardw * 0.66 + 9.0;
+        $rowgap = $columns >= 7 ? 2.5 : 3.0;
         $rowheight = $cardh + $rowgap;
 
-        // A4 height = 297mm. Auto page break is disabled during grid rendering, so a small
-        // bottom margin is enough.
         $pageheight = 297;
-        $bottommargin = 4;
-        // Calculate max rows that fit on first page (accounting for header+heading).
-        $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
-        $maxrows = (int) floor($availableheight / $rowheight);
+        $availableheight = $pageheight - $firstpagebasey - self::BOTTOM_MARGIN;
+        $maxrows = max(1, (int) floor($availableheight / $rowheight));
         $usersperpage = $columns * $maxrows;
-        $basestarty = $firstpagebaseY;
+        $basestarty = $firstpagebasey;
 
-        // Disable auto page break to prevent TCPDF from interfering with manual grid pagination.
+        // Disable auto page break: the grid manages its own pagination.
         $pdf->SetAutoPageBreak(false);
 
-        $indexOnCurrentPage = 0;
+        $indexoncurrentpage = 0;
         foreach ($users as $index => $user) {
-            // Check if we need a new page based on position within current page.
-            if ($index > 0 && $indexOnCurrentPage >= $usersperpage) {
+            if ($index > 0 && $indexoncurrentpage >= $usersperpage) {
                 $pdf->AddPage();
-                $basestarty = 12 + 2;
-                // Recalculate maxrows for subsequent pages (no header/heading).
-                $availableheight = $pageheight - $basestarty - $bottommargin;
-                $maxrows = (int) floor($availableheight / $rowheight);
+                $basestarty = self::CONTINUATION_TOP;
+                $availableheight = $pageheight - $basestarty - self::BOTTOM_MARGIN;
+                $maxrows = max(1, (int) floor($availableheight / $rowheight));
                 $usersperpage = $columns * $maxrows;
-                $indexOnCurrentPage = 0;  // Reset counter for new page
+                $indexoncurrentpage = 0;
             }
 
-            $col = $indexOnCurrentPage % $columns;
-            $row = intdiv($indexOnCurrentPage, $columns);
+            $col = $indexoncurrentpage % $columns;
+            $row = intdiv($indexoncurrentpage, $columns);
 
             $x = $left + ($col * ($cardw + $gutter));
             $y = $basestarty + ($row * $rowheight);
 
-            self::render_student_card($pdf, $x, $y, $cardw, $cardh, $user->photo,
-                self::format_student_name($user), $index + 1, $brand, 'normal');
+            self::render_student_card($pdf, $x, $y, $cardw, $cardh, $user, $index + 1, $brand);
 
-            $indexOnCurrentPage++;
+            $indexoncurrentpage++;
         }
 
-        // Re-enable auto page break after grid rendering.
-        $pdf->SetAutoPageBreak(true, 9);
+        $pdf->SetAutoPageBreak(true, self::BOTTOM_MARGIN);
     }
 
     /**
-     * Render a 6-column grid layout (compact) with proper pagination.
+     * Render a directory layout (photo + name + email).
      *
      * @param \TCPDF $pdf
      * @param array $users
-     * @param float $firstpagebaseY Y position after header+heading on first page
+     * @param float $firstpagebasey Y position after header+heading on first page
+     * @param array{r:int,g:int,b:int} $brand
+     * @param string $density compact|normal|large
      */
-    private static function render_grid_6col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35, array $brand = ['r' => 12, 'g' => 80, 'b' => 160]): void {
-        $columns = 6;
-        $pagew = 210;
-        $left = 8;
-        $gutter = 3;
-        $cardw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
-        $cardh = 32;
-        $rowgap = 3;
-        $rowheight = $cardh + $rowgap;
-
-        // A4 height = 297mm, minimal bottom margin = 3mm (SetAutoPageBreak disabled).
-        $pageheight = 297;
-        $bottommargin = 3;
-        // Calculate max rows that fit on first page (accounting for header+heading).
-        $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
-        $maxrows = (int) floor($availableheight / $rowheight);
-        $usersperpage = $columns * $maxrows;
-        $basestarty = $firstpagebaseY;
-
-        // Disable auto page break to prevent TCPDF from interfering with manual grid pagination.
-        $pdf->SetAutoPageBreak(false);
-
-        $indexOnCurrentPage = 0;
-        foreach ($users as $index => $user) {
-            // Check if we need a new page based on position within current page.
-            if ($index > 0 && $indexOnCurrentPage >= $usersperpage) {
-                $pdf->AddPage();
-                $basestarty = 12 + 2;
-                // Recalculate maxrows for subsequent pages (no header/heading).
-                $availableheight = $pageheight - $basestarty - $bottommargin;
-                $maxrows = (int) floor($availableheight / $rowheight);
-                $usersperpage = $columns * $maxrows;
-                $indexOnCurrentPage = 0;  // Reset counter for new page
-            }
-
-            $col = $indexOnCurrentPage % $columns;
-            $row = intdiv($indexOnCurrentPage, $columns);
-
-            $x = $left + ($col * ($cardw + $gutter));
-            $y = $basestarty + ($row * $rowheight);
-
-            self::render_student_card($pdf, $x, $y, $cardw, $cardh, $user->photo,
-                self::format_student_name($user), $index + 1, $brand, 'compact');
-
-            $indexOnCurrentPage++;
-        }
-
-        // Re-enable auto page break after grid rendering.
-        $pdf->SetAutoPageBreak(true, 9);
-    }
-
-    /**
-     * Render a directory table layout (photo + name + email) with 2 columns.
-     *
-     * @param \TCPDF $pdf
-     * @param array $users
-     * @param float $firstpagebaseY Y position after header+heading on first page
-     */
-    private static function render_directory(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35, array $brand = ['r' => 12, 'g' => 80, 'b' => 160]): void {
-        $pdf->SetFont('helvetica', '', 9);
+    private static function render_directory(\TCPDF &$pdf, array $users, float $firstpagebasey, array $brand,
+            string $density = 'normal'): void {
         $pdf->SetTextColor(0, 0, 0);
 
-        $columns = 2;
+        $columns = $density === 'large' ? 1 : 2;
         $pagew = 210;
         $left = 10;
         $gutter = 8;
-        $colw = ($pagew - $left * 2 - $gutter) / $columns;
-        $rowheight = 22;
+        $colw = ($pagew - $left * 2 - ($columns > 1 ? $gutter : 0)) / $columns;
+        $rowheight = $density === 'compact' ? 18.0 : 21.0;
         $cardh = $rowheight - 3;
 
-        // A4 height = 297mm, minimal bottom margin = 3mm (SetAutoPageBreak disabled).
         $pageheight = 297;
-        $bottommargin = 3;
-        // Calculate max rows that fit on first page (accounting for header+heading).
-        $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
-        $maxrows = (int) floor($availableheight / $rowheight);
+        $availableheight = $pageheight - $firstpagebasey - self::BOTTOM_MARGIN;
+        $maxrows = max(1, (int) floor($availableheight / $rowheight));
         $usersperpage = $columns * $maxrows;
-        $basestarty = $firstpagebaseY;
+        $basestarty = $firstpagebasey;
 
-        // Disable auto page break to prevent TCPDF from interfering with manual pagination.
         $pdf->SetAutoPageBreak(false);
 
-        $indexOnCurrentPage = 0;
+        $indexoncurrentpage = 0;
         foreach ($users as $index => $user) {
-            // Check if we need a new page based on position within current page.
-            if ($indexOnCurrentPage > 0 && $indexOnCurrentPage >= $usersperpage) {
+            if ($index > 0 && $indexoncurrentpage >= $usersperpage) {
                 $pdf->AddPage();
-                $basestarty = 12 + 2;
-                // Recalculate maxrows for subsequent pages (no header/heading).
-                $availableheight = $pageheight - $basestarty - $bottommargin;
-                $maxrows = (int) floor($availableheight / $rowheight);
+                $basestarty = self::CONTINUATION_TOP;
+                $availableheight = $pageheight - $basestarty - self::BOTTOM_MARGIN;
+                $maxrows = max(1, (int) floor($availableheight / $rowheight));
                 $usersperpage = $columns * $maxrows;
-                $indexOnCurrentPage = 0;  // Reset counter for new page
+                $indexoncurrentpage = 0;
             }
 
-            $col = $indexOnCurrentPage % $columns;
-            $pagerow = intdiv($indexOnCurrentPage, $columns);
+            $col = $indexoncurrentpage % $columns;
+            $pagerow = intdiv($indexoncurrentpage, $columns);
 
             $x = $left + ($col * ($colw + $gutter));
             $y = $basestarty + ($pagerow * $rowheight);
@@ -355,14 +357,12 @@ class pdf_builder {
             $pdf->RoundedRect($x, $y, $colw, $cardh, 2, '1111', 'DF',
                 ['width' => 0.2, 'color' => [226, 232, 240]], [248, 250, 252]);
 
-            // Circular photo on the left of the card.
-            $photod = $cardh - 4;
-            $pcx = $x + 2 + $photod / 2;
-            $pcy = $y + 2 + $photod / 2;
-            self::draw_circular_photo($pdf, $user->photo, $pcx, $pcy, $photod);
+            // Circular photo (or initials avatar) on the left of the card.
+            $photod = $cardh - 5;
+            self::draw_avatar($pdf, $user, $x + 3 + $photod / 2, $y + 2.5 + $photod / 2, $photod);
 
-            $textx = $x + $photod + 6;
-            $textw = $colw - $photod - 8;
+            $textx = $x + $photod + 9;
+            $textw = $colw - $photod - 12;
 
             // Number badge overlapping the top-left of the photo.
             self::draw_number_badge($pdf, $x + 2.6, $y + 2.6, 3.4, 5, $index + 1, $brand);
@@ -370,21 +370,93 @@ class pdf_builder {
             // Name.
             $pdf->SetXY($textx, $y + 3);
             $pdf->SetTextColor(45, 55, 72);
-            $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->Cell($textw, 5, self::fit_name(self::format_student_name($user), 40), 0, 0, 'L');
+            $pdf->SetFont('helvetica', 'B', 8.5);
+            $pdf->Cell($textw, 5, self::fit_name(self::format_student_name($user), (int) round($textw * 0.62)), 0, 0, 'L');
 
             // Email.
             $pdf->SetXY($textx, $y + 9);
             $pdf->SetTextColor(110, 120, 135);
-            $pdf->SetFont('helvetica', '', 7);
+            $pdf->SetFont('helvetica', '', 7.5);
             $pdf->Cell($textw, 4, (string) ($user->email ?? ''), 0, 0, 'L');
             $pdf->SetTextColor(0, 0, 0);
 
-            $indexOnCurrentPage++;
+            $indexoncurrentpage++;
         }
 
-        // Re-enable auto page break after directory rendering.
-        $pdf->SetAutoPageBreak(true, 9);
+        $pdf->SetAutoPageBreak(true, self::BOTTOM_MARGIN);
+    }
+
+    /**
+     * Render a signature / attendance sheet: number, small avatar, name and a
+     * ruled line to sign on, one student per row.
+     *
+     * @param \TCPDF $pdf
+     * @param array $users
+     * @param float $firstpagebasey Y position after header+heading on first page
+     * @param array{r:int,g:int,b:int} $brand
+     * @param string $language
+     */
+    private static function render_signatures(\TCPDF &$pdf, array $users, float $firstpagebasey, array $brand,
+            string $language): void {
+        $left = 12.0;
+        $roww = 210 - $left * 2;
+        $rowh = 12.5;
+        $photod = 9.0;
+        $namecolw = $roww * 0.48;
+        $pageheight = 297;
+
+        $headings = static function(float $y) use ($pdf, $left, $roww, $namecolw, $language): void {
+            $pdf->SetFont('helvetica', 'B', 8);
+            $pdf->SetTextColor(120, 120, 120);
+            $pdf->SetXY($left, $y);
+            $pdf->Cell(10, 5, self::translate_word('number', $language), 0, 0, 'L');
+            $pdf->Cell($namecolw - 10, 5, self::translate_word('student', $language), 0, 0, 'L');
+            $pdf->Cell($roww - $namecolw, 5, self::translate_word('signature', $language), 0, 0, 'L');
+            $pdf->SetTextColor(0, 0, 0);
+        };
+
+        $pdf->SetAutoPageBreak(false);
+
+        $headings($firstpagebasey);
+        $y = $firstpagebasey + 6.5;
+
+        foreach ($users as $index => $user) {
+            if ($y + $rowh > $pageheight - self::BOTTOM_MARGIN) {
+                $pdf->AddPage();
+                $headings(self::CONTINUATION_TOP);
+                $y = self::CONTINUATION_TOP + 6.5;
+            }
+
+            // Row separator.
+            $pdf->SetDrawColor(224, 228, 234);
+            $pdf->Line($left, $y + $rowh, $left + $roww, $y + $rowh);
+
+            // Number.
+            $pdf->SetFont('helvetica', 'B', 9);
+            $pdf->SetTextColor(110, 110, 110);
+            $pdf->SetXY($left, $y);
+            $pdf->Cell(10, $rowh, (string) ($index + 1), 0, 0, 'L', false, '', 0, false, 'T', 'M');
+
+            // Avatar.
+            self::draw_avatar($pdf, $user, $left + 10 + $photod / 2, $y + $rowh / 2, $photod);
+
+            // Name.
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->SetTextColor(30, 30, 30);
+            $pdf->SetXY($left + 10 + $photod + 4, $y);
+            $pdf->Cell($namecolw - 14 - $photod, $rowh, self::fit_name(self::format_student_name($user), 44),
+                0, 0, 'L', false, '', 0, false, 'T', 'M');
+
+            // Signature line.
+            $pdf->SetDrawColor(160, 160, 160);
+            $pdf->Line($left + $namecolw, $y + $rowh - 3.5, $left + $roww, $y + $rowh - 3.5);
+
+            $y += $rowh;
+        }
+
+        $pdf->SetDrawColor(0, 0, 0);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetAutoPageBreak(true, self::BOTTOM_MARGIN);
     }
 
     /**
@@ -458,54 +530,68 @@ class pdf_builder {
     }
 
     /**
-     * Render a single student "card": rounded panel, circular photo with ring,
-     * a coloured number badge in the top-left corner and the name underneath.
+     * Render a single student "card": rounded panel, circular photo (or initials
+     * avatar) with a ring, a coloured number badge in the top-left corner and the
+     * name underneath. All dimensions scale with the card width.
      *
      * @param \TCPDF $pdf
      * @param float $x card left
      * @param float $y card top
      * @param float $cardw card width
      * @param float $cardh card height
-     * @param string $photo raw image bytes
-     * @param string $name formatted student name
+     * @param object $user student record with ->firstname, ->lastname, ->photo
      * @param int $number 1-based position shown in the badge
      * @param array{r:int,g:int,b:int} $brand badge fill colour
-     * @param string $size 'normal' or 'compact'
      */
     private static function render_student_card(\TCPDF &$pdf, float $x, float $y, float $cardw, float $cardh,
-            string $photo, string $name, int $number, array $brand, string $size = 'normal'): void {
-        $compact = ($size === 'compact');
-        $pad = $compact ? 2.0 : 3.0;
-        $imgd = $compact ? 15.0 : 24.0;
-        $namefont = $compact ? 6 : 8;
-        $nameh = $compact ? 2.6 : 3.6;
-        $badger = $compact ? 2.9 : 3.7;
-        $badgefont = $compact ? 5 : 6;
-        $namechars = $compact ? 26 : 34;
+            object $user, int $number, array $brand): void {
+        $small = $cardw < 26;
+        $pad = $small ? 2.0 : 3.0;
+        $imgd = max(8.0, min($cardw - $pad * 2 - 2.0, $cardh - 13.0));
+        $namefont = (int) round(max(5, min(9, $cardw * 0.21)));
+        $nameh = $namefont * 0.42;
+        $namemaxh = $nameh * 2.4 + 1.0;
+        $badger = max(2.6, min(4.2, $cardw * 0.105));
+        $badgefont = (int) round(max(5, min(7, $badger * 1.7)));
+        $namechars = (int) round($cardw * 0.82);
 
         // 1. Card panel.
-        $pdf->RoundedRect($x, $y, $cardw, $cardh, $compact ? 1.8 : 2.4, '1111', 'DF',
+        $pdf->RoundedRect($x, $y, $cardw, $cardh, $small ? 1.8 : 2.4, '1111', 'DF',
             ['width' => 0.2, 'color' => [226, 232, 240]], [248, 250, 252]);
 
-        // 2. Circular photo near the top, centred horizontally.
+        // 2. Avatar near the top, centred horizontally.
         $cx = $x + $cardw / 2;
-        $imgy = $y + $pad + ($compact ? 1.0 : 1.5);
-        $cy = $imgy + $imgd / 2;
-        self::draw_circular_photo($pdf, $photo, $cx, $cy, $imgd);
+        $imgy = $y + $pad + 1.0;
+        self::draw_avatar($pdf, $user, $cx, $imgy + $imgd / 2, $imgd);
 
-        // 3. Name block under the photo (up to two lines).
+        // 3. Name block under the avatar (up to two lines).
         $pdf->SetFont('helvetica', 'B', $namefont);
         $pdf->SetTextColor(45, 55, 72);
-        $pdf->SetXY($x + 1, $imgy + $imgd + ($compact ? 1.2 : 1.6));
-        $namemaxh = $compact ? 7.0 : 9.0;
-        $pdf->MultiCell($cardw - 2, $nameh, self::fit_name($name, $namechars), 0, 'C', false, 0,
-            '', '', true, 0, false, true, $namemaxh, 'T');
+        $pdf->SetXY($x + 1, $imgy + $imgd + ($small ? 1.0 : 1.6));
+        $pdf->MultiCell($cardw - 2, $nameh, self::fit_name(self::format_student_name($user), $namechars),
+            0, 'C', false, 0, '', '', true, 0, false, true, $namemaxh, 'T');
 
         // 4. Number badge in the top-left corner of the card.
-        self::draw_number_badge($pdf, $x + $badger + ($compact ? 1.0 : 1.4),
-            $y + $badger + ($compact ? 1.0 : 1.4), $badger, $badgefont, $number, $brand);
+        self::draw_number_badge($pdf, $x + $badger + 1.2, $y + $badger + 1.2, $badger, $badgefont, $number, $brand);
 
         $pdf->SetTextColor(0, 0, 0);
+    }
+
+    /**
+     * Draw a student's circular photo, or an initials avatar when there is no photo.
+     *
+     * @param \TCPDF $pdf
+     * @param object $user
+     * @param float $cx circle centre X
+     * @param float $cy circle centre Y
+     * @param float $d circle diameter
+     */
+    private static function draw_avatar(\TCPDF &$pdf, object $user, float $cx, float $cy, float $d): void {
+        if (!empty($user->photo)) {
+            self::draw_circular_photo($pdf, $user->photo, $cx, $cy, $d);
+        } else {
+            self::draw_initials_avatar($pdf, self::student_initials($user), self::format_student_name($user), $cx, $cy, $d);
+        }
     }
 
     /**
@@ -525,8 +611,77 @@ class pdf_builder {
             '', false, false, 0, 'C', false, false);
         $pdf->StopTransform();
 
+        self::draw_avatar_ring($pdf, $cx, $cy, $r);
+    }
+
+    /**
+     * Draw a coloured circle with the student's initials in white.
+     *
+     * @param \TCPDF $pdf
+     * @param string $initials 1-2 upper-case letters
+     * @param string $colourseed string the background colour is derived from
+     * @param float $cx circle centre X
+     * @param float $cy circle centre Y
+     * @param float $d circle diameter
+     */
+    private static function draw_initials_avatar(\TCPDF &$pdf, string $initials, string $colourseed,
+            float $cx, float $cy, float $d): void {
+        $r = $d / 2;
+        $colour = self::avatar_color($colourseed);
+        $pdf->Circle($cx, $cy, $r, 0, 360, 'F', [], $colour);
+
+        $twochar = mb_strlen($initials) >= 2;
+        $fontpt = (int) round($d * ($twochar ? 1.15 : 1.55));
+        $pdf->SetFont('helvetica', 'B', max(6, $fontpt));
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetXY($cx - $r, $cy - $r);
+        $pdf->Cell($d, $d, $initials, 0, 0, 'C', false, '', 0, false, 'T', 'M');
+        $pdf->SetTextColor(0, 0, 0);
+
+        self::draw_avatar_ring($pdf, $cx, $cy, $r);
+    }
+
+    /**
+     * Draw the thin white + grey ring shared by photo and initials avatars.
+     *
+     * @param \TCPDF $pdf
+     * @param float $cx
+     * @param float $cy
+     * @param float $r
+     */
+    private static function draw_avatar_ring(\TCPDF &$pdf, float $cx, float $cy, float $r): void {
         $pdf->Circle($cx, $cy, $r, 0, 360, 'D', ['width' => 0.5, 'color' => [255, 255, 255]]);
         $pdf->Circle($cx, $cy, $r, 0, 360, 'D', ['width' => 0.2, 'color' => [205, 213, 224]]);
+    }
+
+    /**
+     * Deterministic avatar background colour derived from a string.
+     *
+     * @param string $seed
+     * @return array{0:int,1:int,2:int}
+     */
+    private static function avatar_color(string $seed): array {
+        $palette = [
+            [79, 114, 189], [39, 131, 118], [193, 116, 73], [124, 92, 176],
+            [67, 145, 91], [187, 92, 128], [107, 132, 89], [74, 125, 173],
+            [163, 118, 60], [96, 107, 168],
+        ];
+        $index = abs(crc32(mb_strtolower($seed))) % count($palette);
+        return $palette[$index];
+    }
+
+    /**
+     * First letter of the first name + first letter of the last name, upper-cased.
+     *
+     * @param object $user
+     * @return string
+     */
+    private static function student_initials(object $user): string {
+        $first = trim((string) ($user->firstname ?? ''));
+        $last = trim((string) ($user->lastname ?? ''));
+        $initials = mb_strtoupper(($first !== '' ? mb_substr($first, 0, 1) : '')
+            . ($last !== '' ? mb_substr($last, 0, 1) : ''));
+        return $initials !== '' ? $initials : '?';
     }
 
     /**
@@ -540,7 +695,8 @@ class pdf_builder {
      * @param int $number value to show
      * @param array{r:int,g:int,b:int} $brand fill colour
      */
-    private static function draw_number_badge(\TCPDF &$pdf, float $cx, float $cy, float $r, int $font, int $number, array $brand): void {
+    private static function draw_number_badge(\TCPDF &$pdf, float $cx, float $cy, float $r, int $font, int $number,
+            array $brand): void {
         $pdf->Circle($cx, $cy, $r, 0, 360, 'DF',
             ['width' => 0.3, 'color' => [255, 255, 255]], [$brand['r'], $brand['g'], $brand['b']]);
         $pdf->SetFont('helvetica', 'B', $font);
@@ -591,7 +747,7 @@ class pdf_builder {
     }
 
     /**
-     * Translate the page header based on the selected language.
+     * Translate the page header subtitle based on the selected language.
      *
      * @param string $layout
      * @param string $language
@@ -600,25 +756,53 @@ class pdf_builder {
     private static function translate_title(string $layout, string $language): string {
         $map = [
             'ca' => [
-                'orla' => 'Listado fotográfico',
-                'grid6' => 'Listado fotográfico (6 columnas)',
-                'directory' => 'Directorio de alumnos',
-                'roster' => 'Listado fotográfico',
+                'orla' => 'Llistat fotogràfic',
+                'grid6' => 'Llistat fotogràfic compacte',
+                'directory' => 'Directori d’alumnes',
+                'signatures' => 'Full de signatures',
+                'roster' => 'Llistat fotogràfic',
             ],
             'es' => [
                 'orla' => 'Listado fotográfico',
-                'grid6' => 'Listado fotográfico (6 columnas)',
+                'grid6' => 'Listado fotográfico compacto',
                 'directory' => 'Directorio de alumnos',
+                'signatures' => 'Hoja de firmas',
                 'roster' => 'Listado fotográfico',
             ],
             'en' => [
                 'orla' => 'Photo list',
-                'grid6' => 'Photo list (6 columns)',
+                'grid6' => 'Compact photo list',
                 'directory' => 'Student directory',
+                'signatures' => 'Signature sheet',
                 'roster' => 'Photo list',
             ],
         ];
         return $map[$language][$layout] ?? $map['ca']['orla'];
+    }
+
+    /**
+     * Translate a handful of single words / patterns used inside the PDF chrome.
+     *
+     * @param string $key students|page|number|student|signature|dateformat
+     * @param string $language
+     * @return string
+     */
+    private static function translate_word(string $key, string $language): string {
+        $map = [
+            'ca' => [
+                'students' => 'alumnes', 'page' => 'Pàg.', 'number' => 'Núm.',
+                'student' => 'Alumne', 'signature' => 'Signatura', 'dateformat' => '%d/%m/%Y',
+            ],
+            'es' => [
+                'students' => 'alumnos', 'page' => 'Pág.', 'number' => 'Nº',
+                'student' => 'Alumno', 'signature' => 'Firma', 'dateformat' => '%d/%m/%Y',
+            ],
+            'en' => [
+                'students' => 'students', 'page' => 'Page', 'number' => 'No.',
+                'student' => 'Student', 'signature' => 'Signature', 'dateformat' => '%Y-%m-%d',
+            ],
+        ];
+        return $map[$language][$key] ?? ($map['ca'][$key] ?? $key);
     }
 
     /**
