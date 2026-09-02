@@ -104,12 +104,13 @@ class pdf_builder {
         $firstpagebaseY = self::render_heading($pdf, $heading);
 
         // Render content based on layout, passing first-page Y position.
+        $brand = self::brand_colors($stage);
         if ($layout === 'grid6') {
-            self::render_grid_6col($pdf, $users, $firstpagebaseY);
+            self::render_grid_6col($pdf, $users, $firstpagebaseY, $brand);
         } else if ($layout === 'directory') {
-            self::render_directory($pdf, $users, $firstpagebaseY);
+            self::render_directory($pdf, $users, $firstpagebaseY, $brand);
         } else {
-            self::render_grid_4col($pdf, $users, $firstpagebaseY);
+            self::render_grid_4col($pdf, $users, $firstpagebaseY, $brand);
         }
 
         $pdf->Output($path, 'F');
@@ -190,21 +191,20 @@ class pdf_builder {
      * @param array $users
      * @param float $firstpagebaseY Y position after header+heading on first page
      */
-    private static function render_grid_4col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35): void {
+    private static function render_grid_4col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35, array $brand = ['r' => 12, 'g' => 80, 'b' => 160]): void {
         $columns = 4;
         $pagew = 210;
         $left = 12;
-        $gutter = 7;
-        $cellw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
-        $imgw = 34;
-        $imgh = 34;
-        $rowgap = 6;
-        $textheight = 12;
-        $rowheight = $imgh + $rowgap + $textheight;
+        $gutter = 6;
+        $cardw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
+        $cardh = 40;
+        $rowgap = 3;
+        $rowheight = $cardh + $rowgap;
 
-        // A4 height = 297mm, bottom margin = 9mm.
+        // A4 height = 297mm. Auto page break is disabled during grid rendering, so a small
+        // bottom margin is enough.
         $pageheight = 297;
-        $bottommargin = 9;
+        $bottommargin = 4;
         // Calculate max rows that fit on first page (accounting for header+heading).
         $availableheight = $pageheight - $firstpagebaseY - $bottommargin;
         $maxrows = (int) floor($availableheight / $rowheight);
@@ -230,23 +230,11 @@ class pdf_builder {
             $col = $indexOnCurrentPage % $columns;
             $row = intdiv($indexOnCurrentPage, $columns);
 
-            $x = $left + ($col * ($cellw + $gutter));
+            $x = $left + ($col * ($cardw + $gutter));
             $y = $basestarty + ($row * $rowheight);
-            $xpos = $x + (($cellw - $imgw) / 2);
 
-            // Image with absolute positioning.
-            $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
-
-            // Number label.
-            $pdf->SetFont('helvetica', 'B', 7);
-            $pdf->SetXY($x, $y - 4);
-            $pdf->Cell(5, 4, (string) ($index + 1), 0, 0, 'C');
-
-            // Student name - use ln=0 to NOT advance Y position in TCPDF's internal tracking.
-            $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->SetXY($x, $y + $imgh + 2);
-            $pdf->Cell($cellw, 4, self::format_student_name($user), 0, 0, 'C');
-            $pdf->SetFont('helvetica', '', 8);
+            self::render_student_card($pdf, $x, $y, $cardw, $cardh, $user->photo,
+                self::format_student_name($user), $index + 1, $brand, 'normal');
 
             $indexOnCurrentPage++;
         }
@@ -262,17 +250,15 @@ class pdf_builder {
      * @param array $users
      * @param float $firstpagebaseY Y position after header+heading on first page
      */
-    private static function render_grid_6col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35): void {
+    private static function render_grid_6col(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35, array $brand = ['r' => 12, 'g' => 80, 'b' => 160]): void {
         $columns = 6;
         $pagew = 210;
         $left = 8;
-        $gutter = 4;
-        $cellw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
-        $imgw = 20;
-        $imgh = 20;
-        $rowgap = 4;
-        $textheight = 8;
-        $rowheight = $imgh + $rowgap + $textheight;
+        $gutter = 3;
+        $cardw = ($pagew - $left * 2 - $gutter * ($columns - 1)) / $columns;
+        $cardh = 32;
+        $rowgap = 3;
+        $rowheight = $cardh + $rowgap;
 
         // A4 height = 297mm, minimal bottom margin = 3mm (SetAutoPageBreak disabled).
         $pageheight = 297;
@@ -302,21 +288,11 @@ class pdf_builder {
             $col = $indexOnCurrentPage % $columns;
             $row = intdiv($indexOnCurrentPage, $columns);
 
-            $x = $left + ($col * ($cellw + $gutter));
+            $x = $left + ($col * ($cardw + $gutter));
             $y = $basestarty + ($row * $rowheight);
-            $xpos = $x + (($cellw - $imgw) / 2);
 
-            $pdf->Image('@' . $user->photo, $xpos, $y, $imgw, $imgh, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
-
-            // Number.
-            $pdf->SetFont('helvetica', 'B', 5);
-            $pdf->SetXY($x, $y - 3);
-            $pdf->Cell(4, 3, (string) ($index + 1), 0, 0, 'C');
-
-            $pdf->SetFont('helvetica', 'B', 6);
-            $pdf->SetXY($x, $y + $imgh + 1);
-            $pdf->Cell($cellw, 3, self::format_student_name($user), 0, 0, 'C');
-            $pdf->SetFont('helvetica', '', 6);
+            self::render_student_card($pdf, $x, $y, $cardw, $cardh, $user->photo,
+                self::format_student_name($user), $index + 1, $brand, 'compact');
 
             $indexOnCurrentPage++;
         }
@@ -332,7 +308,7 @@ class pdf_builder {
      * @param array $users
      * @param float $firstpagebaseY Y position after header+heading on first page
      */
-    private static function render_directory(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35): void {
+    private static function render_directory(\TCPDF &$pdf, array $users, float $firstpagebaseY = 35, array $brand = ['r' => 12, 'g' => 80, 'b' => 160]): void {
         $pdf->SetFont('helvetica', '', 9);
         $pdf->SetTextColor(0, 0, 0);
 
@@ -341,7 +317,8 @@ class pdf_builder {
         $left = 10;
         $gutter = 8;
         $colw = ($pagew - $left * 2 - $gutter) / $columns;
-        $rowheight = 20;
+        $rowheight = 22;
+        $cardh = $rowheight - 3;
 
         // A4 height = 297mm, minimal bottom margin = 3mm (SetAutoPageBreak disabled).
         $pageheight = 297;
@@ -356,7 +333,7 @@ class pdf_builder {
         $pdf->SetAutoPageBreak(false);
 
         $indexOnCurrentPage = 0;
-        foreach ($users as $user) {
+        foreach ($users as $index => $user) {
             // Check if we need a new page based on position within current page.
             if ($indexOnCurrentPage > 0 && $indexOnCurrentPage >= $usersperpage) {
                 $pdf->AddPage();
@@ -374,25 +351,34 @@ class pdf_builder {
             $x = $left + ($col * ($colw + $gutter));
             $y = $basestarty + ($pagerow * $rowheight);
 
-            // Photo (18mm width, scaled to row height).
-            $photow = 18;
-            $photoh = $rowheight - 2;
-            $pdf->Image('@' . $user->photo, $x, $y, $photow, $photoh, '', '', 'L', false, 300, '', false, false, 0, false, false, false);
+            // Card background.
+            $pdf->RoundedRect($x, $y, $colw, $cardh, 2, '1111', 'DF',
+                ['width' => 0.2, 'color' => [226, 232, 240]], [248, 250, 252]);
 
-            // Number.
-            $pdf->SetFont('helvetica', 'B', 7);
-            $pdf->SetXY($x + 20, $y);
-            $pdf->Cell(5, 4, (string) ($indexOnCurrentPage + 1), 0, 0, 'L');
+            // Circular photo on the left of the card.
+            $photod = $cardh - 4;
+            $pcx = $x + 2 + $photod / 2;
+            $pcy = $y + 2 + $photod / 2;
+            self::draw_circular_photo($pdf, $user->photo, $pcx, $pcy, $photod);
+
+            $textx = $x + $photod + 6;
+            $textw = $colw - $photod - 8;
+
+            // Number badge overlapping the top-left of the photo.
+            self::draw_number_badge($pdf, $x + 2.6, $y + 2.6, 3.4, 5, $index + 1, $brand);
 
             // Name.
-            $pdf->SetXY($x + $photow + 8, $y + 2);
+            $pdf->SetXY($textx, $y + 3);
+            $pdf->SetTextColor(45, 55, 72);
             $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->Cell($colw - $photow - 10, 5, self::format_student_name($user), 0, 0, 'L');
+            $pdf->Cell($textw, 5, self::fit_name(self::format_student_name($user), 40), 0, 0, 'L');
 
             // Email.
-            $pdf->SetXY($x + $photow + 2, $y + 8);
+            $pdf->SetXY($textx, $y + 9);
+            $pdf->SetTextColor(110, 120, 135);
             $pdf->SetFont('helvetica', '', 7);
-            $pdf->Cell($colw - $photow - 4, 4, (string) ($user->email ?? ''), 0, 0, 'L');
+            $pdf->Cell($textw, 4, (string) ($user->email ?? ''), 0, 0, 'L');
+            $pdf->SetTextColor(0, 0, 0);
 
             $indexOnCurrentPage++;
         }
@@ -469,6 +455,118 @@ class pdf_builder {
         imagedestroy($im);
 
         return $png;
+    }
+
+    /**
+     * Render a single student "card": rounded panel, circular photo with ring,
+     * a coloured number badge in the top-left corner and the name underneath.
+     *
+     * @param \TCPDF $pdf
+     * @param float $x card left
+     * @param float $y card top
+     * @param float $cardw card width
+     * @param float $cardh card height
+     * @param string $photo raw image bytes
+     * @param string $name formatted student name
+     * @param int $number 1-based position shown in the badge
+     * @param array{r:int,g:int,b:int} $brand badge fill colour
+     * @param string $size 'normal' or 'compact'
+     */
+    private static function render_student_card(\TCPDF &$pdf, float $x, float $y, float $cardw, float $cardh,
+            string $photo, string $name, int $number, array $brand, string $size = 'normal'): void {
+        $compact = ($size === 'compact');
+        $pad = $compact ? 2.0 : 3.0;
+        $imgd = $compact ? 15.0 : 24.0;
+        $namefont = $compact ? 6 : 8;
+        $nameh = $compact ? 2.6 : 3.6;
+        $badger = $compact ? 2.9 : 3.7;
+        $badgefont = $compact ? 5 : 6;
+        $namechars = $compact ? 26 : 34;
+
+        // 1. Card panel.
+        $pdf->RoundedRect($x, $y, $cardw, $cardh, $compact ? 1.8 : 2.4, '1111', 'DF',
+            ['width' => 0.2, 'color' => [226, 232, 240]], [248, 250, 252]);
+
+        // 2. Circular photo near the top, centred horizontally.
+        $cx = $x + $cardw / 2;
+        $imgy = $y + $pad + ($compact ? 1.0 : 1.5);
+        $cy = $imgy + $imgd / 2;
+        self::draw_circular_photo($pdf, $photo, $cx, $cy, $imgd);
+
+        // 3. Name block under the photo (up to two lines).
+        $pdf->SetFont('helvetica', 'B', $namefont);
+        $pdf->SetTextColor(45, 55, 72);
+        $pdf->SetXY($x + 1, $imgy + $imgd + ($compact ? 1.2 : 1.6));
+        $namemaxh = $compact ? 7.0 : 9.0;
+        $pdf->MultiCell($cardw - 2, $nameh, self::fit_name($name, $namechars), 0, 'C', false, 0,
+            '', '', true, 0, false, true, $namemaxh, 'T');
+
+        // 4. Number badge in the top-left corner of the card.
+        self::draw_number_badge($pdf, $x + $badger + ($compact ? 1.0 : 1.4),
+            $y + $badger + ($compact ? 1.0 : 1.4), $badger, $badgefont, $number, $brand);
+
+        $pdf->SetTextColor(0, 0, 0);
+    }
+
+    /**
+     * Draw an image clipped to a circle plus a thin white/grey ring.
+     *
+     * @param \TCPDF $pdf
+     * @param string $photo raw image bytes
+     * @param float $cx circle centre X
+     * @param float $cy circle centre Y
+     * @param float $d circle diameter
+     */
+    private static function draw_circular_photo(\TCPDF &$pdf, string $photo, float $cx, float $cy, float $d): void {
+        $r = $d / 2;
+        $pdf->StartTransform();
+        $pdf->Circle($cx, $cy, $r, 0, 360, 'CNZ');
+        $pdf->Image('@' . $photo, $cx - $r, $cy - $r, $d, $d, '', '', '', false, 300,
+            '', false, false, 0, 'C', false, false);
+        $pdf->StopTransform();
+
+        $pdf->Circle($cx, $cy, $r, 0, 360, 'D', ['width' => 0.5, 'color' => [255, 255, 255]]);
+        $pdf->Circle($cx, $cy, $r, 0, 360, 'D', ['width' => 0.2, 'color' => [205, 213, 224]]);
+    }
+
+    /**
+     * Draw a filled circular badge with a centred white number.
+     *
+     * @param \TCPDF $pdf
+     * @param float $cx badge centre X
+     * @param float $cy badge centre Y
+     * @param float $r badge radius
+     * @param int $font font size for the number
+     * @param int $number value to show
+     * @param array{r:int,g:int,b:int} $brand fill colour
+     */
+    private static function draw_number_badge(\TCPDF &$pdf, float $cx, float $cy, float $r, int $font, int $number, array $brand): void {
+        $pdf->Circle($cx, $cy, $r, 0, 360, 'DF',
+            ['width' => 0.3, 'color' => [255, 255, 255]], [$brand['r'], $brand['g'], $brand['b']]);
+        $pdf->SetFont('helvetica', 'B', $font);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetXY($cx - $r, $cy - $r);
+        $pdf->Cell($r * 2, $r * 2, (string) $number, 0, 0, 'C', false, '', 0, false, 'T', 'M');
+        $pdf->SetTextColor(0, 0, 0);
+    }
+
+    /**
+     * Shorten a name so it stays within the card, cutting on a word boundary.
+     *
+     * @param string $name
+     * @param int $maxchars
+     * @return string
+     */
+    private static function fit_name(string $name, int $maxchars): string {
+        if (mb_strlen($name) <= $maxchars) {
+            return $name;
+        }
+        $short = mb_substr($name, 0, $maxchars - 1);
+        $lastspace = mb_strrpos($short, ' ');
+        if ($lastspace !== false && $lastspace > $maxchars * 0.5) {
+            $short = mb_substr($short, 0, $lastspace);
+        }
+        return rtrim($short, " ,.;:-") . '…';
     }
 
     /**
