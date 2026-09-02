@@ -200,9 +200,10 @@ class pdf_builder {
         // Logo: constrain to fit without distortion.
         $logo = self::resolve_logo_path($stage);
         $logosize = 16;
-        if ($logo !== null && preg_match('/\.svg$/i', $logo)) {
-            $pdf->ImageSVG($logo, 10, 7, $logosize, '', '', '', 'T', false);
-        } else if ($logo !== null) {
+        $svg = ($logo !== null && preg_match('/\.svg(\?|$)/i', $logo)) ? self::fetch_logo_svg($logo) : null;
+        if ($svg !== null) {
+            $pdf->ImageSVG('@' . $svg, 10, 7, $logosize, '', '', '', 'T', false);
+        } else if ($logo !== null && !preg_match('/\.svg(\?|$)/i', $logo)) {
             // Use Image with max height, let width scale proportionally.
             $pdf->Image($logo, 10, 7, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
         } else {
@@ -494,6 +495,39 @@ class pdf_builder {
         }
 
         return null;
+    }
+
+    /**
+     * Fetch a remote SVG logo and strip clip-path references TCPDF cannot resolve.
+     *
+     * The source file points at <clipPath> ids it does not define; TCPDF then
+     * emits "Undefined array key" / "foreach() on null" warnings from its SVG
+     * parser without applying (or needing) the clip. Removing the references
+     * keeps the same visual result and silences the warnings.
+     *
+     * @param string $url
+     * @return string|null cleaned SVG markup, or null if it could not be fetched
+     */
+    private static function fetch_logo_svg(string $url): ?string {
+        static $cache = [];
+        if (array_key_exists($url, $cache)) {
+            return $cache[$url];
+        }
+
+        $svg = null;
+        try {
+            $curl = new \curl();
+            $response = $curl->get($url, [], ['CURLOPT_TIMEOUT' => 5, 'CURLOPT_CONNECTTIMEOUT' => 5]);
+            if (!$curl->get_errno() && is_string($response) && stripos($response, '<svg') !== false) {
+                $svg = preg_replace('/<clipPath\b[^>]*>.*?<\/clipPath>/is', '', $response);
+                $svg = preg_replace('/\s+clip-path\s*=\s*("[^"]*"|\'[^\']*\')/i', '', $svg);
+                $svg = preg_replace('/clip-path\s*:\s*url\([^)]*\)\s*;?/i', '', $svg);
+            }
+        } catch (\Throwable $e) {
+            $svg = null;
+        }
+
+        return $cache[$url] = $svg;
     }
 
     /**
