@@ -350,13 +350,89 @@
     margin: 0 auto;
 }
 
-.lpp-export-filters {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+.lpp-export-card {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.5rem;
     padding: 1.5rem;
+}
+
+.lpp-export-intro {
+    margin: 0 0 1.25rem;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.lpp-export-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.lpp-export-section {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.lpp-export-section > legend {
+    float: none;
+    width: auto;
+    margin: 0 0 0.75rem;
+    padding: 0 0 0.35rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+}
+
+.lpp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.9rem;
+}
+
+.lpp-field:last-child {
+    margin-bottom: 0;
+}
+
+.lpp-field-label {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.lpp-field-label > label {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Trim the core help-icon padding so it sits snug against the label text. */
+.lpp-field-label .btn.btn-link {
+    padding: 0;
+    line-height: 1;
+}
+
+.lpp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0 1rem;
+    margin-bottom: 0.9rem;
+}
+
+.lpp-export-actions {
+    margin-top: 0.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lpp-export-actions .btn {
+    width: 100%;
+    font-size: 1.05rem;
+    padding: 0.6rem 1.5rem;
 }
 
 .lpp-export-status {

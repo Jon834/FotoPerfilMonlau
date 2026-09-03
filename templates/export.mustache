@@ -17,69 +17,159 @@
 {{!
     @template local_profilephoto/export
 
-    Export filter screen (Entrega 4). No context variables of its own -
-    all state is applied client-side by amd/src/export.js after render.
+    Export filter screen (Entrega 4). Dropdown/section state is applied
+    client-side by amd/src/export.js after render.
+
+    Context variables required for this template:
+    * helpicons object - rendered Moodle help_icon() HTML keyed by field:
+      filtertype, target, roleset, filetype, filenamestrategy, density,
+      stage, language, heading.
+
+    Example context (json):
+    {
+        "helpicons": {
+            "filtertype": "<a class='btn btn-link'>?</a>",
+            "target": "", "roleset": "", "filetype": "", "filenamestrategy": "",
+            "density": "", "stage": "", "language": "", "heading": ""
+        }
+    }
 }}
 <div class="local-profilephoto-export" data-region="lpp-export-app">
 
-    <div class="lpp-export-filters">
-        <label for="lpp-export-filtertype">{{#str}}export_filtertype, local_profilephoto{{/str}}</label>
-        <select id="lpp-export-filtertype" class="form-control">
-            <option value="session">{{#str}}export_filter_session, local_profilephoto{{/str}}</option>
-            <option value="course">{{#str}}export_filter_course, local_profilephoto{{/str}}</option>
-            <option value="cohort">{{#str}}export_filter_cohort, local_profilephoto{{/str}}</option>
-        </select>
+    <div class="lpp-export-card">
+        <p class="lpp-export-intro">{{#str}}export_intro, local_profilephoto{{/str}}</p>
 
-        <select id="lpp-export-session" class="form-control"></select>
-        <select id="lpp-export-course" class="form-control" hidden></select>
-        <select id="lpp-export-cohort" class="form-control" hidden></select>
+        <div class="lpp-export-form">
 
-        <label for="lpp-export-filenamestrategy">{{#str}}export_filenamestrategy, local_profilephoto{{/str}}</label>
-        <select id="lpp-export-filenamestrategy" class="form-control">
-            <option value="idnumber">idnumber</option>
-            <option value="username">username</option>
-            <option value="email">email</option>
-            <option value="userid">userid</option>
-            <option value="fullname">fullname</option>
-        </select>
+            <fieldset class="lpp-export-section">
+                <legend>{{#str}}export_section_what, local_profilephoto{{/str}}</legend>
 
-        <label for="lpp-export-type">{{#str}}export_filetype, local_profilephoto{{/str}}</label>
-        <select id="lpp-export-type" class="form-control">
-            <option value="zip">{{#str}}export_filetype_zip, local_profilephoto{{/str}}</option>
-            <option value="orla">{{#str}}export_filetype_orla, local_profilephoto{{/str}}</option>
-            <option value="grid6">{{#str}}export_filetype_grid6, local_profilephoto{{/str}}</option>
-            <option value="directory">{{#str}}export_filetype_directory, local_profilephoto{{/str}}</option>
-            <option value="signatures">{{#str}}export_filetype_signatures, local_profilephoto{{/str}}</option>
-        </select>
+                <div class="lpp-field">
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-filtertype">{{#str}}export_filtertype, local_profilephoto{{/str}}</label> {{{helpicons.filtertype}}}
+                    </span>
+                    <select id="lpp-export-filtertype" class="form-control">
+                        <option value="cohort" selected>{{#str}}export_filter_cohort, local_profilephoto{{/str}}</option>
+                        <option value="course">{{#str}}export_filter_course, local_profilephoto{{/str}}</option>
+                        <option value="session">{{#str}}export_filter_session, local_profilephoto{{/str}}</option>
+                    </select>
+                </div>
 
-        <label for="lpp-export-density">{{#str}}export_density, local_profilephoto{{/str}}</label>
-        <select id="lpp-export-density" class="form-control">
-            <option value="normal">{{#str}}export_density_normal, local_profilephoto{{/str}}</option>
-            <option value="compact">{{#str}}export_density_compact, local_profilephoto{{/str}}</option>
-            <option value="large">{{#str}}export_density_large, local_profilephoto{{/str}}</option>
-        </select>
+                <div class="lpp-field lpp-export-target" data-target="session" hidden>
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-session">{{#str}}export_filter_session, local_profilephoto{{/str}}</label> {{{helpicons.target}}}
+                    </span>
+                    <select id="lpp-export-session" class="form-control"></select>
+                </div>
+                <div class="lpp-field lpp-export-target" data-target="course" hidden>
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-course">{{#str}}export_filter_course, local_profilephoto{{/str}}</label> {{{helpicons.target}}}
+                    </span>
+                    <select id="lpp-export-course" class="form-control"></select>
+                </div>
+                <div class="lpp-field lpp-export-target" data-target="cohort">
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-cohort">{{#str}}export_filter_cohort, local_profilephoto{{/str}}</label> {{{helpicons.target}}}
+                    </span>
+                    <select id="lpp-export-cohort" class="form-control"></select>
+                </div>
 
-        <label for="lpp-export-stage">{{#str}}export_stage, local_profilephoto{{/str}}</label>
-        <select id="lpp-export-stage" class="form-control">
-            <option value="fp">{{#str}}export_stage_fp, local_profilephoto{{/str}}</option>
-            <option value="eso">{{#str}}export_stage_eso, local_profilephoto{{/str}}</option>
-            <option value="batx">{{#str}}export_stage_batx, local_profilephoto{{/str}}</option>
-        </select>
+                <div class="lpp-field" data-role-filter hidden>
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-roleset">{{#str}}export_roleset, local_profilephoto{{/str}}</label> {{{helpicons.roleset}}}
+                    </span>
+                    <select id="lpp-export-roleset" class="form-control">
+                        <option value="students" selected>{{#str}}export_roleset_students, local_profilephoto{{/str}}</option>
+                        <option value="studentsteachers">{{#str}}export_roleset_studentsteachers, local_profilephoto{{/str}}</option>
+                        <option value="all">{{#str}}export_roleset_all, local_profilephoto{{/str}}</option>
+                    </select>
+                </div>
 
-        <label for="lpp-export-language">{{#str}}export_language, local_profilephoto{{/str}}</label>
-        <select id="lpp-export-language" class="form-control">
-            <option value="ca">{{#str}}export_language_ca, local_profilephoto{{/str}}</option>
-            <option value="es">{{#str}}export_language_es, local_profilephoto{{/str}}</option>
-            <option value="en">{{#str}}export_language_en, local_profilephoto{{/str}}</option>
-        </select>
+                <div class="lpp-field">
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-type">{{#str}}export_filetype, local_profilephoto{{/str}}</label> {{{helpicons.filetype}}}
+                    </span>
+                    <select id="lpp-export-type" class="form-control">
+                        <option value="grid6" selected>{{#str}}export_filetype_grid6, local_profilephoto{{/str}}</option>
+                        <option value="orla">{{#str}}export_filetype_orla, local_profilephoto{{/str}}</option>
+                        <option value="directory">{{#str}}export_filetype_directory, local_profilephoto{{/str}}</option>
+                        <option value="signatures">{{#str}}export_filetype_signatures, local_profilephoto{{/str}}</option>
+                        <option value="zip">{{#str}}export_filetype_zip, local_profilephoto{{/str}}</option>
+                    </select>
+                </div>
+            </fieldset>
 
-        <label for="lpp-export-heading">{{#str}}export_heading, local_profilephoto{{/str}}</label>
-        <input id="lpp-export-heading" class="form-control" type="text" placeholder="{{#str}}export_heading_placeholder, local_profilephoto{{/str}}">
+            <fieldset class="lpp-export-section" data-section="document">
+                <legend>{{#str}}export_section_document, local_profilephoto{{/str}}</legend>
 
-        <button type="button" id="lpp-export-btn" class="btn btn-primary">
-            {{#str}}export_generate, local_profilephoto{{/str}}
-        </button>
+                <div class="lpp-grid">
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
+                        <label for="lpp-export-density">{{#str}}export_density, local_profilephoto{{/str}}</label> {{{helpicons.density}}}
+                    </span>
+                        <select id="lpp-export-density" class="form-control">
+                            <option value="normal">{{#str}}export_density_normal, local_profilephoto{{/str}}</option>
+                            <option value="compact">{{#str}}export_density_compact, local_profilephoto{{/str}}</option>
+                            <option value="large">{{#str}}export_density_large, local_profilephoto{{/str}}</option>
+                        </select>
+                    </div>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
+                        <label for="lpp-export-stage">{{#str}}export_stage, local_profilephoto{{/str}}</label> {{{helpicons.stage}}}
+                    </span>
+                        <select id="lpp-export-stage" class="form-control">
+                            <option value="fp">{{#str}}export_stage_fp, local_profilephoto{{/str}}</option>
+                            <option value="eso">{{#str}}export_stage_eso, local_profilephoto{{/str}}</option>
+                            <option value="batx">{{#str}}export_stage_batx, local_profilephoto{{/str}}</option>
+                        </select>
+                    </div>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
+                        <label for="lpp-export-language">{{#str}}export_language, local_profilephoto{{/str}}</label> {{{helpicons.language}}}
+                    </span>
+                        <select id="lpp-export-language" class="form-control">
+                            <option value="ca">{{#str}}export_language_ca, local_profilephoto{{/str}}</option>
+                            <option value="es">{{#str}}export_language_es, local_profilephoto{{/str}}</option>
+                            <option value="en">{{#str}}export_language_en, local_profilephoto{{/str}}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="lpp-field">
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-heading">{{#str}}export_heading, local_profilephoto{{/str}}</label> {{{helpicons.heading}}}
+                    </span>
+                    <input id="lpp-export-heading" class="form-control" type="text"
+                        placeholder="{{#str}}export_heading_placeholder, local_profilephoto{{/str}}">
+                </div>
+            </fieldset>
+
+            <fieldset class="lpp-export-section" data-section="zip" hidden>
+                <legend>{{#str}}export_section_files, local_profilephoto{{/str}}</legend>
+
+                <div class="lpp-field">
+                    <span class="lpp-field-label">
+                        <label for="lpp-export-filenamestrategy">{{#str}}export_filenamestrategy, local_profilephoto{{/str}}</label> {{{helpicons.filenamestrategy}}}
+                    </span>
+                    <select id="lpp-export-filenamestrategy" class="form-control">
+                        <option value="idnumber">idnumber</option>
+                        <option value="username">username</option>
+                        <option value="email">email</option>
+                        <option value="userid">userid</option>
+                        <option value="fullname">fullname</option>
+                    </select>
+                </div>
+            </fieldset>
+
+            <div class="lpp-export-actions">
+                <button type="button" id="lpp-export-btn" class="btn btn-primary">
+                    {{#pix}}i/export, core{{/pix}} {{#str}}export_generate, local_profilephoto{{/str}}
+                </button>
+            </div>
+        </div>
+
+        <p id="lpp-export-status" class="lpp-export-status" role="status" aria-live="polite"></p>
     </div>
-
-    <p id="lpp-export-status" class="lpp-export-status" role="status" aria-live="polite"></p>
 </div>

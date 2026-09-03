@@ -24,18 +24,24 @@
 import Ajax from 'core/ajax';
 import Notification from 'core/notification';
 import {getString} from 'core/str';
+import * as Autocomplete from 'core/form-autocomplete';
 
 const SELECTORS = {
     FILTER_TYPE: '#lpp-export-filtertype',
     SESSION: '#lpp-export-session',
     COURSE: '#lpp-export-course',
     COHORT: '#lpp-export-cohort',
+    TARGET: '.lpp-export-target',
+    ROLESET: '#lpp-export-roleset',
+    ROLE_FILTER: '[data-role-filter]',
     FILENAME_STRATEGY: '#lpp-export-filenamestrategy',
     EXPORT_TYPE: '#lpp-export-type',
     DENSITY: '#lpp-export-density',
     LANGUAGE: '#lpp-export-language',
     STAGE: '#lpp-export-stage',
     HEADING: '#lpp-export-heading',
+    SECTION_DOCUMENT: '[data-section="document"]',
+    SECTION_ZIP: '[data-section="zip"]',
     GENERATE_BTN: '#lpp-export-btn',
     STATUS: '#lpp-export-status',
 };
@@ -54,13 +60,14 @@ const getExportOptions = () => Ajax.call([{
  * @param {string} filenamestrategy
  * @return {Promise}
  */
-const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading, density) => Ajax.call([{
-    methodname: 'local_profilephoto_create_export',
-    args: {
-        filtertype, filterid, filenamestrategy, fallbackstrategy: 'username',
-        exporttype, language, stage, heading, density,
-    },
-}])[0];
+const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading, density, roleset) =>
+    Ajax.call([{
+        methodname: 'local_profilephoto_create_export',
+        args: {
+            filtertype, filterid, filenamestrategy, fallbackstrategy: 'username',
+            exporttype, language, stage, heading, density, roleset,
+        },
+    }])[0];
 
 /**
  * @param {HTMLSelectElement} selectEl
@@ -78,6 +85,17 @@ const populateSelect = (selectEl, options, labelFn) => {
 };
 
 /**
+ * Turn a plain <select> into a type-to-search autocomplete field.
+ *
+ * @param {string} selector
+ * @return {Promise}
+ */
+const makeSearchable = (selector) => getString('export_search', 'local_profilephoto')
+    .then((placeholder) => getString('export_target_none', 'local_profilephoto')
+        .then((noSelection) => Autocomplete.enhance(selector, false, '', placeholder, false, true, noSelection, true)))
+    .catch(Notification.exception);
+
+/**
  * Initialise the export screen.
  */
 export const init = () => {
@@ -85,29 +103,57 @@ export const init = () => {
     const sessionSelect = document.querySelector(SELECTORS.SESSION);
     const courseSelect = document.querySelector(SELECTORS.COURSE);
     const cohortSelect = document.querySelector(SELECTORS.COHORT);
+    const targets = document.querySelectorAll(SELECTORS.TARGET);
+    const roleset = document.querySelector(SELECTORS.ROLESET);
+    const roleFilter = document.querySelector(SELECTORS.ROLE_FILTER);
     const filenameStrategy = document.querySelector(SELECTORS.FILENAME_STRATEGY);
     const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
     const density = document.querySelector(SELECTORS.DENSITY);
     const language = document.querySelector(SELECTORS.LANGUAGE);
     const stage = document.querySelector(SELECTORS.STAGE);
     const heading = document.querySelector(SELECTORS.HEADING);
+    const documentSections = document.querySelectorAll(SELECTORS.SECTION_DOCUMENT);
+    const zipSections = document.querySelectorAll(SELECTORS.SECTION_ZIP);
     const generateBtn = document.querySelector(SELECTORS.GENERATE_BTN);
     const status = document.querySelector(SELECTORS.STATUS);
 
+    // Show only the target select matching the chosen source (cohort / course / session).
+    // The role filter only makes sense for a course (cohorts have no roles).
     const updateFilterVisibility = () => {
-        sessionSelect.hidden = filterType.value !== 'session';
-        courseSelect.hidden = filterType.value !== 'course';
-        cohortSelect.hidden = filterType.value !== 'cohort';
+        targets.forEach((target) => {
+            target.hidden = target.dataset.target !== filterType.value;
+        });
+        if (roleFilter) {
+            roleFilter.hidden = filterType.value !== 'course';
+        }
+    };
+
+    // The filename strategy only applies to the ZIP; density / stage / language /
+    // heading only apply to the PDF layouts. Show whichever block is relevant.
+    const updateSectionVisibility = () => {
+        const isZip = exportType.value === 'zip';
+        documentSections.forEach((el) => {
+            el.hidden = isZip;
+        });
+        zipSections.forEach((el) => {
+            el.hidden = !isZip;
+        });
     };
 
     filterType.addEventListener('change', updateFilterVisibility);
+    exportType.addEventListener('change', updateSectionVisibility);
     updateFilterVisibility();
+    updateSectionVisibility();
 
     getExportOptions().then((options) => {
         populateSelect(sessionSelect, options.sessions, (s) => s.label);
         populateSelect(courseSelect, options.courses, (c) => c.name);
         populateSelect(cohortSelect, options.cohorts, (c) => c.name);
-        return null;
+        // Enhance after the options exist - form-autocomplete snapshots them on enhance.
+        return Promise.all([
+            makeSearchable(SELECTORS.COHORT),
+            makeSearchable(SELECTORS.COURSE),
+        ]);
     }).catch(Notification.exception);
 
     generateBtn.addEventListener('click', () => {
@@ -130,7 +176,8 @@ export const init = () => {
                 language.value,
                 stage.value,
                 heading.value.trim(),
-                density.value
+                density.value,
+                roleset.value
             );
         }).then((result) => {
             return getString('export_ready', 'local_profilephoto', result.count).then((message) => {

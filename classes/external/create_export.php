@@ -63,8 +63,15 @@ class create_export extends external_api {
             'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx', VALUE_DEFAULT, 'fp'),
             'heading' => new external_value(PARAM_TEXT, 'Optional heading text', VALUE_DEFAULT, ''),
             'density' => new external_value(PARAM_ALPHA, 'compact | normal | large', VALUE_DEFAULT, 'normal'),
+            'roleset' => new external_value(PARAM_ALPHA,
+                'Which course participants to include: students | studentsteachers | all', VALUE_DEFAULT, 'students'),
         ]);
     }
+
+    /**
+     * Course-participant role sets selectable in the export screen.
+     */
+    private const ROLESETS = ['students', 'studentsteachers', 'all'];
 
     /**
      * Build the export.
@@ -84,7 +91,8 @@ class create_export extends external_api {
         string $language = 'ca',
         string $stage = 'fp',
         string $heading = '',
-        string $density = 'normal'
+        string $density = 'normal',
+        string $roleset = 'students'
     ): array {
         global $DB, $USER;
 
@@ -98,7 +106,10 @@ class create_export extends external_api {
             'stage' => $stage,
             'heading' => $heading,
             'density' => $density,
+            'roleset' => $roleset,
         ]);
+
+        $roleset = in_array($params['roleset'], self::ROLESETS, true) ? $params['roleset'] : 'students';
 
         $context = context_system::instance();
         self::validate_context($context);
@@ -129,8 +140,9 @@ class create_export extends external_api {
         } else if ($params['filtertype'] === 'course') {
             require_capability('local/profilephoto:exportall', $context);
             $course = $DB->get_record('course', ['id' => $params['filterid']], 'id', MUST_EXIST);
-            $enrolled = get_enrolled_users(context_course::instance($course->id), '', 0, 'u.id');
-            $userids = array_map('intval', array_keys($enrolled));
+            $coursecontext = context_course::instance($course->id);
+            $enrolled = get_enrolled_users($coursecontext, '', 0, 'u.id');
+            $userids = self::filter_by_roleset(array_map('intval', array_keys($enrolled)), $coursecontext, $roleset);
         } else if ($params['filtertype'] === 'cohort') {
             require_capability('local/profilephoto:exportall', $context);
             $members = $DB->get_records('cohort_members', ['cohortid' => $params['filterid']], '', 'userid');
@@ -180,6 +192,49 @@ class create_export extends external_api {
             'filename' => $built['filename'],
             'count' => $built['count'],
         ];
+    }
+
+    /**
+     * Restrict a list of enrolled course users to the requested role set.
+     *
+     * Only applies to the "course" filter; cohorts have members but no roles,
+     * and sessions carry an already fixed queue. "students" (the default)
+     * keeps only holders of a student-archetype role, "studentsteachers" also
+     * keeps (editing) teachers, and "all" leaves the list untouched. Role
+     * assignments in a parent category context count too.
+     *
+     * @param array $userids enrolled user ids
+     * @param \context $context course context
+     * @param string $roleset one of self::ROLESETS
+     * @return array filtered user ids
+     */
+    private static function filter_by_roleset(array $userids, \context $context, string $roleset): array {
+        if ($roleset === 'all' || !$userids) {
+            return $userids;
+        }
+
+        $archetypes = $roleset === 'studentsteachers'
+            ? ['student', 'teacher', 'editingteacher']
+            : ['student'];
+
+        $roleids = [];
+        foreach (get_all_roles() as $role) {
+            if (in_array($role->archetype, $archetypes, true)) {
+                $roleids[] = (int) $role->id;
+            }
+        }
+        if (!$roleids) {
+            return $userids;
+        }
+
+        $allowed = [];
+        foreach (get_role_users($roleids, $context, true, 'u.id', 'u.id') as $roleuser) {
+            $allowed[(int) $roleuser->id] = true;
+        }
+
+        return array_values(array_filter($userids, static function($userid) use ($allowed) {
+            return isset($allowed[$userid]);
+        }));
     }
 
     /**

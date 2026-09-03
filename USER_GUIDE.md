@@ -66,13 +66,24 @@ adicional.
 
 1. Pulsa **Exportar fotografías descargables** (arriba de la pantalla de
    captura), o ve directamente a `export.php`.
-2. Elige si quieres exportar por **sesión**, **curso** o **cohorte**.
-3. Elige cómo se nombran los archivos (por defecto, `idnumber`; si un
-   alumno no tiene, se usa su nombre de usuario).
-4. Pulsa **Generar ZIP**. La descarga empieza automáticamente al terminar.
-5. El ZIP incluye un `manifest.csv` con el detalle de cada fotografía
+2. En **Qué exportar**, elige el origen (**cohorte** por defecto, o
+   **curso** / **sesión**) y escribe para buscarlo en el selector.
+   - Si exportas por **curso**, en **Participantes del curso** eliges a
+     quién incluir: solo estudiantes (por defecto), estudiantes y
+     profesores, o todos los participantes.
+3. Elige el **Tipo de exportación**: orla compacta, orla en tarjetas,
+   directorio de alumnos, hoja de firmas o ZIP de fotografías. La pantalla
+   muestra solo los campos que aplican a ese tipo.
+   - Para las orlas/PDF: ajusta **densidad**, **etapa**, **idioma** y el
+     **texto extra** del documento.
+   - Para el ZIP: elige cómo se nombran los archivos (por defecto,
+     `idnumber`; si un alumno no tiene, se usa su nombre de usuario).
+4. Cada campo tiene un icono **?** con una explicación breve.
+5. Pulsa **Generar exportación**. La descarga empieza automáticamente al
+   terminar.
+6. El ZIP incluye un `manifest.csv` con el detalle de cada fotografía
    exportada.
-6. El enlace de descarga es de un solo uso: si necesitas el mismo ZIP
+7. El enlace de descarga es de un solo uso: si necesitas el mismo archivo
    otra vez, genera una nueva exportación.
 
 Si la selección tiene demasiados alumnos, se te pedirá acotar el filtro

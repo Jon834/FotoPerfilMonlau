@@ -1,5 +1,37 @@
 # Changelog — local_profilephoto
 
+## 0.6.3 (exportar: filtro de participantes por rol)
+
+* Al exportar **por curso** aparece un selector **Participantes del curso**:
+  *Solo estudiantes* (por defecto), *Estudiantes y profesores* o *Todos los
+  participantes*. Antes se incluía siempre a todo el mundo matriculado
+  (profesores incluidos) en las orlas y listados.
+* El filtro se basa en el arquetipo del rol (student / teacher /
+  editingteacher), así que respeta roles personalizados del centro.
+* No aplica a cohortes (se exportan todos sus miembros) ni a sesiones
+  fotográficas (la cola ya está fijada).
+
+## 0.6.2 (exportar: pantalla reorganizada y ayuda por campo)
+
+* La pantalla de exportación se reorganiza en tres secciones ("Qué
+  exportar", "Formato del documento", "Archivos") con una frase
+  introductoria, rejilla de dos/tres columnas para los selectores cortos
+  y botón "Generar" a ancho completo.
+* Cada campo tiene un icono de ayuda `?` (popover nativo de Moodle) que
+  explica para qué sirve y a qué tipo de exportación aplica.
+* Los campos se muestran según el **Tipo de exportación**: con ZIP se ve
+  "Nombrar archivos por"; con las orlas/PDF se ven densidad, etapa,
+  idioma y texto extra.
+* El tipo de exportación por defecto pasa a ser **Orla compacta**.
+
+## 0.6.1 (exportar: cohorte por defecto y búsqueda)
+
+* En la pantalla de exportación, "Exportar por" ahora sale como **Cohorte**
+  por defecto (antes: sesión fotográfica).
+* Los selectores de **cohorte** y de **curso** se convierten en campos con
+  búsqueda: se puede escribir para filtrar la lista en vez de desplegar
+  todas las opciones. Usa `core/form-autocomplete` del núcleo de Moodle.
+
 ## 0.5.3 (cámara frontal/trasera en móvil)
 
 * En móviles y tablets (detectados por puntero táctil), la pantalla de

@@ -156,6 +156,42 @@ $string['export_filtertype'] = 'Exportar por';
 $string['export_filter_session'] = 'Sesión fotográfica';
 $string['export_filter_course'] = 'Curso';
 $string['export_filter_cohort'] = 'Cohorte';
+$string['export_target'] = 'Selección';
+$string['export_target_none'] = 'Nada seleccionado';
+$string['export_search'] = 'Escribe para buscar…';
+$string['export_intro'] = 'Genera orlas, listados y descargas de fotos a partir de una cohorte, un curso o una sesión fotográfica.';
+$string['export_section_what'] = 'Qué exportar';
+$string['export_section_document'] = 'Formato del documento';
+$string['export_section_files'] = 'Archivos';
+$string['export_roleset'] = 'Participantes del curso';
+$string['export_roleset_students'] = 'Solo estudiantes';
+$string['export_roleset_studentsteachers'] = 'Estudiantes y profesores';
+$string['export_roleset_all'] = 'Todos los participantes';
+$string['export_roleset_help'] = 'Solo se aplica cuando exportas por curso. Filtra quién se incluye según su rol:
+
+* **Solo estudiantes** (por defecto): usuarios con un rol de tipo estudiante.
+* **Estudiantes y profesores**: añade los roles de profesor y profesor editor.
+* **Todos los participantes**: cualquier persona matriculada en el curso.
+
+Las cohortes exportan siempre todos sus miembros.';
+$string['export_filtertype_help'] = 'Origen de los alumnos que se incluyen en la exportación:
+
+* **Cohorte**: una cohorte del sistema (grupos definidos por administración).
+* **Curso**: los alumnos matriculados en un curso.
+* **Sesión fotográfica**: una sesión de captura que hayas realizado tú.';
+$string['export_target_help'] = 'Escribe para filtrar la lista. Solo aparecen las cohortes, cursos o sesiones a los que tienes acceso.';
+$string['export_filetype_help'] = 'Qué se genera:
+
+* **Orla compacta**: PDF con muchos alumnos por página (foto y nombre).
+* **Orla en tarjetas**: PDF con cada alumno en una tarjeta.
+* **Directorio de alumnos**: PDF con foto, nombre y correo.
+* **Hoja de firmas**: PDF con foto, nombre y una casilla para firmar.
+* **ZIP de fotografías**: archivo comprimido con la foto de cada alumno por separado.';
+$string['export_filenamestrategy_help'] = 'Solo se aplica al ZIP de fotografías. Determina cómo se nombra el archivo de cada alumno. Si el dato elegido está vacío, se usa el nombre de usuario.';
+$string['export_density_help'] = 'Solo para los PDF. Ajusta cuántos alumnos caben por página y el tamaño de las fotos.';
+$string['export_stage_help'] = 'Solo para los PDF. Selecciona la etapa educativa para aplicar la plantilla y el estilo de orla correspondiente.';
+$string['export_language_help'] = 'Idioma de los textos fijos del documento (títulos y cabeceras). No afecta a los nombres de los alumnos.';
+$string['export_heading_help'] = 'Texto opcional que aparece bajo el título del documento. Por ejemplo, el curso académico o el grupo.';
 $string['export_filenamestrategy'] = 'Nombrar archivos por';
 $string['export_filetype'] = 'Tipo de exportación';
 $string['export_filetype_zip'] = 'ZIP de fotografías';

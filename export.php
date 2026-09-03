@@ -77,6 +77,18 @@ $PAGE->set_heading(get_string('export_title', 'local_profilephoto'));
 
 $PAGE->requires->js_call_amd('local_profilephoto/export', 'init');
 
+$helpicons = [
+    'filtertype' => $OUTPUT->help_icon('export_filtertype', 'local_profilephoto'),
+    'target' => $OUTPUT->help_icon('export_target', 'local_profilephoto'),
+    'roleset' => $OUTPUT->help_icon('export_roleset', 'local_profilephoto'),
+    'filetype' => $OUTPUT->help_icon('export_filetype', 'local_profilephoto'),
+    'filenamestrategy' => $OUTPUT->help_icon('export_filenamestrategy', 'local_profilephoto'),
+    'density' => $OUTPUT->help_icon('export_density', 'local_profilephoto'),
+    'stage' => $OUTPUT->help_icon('export_stage', 'local_profilephoto'),
+    'language' => $OUTPUT->help_icon('export_language', 'local_profilephoto'),
+    'heading' => $OUTPUT->help_icon('export_heading', 'local_profilephoto'),
+];
+
 echo $OUTPUT->header();
-echo $OUTPUT->render_from_template('local_profilephoto/export', []);
+echo $OUTPUT->render_from_template('local_profilephoto/export', ['helpicons' => $helpicons]);
 echo $OUTPUT->footer();

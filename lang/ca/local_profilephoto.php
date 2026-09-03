@@ -156,6 +156,42 @@ $string['export_filtertype'] = 'Exportar per';
 $string['export_filter_session'] = 'Sessió fotogràfica';
 $string['export_filter_course'] = 'Curs';
 $string['export_filter_cohort'] = 'Cohort';
+$string['export_target'] = 'Selecció';
+$string['export_target_none'] = 'Res seleccionat';
+$string['export_search'] = 'Escriu per cercar…';
+$string['export_intro'] = 'Genera orles, llistats i descàrregues de fotos a partir d\'una cohort, un curs o una sessió fotogràfica.';
+$string['export_section_what'] = 'Què exportar';
+$string['export_section_document'] = 'Format del document';
+$string['export_section_files'] = 'Fitxers';
+$string['export_roleset'] = 'Participants del curs';
+$string['export_roleset_students'] = 'Només estudiants';
+$string['export_roleset_studentsteachers'] = 'Estudiants i professorat';
+$string['export_roleset_all'] = 'Tots els participants';
+$string['export_roleset_help'] = 'Només s\'aplica quan exportes per curs. Filtra qui s\'inclou segons el seu rol:
+
+* **Només estudiants** (per defecte): usuaris amb un rol de tipus estudiant.
+* **Estudiants i professorat**: també inclou els rols de professor i professor editor.
+* **Tots els participants**: qualsevol persona matriculada al curs.
+
+Les cohorts exporten sempre tots els seus membres.';
+$string['export_filtertype_help'] = 'Origen de l\'alumnat que s\'inclou a l\'exportació:
+
+* **Cohort**: una cohort del sistema (grups definits per administració).
+* **Curs**: l\'alumnat matriculat en un curs.
+* **Sessió fotogràfica**: una sessió de captura que hagis fet tu.';
+$string['export_target_help'] = 'Escriu per filtrar la llista. Només apareixen les cohorts, cursos o sessions als quals tens accés.';
+$string['export_filetype_help'] = 'Què es genera:
+
+* **Orla compacta**: PDF amb molts alumnes per pàgina (foto i nom).
+* **Orla en targetes**: PDF amb cada alumne en una targeta.
+* **Directori d\'alumnes**: PDF amb foto, nom i correu.
+* **Full de signatures**: PDF amb foto, nom i una casella per signar.
+* **ZIP de fotografies**: fitxer comprimit amb la foto de cada alumne per separat.';
+$string['export_filenamestrategy_help'] = 'Només s\'aplica al ZIP de fotografies. Determina com s\'anomena el fitxer de cada alumne. Si la dada triada és buida, s\'utilitza el nom d\'usuari.';
+$string['export_density_help'] = 'Només per als PDF. Ajusta quants alumnes caben per pàgina i la mida de les fotos.';
+$string['export_stage_help'] = 'Només per als PDF. Selecciona l\'etapa educativa per aplicar la plantilla i l\'estil d\'orla corresponent.';
+$string['export_language_help'] = 'Idioma dels textos fixos del document (títols i capçaleres). No afecta els noms dels alumnes.';
+$string['export_heading_help'] = 'Text opcional que apareix sota el títol del document. Per exemple, el curs acadèmic o el grup.';
 $string['export_filenamestrategy'] = 'Anomenar fitxers per';
 $string['export_filetype'] = 'Tipus d’exportació';
 $string['export_filetype_zip'] = 'ZIP de fotografies';

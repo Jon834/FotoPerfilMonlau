@@ -156,6 +156,42 @@ $string['export_filtertype'] = 'Export by';
 $string['export_filter_session'] = 'Photography session';
 $string['export_filter_course'] = 'Course';
 $string['export_filter_cohort'] = 'Cohort';
+$string['export_target'] = 'Selection';
+$string['export_target_none'] = 'Nothing selected';
+$string['export_search'] = 'Type to search…';
+$string['export_intro'] = 'Generate class photo boards, rosters and photo downloads from a cohort, a course or a photography session.';
+$string['export_section_what'] = 'What to export';
+$string['export_section_document'] = 'Document format';
+$string['export_section_files'] = 'Files';
+$string['export_roleset'] = 'Course participants';
+$string['export_roleset_students'] = 'Students only';
+$string['export_roleset_studentsteachers'] = 'Students and teachers';
+$string['export_roleset_all'] = 'All participants';
+$string['export_roleset_help'] = 'Only applies when exporting by course. Filters who is included based on their role:
+
+* **Students only** (default): users with a student-type role.
+* **Students and teachers**: also includes the teacher and editing teacher roles.
+* **All participants**: anyone enrolled in the course.
+
+Cohorts always export all of their members.';
+$string['export_filtertype_help'] = 'Source of the students included in the export:
+
+* **Cohort**: a site cohort (groups defined by administration).
+* **Course**: users enrolled in a course.
+* **Photography session**: a capture session you ran yourself.';
+$string['export_target_help'] = 'Type to filter the list. Only the cohorts, courses or sessions you have access to are shown.';
+$string['export_filetype_help'] = 'What gets generated:
+
+* **Compact orla**: PDF with many students per page (photo and name).
+* **Card orla**: PDF with each student on a card.
+* **Student directory**: PDF with photo, name and email.
+* **Signature sheet**: PDF with photo, name and a box to sign.
+* **Photo ZIP**: compressed file with each student photo separately.';
+$string['export_filenamestrategy_help'] = 'Only applies to the photo ZIP. Sets how each student file is named. If the chosen field is empty, the username is used.';
+$string['export_density_help'] = 'PDF only. Adjusts how many students fit per page and the photo size.';
+$string['export_stage_help'] = 'PDF only. Pick the education stage to apply the matching orla template and style.';
+$string['export_language_help'] = 'Language of the document fixed texts (titles and headers). Does not affect student names.';
+$string['export_heading_help'] = 'Optional text shown under the document title. For example the academic year or the group.';
 $string['export_filenamestrategy'] = 'Name files by';
 $string['export_filetype'] = 'Export format';
 $string['export_filetype_zip'] = 'Photo ZIP';
