@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_profilephoto';
-$plugin->version   = 2026090303;
+$plugin->version   = 2026090401;
 // Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
 // against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
 $plugin->requires  = 2025100600;
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.6.3 (Exportar: filtro de participantes por rol al exportar por curso)';
+$plugin->release   = '0.7.0 (Nuevo formato de exportación: Control d\'activitat, listado imprimible por cohorte)';

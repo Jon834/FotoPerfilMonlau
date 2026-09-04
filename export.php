@@ -39,7 +39,8 @@ require_login();
 
 $context = context_system::instance();
 if (!has_capability('local/profilephoto:exportsession', $context)
-        && !has_capability('local/profilephoto:exportall', $context)) {
+        && !has_capability('local/profilephoto:exportall', $context)
+        && !has_capability('local/profilephoto:exportactivity', $context)) {
     require_capability('local/profilephoto:exportsession', $context);
 }
 
@@ -87,8 +88,17 @@ $helpicons = [
     'stage' => $OUTPUT->help_icon('export_stage', 'local_profilephoto'),
     'language' => $OUTPUT->help_icon('export_language', 'local_profilephoto'),
     'heading' => $OUTPUT->help_icon('export_heading', 'local_profilephoto'),
+    'activitycohort' => $OUTPUT->help_icon('activity_cohort', 'local_profilephoto'),
+    'activitytemplate' => $OUTPUT->help_icon('activity_template', 'local_profilephoto'),
+    'activitycolumns' => $OUTPUT->help_icon('activity_columns', 'local_profilephoto'),
+    'activityorder' => $OUTPUT->help_icon('activity_order', 'local_profilephoto'),
 ];
 
+$canexportactivity = has_capability('local/profilephoto:exportactivity', $context);
+
 echo $OUTPUT->header();
-echo $OUTPUT->render_from_template('local_profilephoto/export', ['helpicons' => $helpicons]);
+echo $OUTPUT->render_from_template('local_profilephoto/export', [
+    'helpicons' => $helpicons,
+    'canexportactivity' => $canexportactivity,
+]);
 echo $OUTPUT->footer();

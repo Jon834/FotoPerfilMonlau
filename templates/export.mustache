@@ -23,15 +23,20 @@
     Context variables required for this template:
     * helpicons object - rendered Moodle help_icon() HTML keyed by field:
       filtertype, target, roleset, filetype, filenamestrategy, density,
-      stage, language, heading.
+      stage, language, heading, activitycohort, activitytemplate,
+      activitycolumns, activityorder.
+    * canexportactivity bool - whether to offer the "Control d'activitat"
+      format at all (local/profilephoto:exportactivity).
 
     Example context (json):
     {
         "helpicons": {
             "filtertype": "<a class='btn btn-link'>?</a>",
             "target": "", "roleset": "", "filetype": "", "filenamestrategy": "",
-            "density": "", "stage": "", "language": "", "heading": ""
-        }
+            "density": "", "stage": "", "language": "", "heading": "",
+            "activitycohort": "", "activitytemplate": "", "activitycolumns": "", "activityorder": ""
+        },
+        "canexportactivity": true
     }
 }}
 <div class="local-profilephoto-export" data-region="lpp-export-app">
@@ -40,6 +45,8 @@
         <p class="lpp-export-intro">{{#str}}export_intro, local_profilephoto{{/str}}</p>
 
         <div class="lpp-export-form">
+
+            <div data-mode="standard">
 
             <fieldset class="lpp-export-section">
                 <legend>{{#str}}export_section_what, local_profilephoto{{/str}}</legend>
@@ -95,6 +102,9 @@
                         <option value="directory">{{#str}}export_filetype_directory, local_profilephoto{{/str}}</option>
                         <option value="signatures">{{#str}}export_filetype_signatures, local_profilephoto{{/str}}</option>
                         <option value="zip">{{#str}}export_filetype_zip, local_profilephoto{{/str}}</option>
+                        {{#canexportactivity}}
+                        <option value="activity">{{#str}}export_filetype_activity, local_profilephoto{{/str}}</option>
+                        {{/canexportactivity}}
                     </select>
                 </div>
             </fieldset>
@@ -122,6 +132,7 @@
                             <option value="fp">{{#str}}export_stage_fp, local_profilephoto{{/str}}</option>
                             <option value="eso">{{#str}}export_stage_eso, local_profilephoto{{/str}}</option>
                             <option value="batx">{{#str}}export_stage_batx, local_profilephoto{{/str}}</option>
+                            <option value="corporate">{{#str}}export_stage_corporate, local_profilephoto{{/str}}</option>
                         </select>
                     </div>
 
@@ -168,6 +179,204 @@
                     {{#pix}}i/export, core{{/pix}} {{#str}}export_generate, local_profilephoto{{/str}}
                 </button>
             </div>
+
+            </div>
+
+            {{#canexportactivity}}
+            <div data-mode="activity" hidden>
+
+                <fieldset class="lpp-export-section">
+                    <legend>{{#str}}export_section_activity_cohort, local_profilephoto{{/str}}</legend>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
+                            <label for="lpp-activity-cohort">{{#str}}activity_cohort, local_profilephoto{{/str}}</label> {{{helpicons.activitycohort}}}
+                        </span>
+                        <select id="lpp-activity-cohort" class="form-control"></select>
+                    </div>
+                    <p id="lpp-activity-cohort-info" class="lpp-activity-cohort-info" aria-live="polite"></p>
+                </fieldset>
+
+                <fieldset class="lpp-export-section">
+                    <legend>{{#str}}export_section_activity_info, local_profilephoto{{/str}}</legend>
+
+                    <div class="lpp-grid">
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-name">{{#str}}activity_name, local_profilephoto{{/str}}</label>
+                            </span>
+                            <input id="lpp-activity-name" class="form-control" type="text"
+                                placeholder="{{#str}}activity_name_placeholder, local_profilephoto{{/str}}">
+                        </div>
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-date">{{#str}}activity_date, local_profilephoto{{/str}}</label>
+                            </span>
+                            <input id="lpp-activity-date" class="form-control" type="date">
+                        </div>
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-place">{{#str}}activity_place, local_profilephoto{{/str}}</label>
+                            </span>
+                            <input id="lpp-activity-place" class="form-control" type="text"
+                                placeholder="{{#str}}activity_place_placeholder, local_profilephoto{{/str}}">
+                        </div>
+                    </div>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
+                            <label for="lpp-activity-responsables">{{#str}}activity_responsables, local_profilephoto{{/str}}</label>
+                        </span>
+                        <input id="lpp-activity-responsables" class="form-control" type="text"
+                            placeholder="{{#str}}activity_responsables_placeholder, local_profilephoto{{/str}}">
+                    </div>
+                </fieldset>
+
+                <fieldset class="lpp-export-section">
+                    <legend>{{#str}}export_section_activity_template, local_profilephoto{{/str}}</legend>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
+                            <label for="lpp-activity-template">{{#str}}activity_template, local_profilephoto{{/str}}</label> {{{helpicons.activitytemplate}}}
+                        </span>
+                        <select id="lpp-activity-template" class="form-control">
+                            <option value="sortida" selected>{{#str}}activity_template_sortida, local_profilephoto{{/str}}</option>
+                            <option value="activitat">{{#str}}activity_template_activitat, local_profilephoto{{/str}}</option>
+                            <option value="taller">{{#str}}activity_template_taller, local_profilephoto{{/str}}</option>
+                            <option value="personalitzat">{{#str}}activity_template_personalitzat, local_profilephoto{{/str}}</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset class="lpp-export-section">
+                    <legend>
+                        {{#str}}export_section_activity_columns, local_profilephoto{{/str}} {{{helpicons.activitycolumns}}}
+                    </legend>
+
+                    <div class="lpp-activity-columns-grid" id="lpp-activity-columns-grid">
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="present" data-col-type="checkbox">
+                            {{#str}}activity_col_present, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="autoritzacio" data-col-type="checkbox">
+                            {{#str}}activity_col_autoritzacio, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="transport" data-col-type="checkbox">
+                            {{#str}}activity_col_transport, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="pagament" data-col-type="checkbox">
+                            {{#str}}activity_col_pagament, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="menu" data-col-type="checkbox">
+                            {{#str}}activity_col_menu, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="epi" data-col-type="checkbox">
+                            {{#str}}activity_col_epi, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="material" data-col-type="checkbox">
+                            {{#str}}activity_col_material, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="grupequip" data-col-type="text">
+                            {{#str}}activity_col_grupequip, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="hora" data-col-type="text">
+                            {{#str}}activity_col_hora, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="observacions" data-col-type="text" checked>
+                            {{#str}}activity_col_observacions, local_profilephoto{{/str}}
+                        </label>
+                    </div>
+
+                    <div class="lpp-activity-customcolumns" id="lpp-activity-customcolumns"></div>
+
+                    <div class="lpp-activity-addcolumn">
+                        <button type="button" id="lpp-activity-addcolumn-btn" class="btn btn-link">
+                            {{#pix}}t/add, core{{/pix}} {{#str}}activity_addcolumn, local_profilephoto{{/str}}
+                        </button>
+                    </div>
+
+                    <p id="lpp-activity-columns-warning" class="lpp-activity-columns-warning" role="alert" hidden></p>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">{{#str}}activity_reorder, local_profilephoto{{/str}}</span>
+                        <ol id="lpp-activity-order-list" class="lpp-activity-order-list"></ol>
+                    </div>
+                </fieldset>
+
+                <fieldset class="lpp-export-section">
+                    <legend>{{#str}}export_section_activity_options, local_profilephoto{{/str}}</legend>
+
+                    <div class="lpp-grid">
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-showphotos">{{#str}}activity_showphotos, local_profilephoto{{/str}}</label>
+                            </span>
+                            <select id="lpp-activity-showphotos" class="form-control">
+                                <option value="1" selected>{{#str}}activity_showphotos_yes, local_profilephoto{{/str}}</option>
+                                <option value="0">{{#str}}activity_showphotos_no, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-order">{{#str}}activity_order, local_profilephoto{{/str}}</label> {{{helpicons.activityorder}}}
+                            </span>
+                            <select id="lpp-activity-order" class="form-control">
+                                <option value="lastname" selected>{{#str}}activity_order_lastname, local_profilephoto{{/str}}</option>
+                                <option value="firstname">{{#str}}activity_order_firstname, local_profilephoto{{/str}}</option>
+                                <option value="cohort">{{#str}}activity_order_cohort, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-stage">{{#str}}export_stage, local_profilephoto{{/str}}</label> {{{helpicons.stage}}}
+                            </span>
+                            <select id="lpp-activity-stage" class="form-control">
+                                <option value="fp">{{#str}}export_stage_fp, local_profilephoto{{/str}}</option>
+                                <option value="eso">{{#str}}export_stage_eso, local_profilephoto{{/str}}</option>
+                                <option value="batx">{{#str}}export_stage_batx, local_profilephoto{{/str}}</option>
+                                <option value="corporate">{{#str}}export_stage_corporate, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-language">{{#str}}export_language, local_profilephoto{{/str}}</label> {{{helpicons.language}}}
+                            </span>
+                            <select id="lpp-activity-language" class="form-control">
+                                <option value="ca">{{#str}}export_language_ca, local_profilephoto{{/str}}</option>
+                                <option value="es">{{#str}}export_language_es, local_profilephoto{{/str}}</option>
+                                <option value="en">{{#str}}export_language_en, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="lpp-field">
+                        <label>
+                            <input type="checkbox" id="lpp-activity-showgeneralobs" checked>
+                            {{#str}}activity_showgeneralobs, local_profilephoto{{/str}}
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="lpp-export-actions lpp-activity-actions">
+                    <button type="button" id="lpp-activity-preview-btn" class="btn btn-secondary">
+                        {{#str}}activity_preview, local_profilephoto{{/str}}
+                    </button>
+                    <button type="button" id="lpp-activity-generate-btn" class="btn btn-primary">
+                        {{#pix}}i/export, core{{/pix}} {{#str}}activity_generate, local_profilephoto{{/str}}
+                    </button>
+                </div>
+
+            </div>
+            {{/canexportactivity}}
         </div>
 
         <p id="lpp-export-status" class="lpp-export-status" role="status" aria-live="polite"></p>

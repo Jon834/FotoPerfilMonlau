@@ -33,6 +33,7 @@ $string['profilephoto:replaceexisting'] = 'Replace an already existing profile p
 $string['profilephoto:viewidentifiers'] = 'View personal identifiers (email, idnumber, username)';
 $string['profilephoto:viewallusers'] = 'View and photograph students site-wide, with no scope restriction';
 $string['profilephoto:exportsession'] = 'Export photos from a session of your own';
+$string['profilephoto:exportactivity'] = 'Generate an Activity control sheet (printable cohort roster)';
 $string['profilephoto:exportall'] = 'Export photos from any session';
 $string['profilephoto:managesessions'] = 'Manage photo sessions';
 $string['profilephoto:configure'] = 'Configure the profile photo capture plugin';
@@ -186,7 +187,8 @@ $string['export_filetype_help'] = 'What gets generated:
 * **Card orla**: PDF with each student on a card.
 * **Student directory**: PDF with photo, name and email.
 * **Signature sheet**: PDF with photo, name and a box to sign.
-* **Photo ZIP**: compressed file with each student photo separately.';
+* **Photo ZIP**: compressed file with each student photo separately.
+* **Activity control sheet**: landscape PDF for outings, workshops and activities, with configurable columns (attendance, authorisation, transport...) to mark by hand.';
 $string['export_filenamestrategy_help'] = 'Only applies to the photo ZIP. Sets how each student file is named. If the chosen field is empty, the username is used.';
 $string['export_density_help'] = 'PDF only. Adjusts how many students fit per page and the photo size.';
 $string['export_stage_help'] = 'PDF only. Pick the education stage to apply the matching orla template and style.';
@@ -208,6 +210,7 @@ $string['export_stage'] = 'Stage';
 $string['export_stage_fp'] = 'Vocational';
 $string['export_stage_eso'] = 'Secondary';
 $string['export_stage_batx'] = 'Upper secondary';
+$string['export_stage_corporate'] = 'Corporate';
 $string['export_language'] = 'Language';
 $string['export_language_ca'] = 'Catalan';
 $string['export_language_es'] = 'Spanish';
@@ -223,6 +226,67 @@ $string['error_exportexpired'] = 'This download link has expired or has already 
 $string['error_exporttoobig'] = 'The selection exceeds the maximum of {$a} students for one export. Narrow the filter (a smaller course, cohort or session).';
 $string['error_invalidexportfilter'] = 'Invalid export filter.';
 $string['error_invalidstatus'] = 'Invalid queue status.';
+$string['error_activitycohortnotfound'] = 'The selected cohort does not exist.';
+$string['error_activitytoomanycolumns'] = 'You have selected too many columns to generate a readable document. Reduce the number of columns or remove one (maximum {$a} beyond No. and Student).';
+$string['error_activitytoomanycustomcolumns'] = 'Only up to {$a} custom columns can be added.';
+$string['error_activityinvalidcolumn'] = 'One of the selected columns is not valid.';
+
+$string['export_filetype_activity'] = 'Activity control sheet';
+$string['export_section_activity_cohort'] = 'Cohort';
+$string['export_section_activity_info'] = 'Activity';
+$string['export_section_activity_template'] = 'Template';
+$string['export_section_activity_columns'] = 'Columns';
+$string['export_section_activity_options'] = 'Options';
+
+$string['activity_cohort'] = 'Cohort';
+$string['activity_cohort_help'] = 'A site cohort, its current members are read for the roster. The PDF always reflects the cohort\'s current membership: no list of your own is saved.';
+$string['activity_cohort_membercount'] = '{$a} students';
+$string['activity_name'] = 'Activity name';
+$string['activity_name_placeholder'] = 'e.g. CosmoCaixa visit';
+$string['activity_date'] = 'Date';
+$string['activity_place'] = 'Place';
+$string['activity_place_placeholder'] = 'e.g. Barcelona';
+$string['activity_responsables'] = 'Staff in charge';
+$string['activity_responsables_placeholder'] = 'e.g. Jonatan Núñez, Marta Solé';
+$string['activity_template'] = 'Template';
+$string['activity_template_help'] = 'Pre-selects a common set of columns. You can adjust it freely afterwards; "Custom" leaves the current selection untouched.';
+$string['activity_template_sortida'] = 'Outing';
+$string['activity_template_activitat'] = 'Activity';
+$string['activity_template_taller'] = 'Workshop';
+$string['activity_template_personalitzat'] = 'Custom';
+$string['activity_columns'] = 'Columns';
+$string['activity_columns_help'] = 'Choose the columns shown in the PDF, beyond No. and Student (always present). Maximum {$a} extra columns, to keep the document readable.';
+$string['activity_col_present'] = 'Present';
+$string['activity_col_autoritzacio'] = 'Authorisation';
+$string['activity_col_transport'] = 'Transport';
+$string['activity_col_pagament'] = 'Payment';
+$string['activity_col_menu'] = 'Menu';
+$string['activity_col_epi'] = 'PPE';
+$string['activity_col_material'] = 'Material';
+$string['activity_col_grupequip'] = 'Group / Team';
+$string['activity_col_hora'] = 'Time';
+$string['activity_col_observacions'] = 'Notes';
+$string['activity_addcolumn'] = 'Add column';
+$string['activity_customcolumn_name'] = 'Name';
+$string['activity_customcolumn_type'] = 'Type';
+$string['activity_customcolumn_type_checkbox'] = 'Checkbox';
+$string['activity_customcolumn_type_text'] = 'Short text';
+$string['activity_customcolumn_remove'] = 'Remove this column';
+$string['activity_customcolumn_placeholder'] = 'e.g. T-shirt';
+$string['activity_reorder'] = 'Column order';
+$string['activity_showphotos'] = 'Show photo / avatar';
+$string['activity_showphotos_yes'] = 'Yes';
+$string['activity_showphotos_no'] = 'No';
+$string['activity_showgeneralobs'] = 'Show general notes box';
+$string['activity_order'] = 'Sort students by';
+$string['activity_order_help'] = 'Order students appear in on the PDF. "Cohort order" keeps the order returned by the system, without sorting.';
+$string['activity_order_lastname'] = 'Surname / First name';
+$string['activity_order_firstname'] = 'First name / Surname';
+$string['activity_order_cohort'] = 'Cohort order';
+$string['activity_preview'] = 'Preview';
+$string['activity_generate'] = 'Generate PDF';
+$string['activity_generating'] = 'Generating the PDF…';
+$string['activity_nocohort'] = 'Select a cohort to continue.';
 
 $string['privacy:metadata:session'] = 'Data about each photography session opened by an operator.';
 $string['privacy:metadata:session:operatorid'] = 'The user who opened the session.';

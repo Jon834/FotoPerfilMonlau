@@ -60,7 +60,7 @@ class create_export extends external_api {
             'exporttype' => new external_value(PARAM_ALPHANUM, 'zip | orla | grid6 | directory | signatures',
                 VALUE_DEFAULT, 'zip'),
             'language' => new external_value(PARAM_ALPHA, 'ca | es | en', VALUE_DEFAULT, 'ca'),
-            'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx', VALUE_DEFAULT, 'fp'),
+            'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx | corporate', VALUE_DEFAULT, 'fp'),
             'heading' => new external_value(PARAM_TEXT, 'Optional heading text', VALUE_DEFAULT, ''),
             'density' => new external_value(PARAM_ALPHA, 'compact | normal | large', VALUE_DEFAULT, 'normal'),
             'roleset' => new external_value(PARAM_ALPHA,

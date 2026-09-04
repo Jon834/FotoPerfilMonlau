@@ -517,3 +517,95 @@ sepa exactamente qué falta:
   (ya existente para navegadores sin cámara) como mecanismo determinista
   de captura en los tests, tal como pide la sección 27 del encargo. Ese
   flag no tiene efecto fuera de una ejecución Behat real.
+
+## 13. Entrega 6 — Control d'activitat (llistat imprimible per cohort)
+
+Nuevo formato de exportación pensado para salidas, talleres y actividades:
+un PDF A4 horizontal con los miembros actuales de una cohorte y columnas
+configurables (asistencia, autorización, transporte...) para marcar a
+bolígrafo sobre papel. Se integra como un modo más de `export.php`, sin
+tocar el comportamiento de los formatos existentes.
+
+### 13.1. Flujo de datos
+
+`get_activity_cohorts.php` lista las cohortes visibles; al elegir una,
+`get_activity_cohort_info.php` resuelve su nombre y recuento actual de
+miembros; `create_activity_export.php` valida cohorte, permisos y columnas,
+resuelve los miembros con `cohort_get_members()` (API core de
+`cohort/lib.php`, no SQL directo) y delega el renderizado a
+`activity_pdf_builder::build()`. El token de descarga resultante se guarda
+en la misma cache `local_profilephoto/exports` y se sirve por el mismo
+`export.php?token=...` que ya usan el ZIP y los demás PDF - no hay
+endpoint de descarga nuevo.
+
+### 13.2. Modelo de permisos
+
+`local/profilephoto:exportactivity` (sistema) habilita el formato en sí.
+El **alcance de cohortes visibles** no usa una capability propia paralela:
+reutiliza `moodle/cohort:view` en el contexto propio de cada cohorte
+(categoría o sistema), la misma que ya usa el núcleo de Moodle para decidir
+qué cohortes puede ver cada usuario. Un gestor de categoría solo ve las
+cohortes de su categoría ("cohorts pròpies"); un manager con
+`moodle/cohort:view` a nivel de sistema las ve todas ("totes les
+cohorts") - sin necesidad de una tabla de asignación cohorte↔operador como
+la que 12.5 identificó como pendiente para el resto del plugin.
+
+### 13.3. `activity_pdf_builder`: por qué es una clase aparte
+
+`pdf_builder` siempre construye un `TCPDF` portrait ('P') de 210mm de
+ancho; este formato necesita landscape ('L') a 297mm, cabecera compacta y
+una tabla de anchos dinámicos - lo bastante distinto como para que
+ampliar `pdf_builder` con un quinto `$layout` hubiera significado
+ramificar buena parte de sus métodos privados por orientación. En su
+lugar, `activity_pdf_builder` es una clase independiente que duplica un
+puñado de helpers pequeños (avatar circular/iniciales, paleta de marca,
+resolución de logo, sanitizado de nombre de fichero): sin una instancia
+Moodle real para correr `tests/pdf_builder_test.php` tras un refactor,
+duplicar ~150 líneas resultaba más seguro que arriesgar una regresión
+visual en los cuatro formatos ya en producción.
+
+### 13.4. Columnas: cálculo de anchos y límite de 6
+
+`Núm.` (10mm) y `Alumne` (mínimo ~56mm) son fijas. Cada columna extra
+(estándar o personalizada) tiene un ancho fijo por tipo; la columna
+marcada como absorbente (`Observacions` si está seleccionada, si no
+`Alumne`) se lleva el resto del ancho disponible. El máximo de 6 columnas
+adicionales (`activity_pdf_builder::MAX_EXTRA_COLUMNS`) se valida tanto en
+`amd/src/export.js` (deshabilita más checkboxes y el botón "Afegir
+columna" al llegar al límite) como en `create_activity_export.php`
+(excepción si se supera, por si alguien evita el JS) y de nuevo dentro de
+`activity_pdf_builder::build()` como última línea de defensa.
+
+### 13.5. Altura de fila y paginación
+
+La altura de fila se calcula como `alto_disponible / nº_alumnes`, acotada
+entre un mínimo y un máximo legibles, con el mismo patrón de paginación
+manual (`SetAutoPageBreak(false)`, cálculo de filas por página) que ya
+usan `render_grid`/`render_directory`/`render_signatures` en
+`pdf_builder.php`. Cohortes de ~25-30 alumnos deberían caber en una
+página; por encima de eso, o con muchas columnas, el documento pagina en
+vez de encoger por debajo del mínimo legible - la legibilidad tiene
+prioridad explícita sobre "una página" en el encargo de esta entrega.
+
+### 13.6. Nada se persiste
+
+Actividad (nombre, fecha, lugar, responsables), plantilla elegida y
+columnas configuradas viven solo en la petición que genera el PDF - no hay
+tabla nueva ni cambios en `db/upgrade.php`. Si en el futuro se decide
+ofrecer plantillas guardadas por operador, el punto de extensión natural
+es una tabla `local_profilephoto_activity_template` (operatorid, nombre,
+columnas en JSON) leída/escrita solo desde `create_activity_export.php` y
+la nueva pantalla, sin afectar a `activity_pdf_builder` ni al resto del
+plugin.
+
+### 13.7. Recortes conscientes de esta entrega
+
+* **Reordenar columnas con botones ↑/↓**, no drag & drop - más simple de
+  verificar sin una instancia Moodle real en la que probar interacciones
+  de arrastre, y accesible por teclado sin JS adicional.
+* **Sin plantillas guardadas** (ver 13.6): cada generación parte de cero.
+* **`amd/build/export.min.js` es de nuevo un puerto manual** (ver la nota
+  general sobre módulos AMD al principio de este documento): se amplió a
+  mano en paralelo a `amd/src/export.js` y se verificó con un smoke test
+  funcional en Node+jsdom (fuera de este repositorio) antes de la entrega,
+  no con el `grunt amd` real de Moodle core.

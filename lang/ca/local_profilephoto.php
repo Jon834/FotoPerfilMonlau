@@ -34,6 +34,7 @@ $string['profilephoto:viewidentifiers'] = 'Veure identificadors personals (corre
 $string['profilephoto:viewallusers'] = 'Veure i fotografiar alumnes de tot el sistema, sense restricció d\'àmbit';
 $string['profilephoto:exportsession'] = 'Exportar les fotografies d\'una sessió pròpia';
 $string['profilephoto:exportall'] = 'Exportar fotografies de qualsevol sessió';
+$string['profilephoto:exportactivity'] = 'Generar un Control d\'activitat (llistat imprimible d\'una cohort)';
 $string['profilephoto:managesessions'] = 'Gestionar sessions fotogràfiques';
 $string['profilephoto:configure'] = 'Configurar el connector de captura de fotografies';
 $string['profilephoto:viewlogs'] = 'Veure el registre d\'auditoria de fotografies';
@@ -186,7 +187,8 @@ $string['export_filetype_help'] = 'Què es genera:
 * **Orla en targetes**: PDF amb cada alumne en una targeta.
 * **Directori d\'alumnes**: PDF amb foto, nom i correu.
 * **Full de signatures**: PDF amb foto, nom i una casella per signar.
-* **ZIP de fotografies**: fitxer comprimit amb la foto de cada alumne per separat.';
+* **ZIP de fotografies**: fitxer comprimit amb la foto de cada alumne per separat.
+* **Control d\'activitat**: PDF horitzontal per a sortides, tallers i activitats, amb columnes configurables (assistència, autorització, transport...) per marcar amb bolígraf.';
 $string['export_filenamestrategy_help'] = 'Només s\'aplica al ZIP de fotografies. Determina com s\'anomena el fitxer de cada alumne. Si la dada triada és buida, s\'utilitza el nom d\'usuari.';
 $string['export_density_help'] = 'Només per als PDF. Ajusta quants alumnes caben per pàgina i la mida de les fotos.';
 $string['export_stage_help'] = 'Només per als PDF. Selecciona l\'etapa educativa per aplicar la plantilla i l\'estil d\'orla corresponent.';
@@ -208,6 +210,7 @@ $string['export_stage'] = 'Etapa';
 $string['export_stage_fp'] = 'FP';
 $string['export_stage_eso'] = 'ESO';
 $string['export_stage_batx'] = 'Batxillerat';
+$string['export_stage_corporate'] = 'Corporatiu';
 $string['export_language'] = 'Idioma';
 $string['export_language_ca'] = 'Català';
 $string['export_language_es'] = 'Espanyol';
@@ -223,6 +226,67 @@ $string['error_exportexpired'] = 'Aquest enllaç de descàrrega ha caducat o ja 
 $string['error_exporttoobig'] = 'La selecció supera el màxim de {$a} alumnes per a una exportació. Acota el filtre (curs, cohort o sessió més petits).';
 $string['error_invalidexportfilter'] = 'Filtre d\'exportació no vàlid.';
 $string['error_invalidstatus'] = 'Estat de cua no vàlid.';
+$string['error_activitycohortnotfound'] = 'La cohort seleccionada no existeix.';
+$string['error_activitytoomanycolumns'] = 'Has seleccionat massa columnes per generar un document llegible. Redueix el nombre de columnes o elimina alguna columna (màxim {$a} a més de Núm. i Alumne).';
+$string['error_activitytoomanycustomcolumns'] = 'Només es poden afegir fins a {$a} columnes personalitzades.';
+$string['error_activityinvalidcolumn'] = 'Alguna de les columnes seleccionades no és vàlida.';
+
+$string['export_filetype_activity'] = 'Control d’activitat';
+$string['export_section_activity_cohort'] = 'Cohort';
+$string['export_section_activity_info'] = 'Activitat';
+$string['export_section_activity_template'] = 'Plantilla';
+$string['export_section_activity_columns'] = 'Columnes';
+$string['export_section_activity_options'] = 'Opcions';
+
+$string['activity_cohort'] = 'Cohort';
+$string['activity_cohort_help'] = 'Cohort del sistema de la qual s\'obtenen els membres actuals per al llistat. El PDF sempre reflecteix la composició actual de la cohort: no es desa cap llista pròpia.';
+$string['activity_cohort_membercount'] = '{$a} alumnes';
+$string['activity_name'] = 'Nom de l’activitat';
+$string['activity_name_placeholder'] = 'p. ex. Visita CosmoCaixa';
+$string['activity_date'] = 'Data';
+$string['activity_place'] = 'Lloc';
+$string['activity_place_placeholder'] = 'p. ex. Barcelona';
+$string['activity_responsables'] = 'Responsables';
+$string['activity_responsables_placeholder'] = 'p. ex. Jonatan Núñez, Marta Solé';
+$string['activity_template'] = 'Plantilla';
+$string['activity_template_help'] = 'Preselecciona un conjunt habitual de columnes. Pots ajustar-lo lliurement després de triar-la; «Personalitzat» no modifica la selecció actual.';
+$string['activity_template_sortida'] = 'Sortida';
+$string['activity_template_activitat'] = 'Activitat';
+$string['activity_template_taller'] = 'Taller';
+$string['activity_template_personalitzat'] = 'Personalitzat';
+$string['activity_columns'] = 'Columnes';
+$string['activity_columns_help'] = 'Tria les columnes que apareixeran al PDF, a més de Núm. i Alumne (sempre presents). Màxim {$a} columnes addicionals perquè el document es mantingui llegible.';
+$string['activity_col_present'] = 'Present';
+$string['activity_col_autoritzacio'] = 'Autorització';
+$string['activity_col_transport'] = 'Transport';
+$string['activity_col_pagament'] = 'Pagament';
+$string['activity_col_menu'] = 'Menú';
+$string['activity_col_epi'] = 'EPI';
+$string['activity_col_material'] = 'Material';
+$string['activity_col_grupequip'] = 'Grup / Equip';
+$string['activity_col_hora'] = 'Hora';
+$string['activity_col_observacions'] = 'Observacions';
+$string['activity_addcolumn'] = 'Afegir columna';
+$string['activity_customcolumn_name'] = 'Nom';
+$string['activity_customcolumn_type'] = 'Tipus';
+$string['activity_customcolumn_type_checkbox'] = 'Casella de verificació';
+$string['activity_customcolumn_type_text'] = 'Text curt';
+$string['activity_customcolumn_remove'] = 'Elimina aquesta columna';
+$string['activity_customcolumn_placeholder'] = 'p. ex. Samarreta';
+$string['activity_reorder'] = 'Ordre de les columnes';
+$string['activity_showphotos'] = 'Mostrar fotografia / avatar';
+$string['activity_showphotos_yes'] = 'Sí';
+$string['activity_showphotos_no'] = 'No';
+$string['activity_showgeneralobs'] = 'Mostrar observacions generals';
+$string['activity_order'] = 'Ordenar alumnes';
+$string['activity_order_help'] = 'Ordre en què apareixen els alumnes al PDF. «Ordre de la cohort» manté l\'ordre retornat pel sistema, sense reordenar.';
+$string['activity_order_lastname'] = 'Cognoms / Nom';
+$string['activity_order_firstname'] = 'Nom / Cognoms';
+$string['activity_order_cohort'] = 'Ordre de la cohort';
+$string['activity_preview'] = 'Vista prèvia';
+$string['activity_generate'] = 'Generar PDF';
+$string['activity_generating'] = 'Generant el PDF…';
+$string['activity_nocohort'] = 'Selecciona una cohort per continuar.';
 
 $string['privacy:metadata:session'] = 'Dades de cada sessió fotogràfica oberta per un operador.';
 $string['privacy:metadata:session:operatorid'] = 'L\'usuari que va obrir la sessió.';

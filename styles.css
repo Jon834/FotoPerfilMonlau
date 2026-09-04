@@ -440,3 +440,96 @@
     font-weight: 600;
     margin-top: 1rem;
 }
+
+.lpp-activity-cohort-info {
+    margin: 0.35rem 0 0;
+    font-weight: 600;
+    color: var(--success, #2e7d32);
+    min-height: 1.2rem;
+}
+
+.lpp-activity-columns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.lpp-activity-col-check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.lpp-activity-customcolumns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.lpp-activity-customcolumn-row {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.lpp-activity-customcolumn-remove {
+    color: var(--danger, #b02a37);
+}
+
+.lpp-activity-addcolumn {
+    margin-bottom: 0.75rem;
+}
+
+.lpp-activity-columns-warning {
+    background: rgba(176, 42, 55, 0.08);
+    border: 1px solid rgba(176, 42, 55, 0.25);
+    color: var(--danger, #b02a37);
+    border-radius: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    font-weight: 600;
+    margin: 0 0 0.9rem;
+}
+
+.lpp-activity-order-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.35rem;
+    overflow: hidden;
+}
+
+.lpp-activity-order-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+}
+
+.lpp-activity-order-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lpp-activity-order-label {
+    font-weight: 500;
+}
+
+.lpp-activity-order-controls {
+    display: flex;
+    gap: 0.15rem;
+}
+
+.lpp-activity-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.lpp-activity-actions .btn {
+    flex: 1;
+}

@@ -19,11 +19,11 @@ namespace local_profilephoto\task;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Deletes export ZIPs left over in the temp area past their retention
- * period (encargo section 15: "eliminar los ZIP temporales
- * automáticamente"). Safety net for exports that were built but never
- * downloaded - export.php itself deletes its file immediately via
- * send_temp_file() on the normal successful-download path.
+ * Deletes export files (ZIP and PDF) left over in the temp area past
+ * their retention period (encargo section 15: "eliminar los ZIP
+ * temporales automáticamente"). Safety net for exports that were built
+ * but never downloaded - export.php itself deletes its file immediately
+ * via send_temp_file() on the normal successful-download path.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -48,7 +48,7 @@ class cleanup_exports extends \core\task\scheduled_task {
         $cutoff = time() - ($retentionminutes * 60);
 
         $tempdir = make_temp_directory('local_profilephoto/exports');
-        $files = glob($tempdir . '/*.zip');
+        $files = array_merge(glob($tempdir . '/*.zip') ?: [], glob($tempdir . '/*.pdf') ?: []);
         if (!$files) {
             return;
         }

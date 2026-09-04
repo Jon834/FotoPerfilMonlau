@@ -104,6 +104,15 @@ $capabilities = [
         ],
     ],
 
+    'local/profilephoto:exportactivity' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'riskbitmask' => RISK_PERSONAL,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
     'local/profilephoto:managesessions' => [
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,

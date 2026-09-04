@@ -102,6 +102,30 @@ $functions = [
         'ajax'        => true,
         'capabilities' => 'local/profilephoto:exportsession,local/profilephoto:exportall',
     ],
+    'local_profilephoto_get_activity_cohorts' => [
+        'classname'   => 'local_profilephoto\external\get_activity_cohorts',
+        'methodname'  => 'execute',
+        'description' => 'List the cohorts the operator may use for a Control d\'activitat export.',
+        'type'        => 'read',
+        'ajax'        => true,
+        'capabilities' => 'local/profilephoto:exportactivity',
+    ],
+    'local_profilephoto_get_activity_cohort_info' => [
+        'classname'   => 'local_profilephoto\external\get_activity_cohort_info',
+        'methodname'  => 'execute',
+        'description' => 'Resolve a cohort\'s name and current member count.',
+        'type'        => 'read',
+        'ajax'        => true,
+        'capabilities' => 'local/profilephoto:exportactivity',
+    ],
+    'local_profilephoto_create_activity_export' => [
+        'classname'   => 'local_profilephoto\external\create_activity_export',
+        'methodname'  => 'execute',
+        'description' => 'Build a Control d\'activitat PDF roster for a cohort.',
+        'type'        => 'write',
+        'ajax'        => true,
+        'capabilities' => 'local/profilephoto:exportactivity',
+    ],
 ];
 
 $services = [
@@ -116,6 +140,9 @@ $services = [
             'local_profilephoto_get_session_options',
             'local_profilephoto_get_export_options',
             'local_profilephoto_create_export',
+            'local_profilephoto_get_activity_cohorts',
+            'local_profilephoto_get_activity_cohort_info',
+            'local_profilephoto_create_activity_export',
         ],
         'restrictedusers' => 0,
         'enabled' => 1,

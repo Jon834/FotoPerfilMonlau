@@ -65,7 +65,7 @@ class pdf_builder {
         }
 
         $language = in_array($options['language'] ?? 'ca', ['ca', 'es', 'en'], true) ? $options['language'] : 'ca';
-        $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx'], true) ? $options['stage'] : 'fp';
+        $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx', 'corporate'], true) ? $options['stage'] : 'fp';
         $density = in_array($options['density'] ?? 'normal', ['compact', 'normal', 'large'], true)
             ? $options['density'] : 'normal';
         $heading = trim((string) ($options['heading'] ?? ''));
@@ -473,6 +473,9 @@ class pdf_builder {
         if ($stage === 'batx') {
             return ['r' => 116, 'g' => 161, 'b' => 47];
         }
+        if ($stage === 'corporate') {
+            return ['r' => 0, 'g' => 0, 'b' => 0];
+        }
         return ['r' => 12, 'g' => 80, 'b' => 160];
     }
 
@@ -487,6 +490,7 @@ class pdf_builder {
             'fp' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_fp.jpg',
             'eso' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_eso.jpg',
             'batx' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
+            'corporate' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
         ];
 
         $url = $urls[$stage] ?? $urls['fp'];

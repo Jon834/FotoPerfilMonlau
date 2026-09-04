@@ -14,7 +14,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Export filter screen (encargo section 15).
+ * Export filter screen (encargo section 15), plus the "Control d'activitat"
+ * mode (cohort roster PDF for outings/activities).
  *
  * @module     local_profilephoto/export
  * @copyright  2026 Centre Educatiu
@@ -44,6 +45,40 @@ const SELECTORS = {
     SECTION_ZIP: '[data-section="zip"]',
     GENERATE_BTN: '#lpp-export-btn',
     STATUS: '#lpp-export-status',
+    MODE_STANDARD: '[data-mode="standard"]',
+    MODE_ACTIVITY: '[data-mode="activity"]',
+    ACTIVITY_COHORT: '#lpp-activity-cohort',
+    ACTIVITY_COHORT_INFO: '#lpp-activity-cohort-info',
+    ACTIVITY_NAME: '#lpp-activity-name',
+    ACTIVITY_DATE: '#lpp-activity-date',
+    ACTIVITY_PLACE: '#lpp-activity-place',
+    ACTIVITY_RESPONSABLES: '#lpp-activity-responsables',
+    ACTIVITY_TEMPLATE: '#lpp-activity-template',
+    ACTIVITY_COLUMNS_GRID: '#lpp-activity-columns-grid',
+    ACTIVITY_CUSTOMCOLUMNS: '#lpp-activity-customcolumns',
+    ACTIVITY_ADDCOLUMN_BTN: '#lpp-activity-addcolumn-btn',
+    ACTIVITY_COLUMNS_WARNING: '#lpp-activity-columns-warning',
+    ACTIVITY_ORDER_LIST: '#lpp-activity-order-list',
+    ACTIVITY_SHOWPHOTOS: '#lpp-activity-showphotos',
+    ACTIVITY_SHOWGENERALOBS: '#lpp-activity-showgeneralobs',
+    ACTIVITY_ORDER: '#lpp-activity-order',
+    ACTIVITY_STAGE: '#lpp-activity-stage',
+    ACTIVITY_LANGUAGE: '#lpp-activity-language',
+    ACTIVITY_PREVIEW_BTN: '#lpp-activity-preview-btn',
+    ACTIVITY_GENERATE_BTN: '#lpp-activity-generate-btn',
+};
+
+/** @var {number} Maximum extra columns (beyond Núm./Alumne), mirrors activity_pdf_builder::MAX_EXTRA_COLUMNS. */
+const MAX_EXTRA_COLUMNS = 6;
+
+/** @var {number} Maximum custom (user-defined) columns. */
+const MAX_CUSTOM_COLUMNS = 4;
+
+/** @var {Object} Quick-template column presets. "personalitzat" leaves the current selection untouched. */
+const COLUMN_TEMPLATES = {
+    sortida: ['present', 'autoritzacio', 'transport', 'menu', 'observacions'],
+    activitat: ['present', 'material', 'observacions'],
+    taller: ['present', 'epi', 'grupequip', 'material', 'observacions'],
 };
 
 /**
@@ -68,6 +103,32 @@ const createExport = (filtertype, filterid, filenamestrategy, exporttype, langua
             exporttype, language, stage, heading, density, roleset,
         },
     }])[0];
+
+/**
+ * @return {Promise}
+ */
+const getActivityCohorts = () => Ajax.call([{
+    methodname: 'local_profilephoto_get_activity_cohorts',
+    args: {},
+}])[0];
+
+/**
+ * @param {number} cohortid
+ * @return {Promise}
+ */
+const getActivityCohortInfo = (cohortid) => Ajax.call([{
+    methodname: 'local_profilephoto_get_activity_cohort_info',
+    args: {cohortid},
+}])[0];
+
+/**
+ * @param {Object} args
+ * @return {Promise}
+ */
+const createActivityExport = (args) => Ajax.call([{
+    methodname: 'local_profilephoto_create_activity_export',
+    args,
+}])[0];
 
 /**
  * @param {HTMLSelectElement} selectEl
@@ -99,6 +160,17 @@ const makeSearchable = (selector) => getString('export_search', 'local_profileph
  * Initialise the export screen.
  */
 export const init = () => {
+    initStandardMode();
+    initModeToggle();
+    if (document.querySelector(SELECTORS.MODE_ACTIVITY)) {
+        initActivityMode();
+    }
+};
+
+/**
+ * Wire up the pre-existing ZIP/PDF export flow (sessions, courses, cohorts).
+ */
+const initStandardMode = () => {
     const filterType = document.querySelector(SELECTORS.FILTER_TYPE);
     const sessionSelect = document.querySelector(SELECTORS.SESSION);
     const courseSelect = document.querySelector(SELECTORS.COURSE);
@@ -189,6 +261,333 @@ export const init = () => {
             generateBtn.disabled = false;
         });
     });
+};
+
+/**
+ * Toggle between the pre-existing form and the "Control d'activitat" mode
+ * based on the shared #lpp-export-type select.
+ */
+const initModeToggle = () => {
+    const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
+    const standardBlocks = document.querySelectorAll(SELECTORS.MODE_STANDARD);
+    const activityBlocks = document.querySelectorAll(SELECTORS.MODE_ACTIVITY);
+
+    const update = () => {
+        const isActivity = exportType.value === 'activity';
+        standardBlocks.forEach((el) => {
+            el.hidden = isActivity;
+        });
+        activityBlocks.forEach((el) => {
+            el.hidden = !isActivity;
+        });
+    };
+
+    exportType.addEventListener('change', update);
+    update();
+};
+
+/**
+ * Wire up the "Control d'activitat" screen: cohort search, template presets,
+ * configurable/custom columns with manual reordering, and the two
+ * (preview/generate) actions.
+ */
+const initActivityMode = () => {
+    const cohortSelect = document.querySelector(SELECTORS.ACTIVITY_COHORT);
+    const cohortInfo = document.querySelector(SELECTORS.ACTIVITY_COHORT_INFO);
+    const template = document.querySelector(SELECTORS.ACTIVITY_TEMPLATE);
+    const columnsGrid = document.querySelector(SELECTORS.ACTIVITY_COLUMNS_GRID);
+    const customColumnsEl = document.querySelector(SELECTORS.ACTIVITY_CUSTOMCOLUMNS);
+    const addColumnBtn = document.querySelector(SELECTORS.ACTIVITY_ADDCOLUMN_BTN);
+    const columnsWarning = document.querySelector(SELECTORS.ACTIVITY_COLUMNS_WARNING);
+    const orderList = document.querySelector(SELECTORS.ACTIVITY_ORDER_LIST);
+    const previewBtn = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_BTN);
+    const generateBtn = document.querySelector(SELECTORS.ACTIVITY_GENERATE_BTN);
+    const status = document.querySelector(SELECTORS.STATUS);
+
+    // Ordered list of extra column keys (beyond Núm./Alumne). Custom columns'
+    // name/type live in customMeta, keyed by the same generated key.
+    const state = {
+        orderedKeys: [],
+        customMeta: {},
+        customCounter: 0,
+    };
+
+    const standardCheckboxes = () => Array.from(columnsGrid.querySelectorAll('input[type="checkbox"]'));
+
+    const standardLabel = (key) => {
+        const checkbox = columnsGrid.querySelector(`[data-col-key="${key}"]`);
+        return checkbox ? checkbox.closest('label').textContent.trim() : key;
+    };
+
+    const columnType = (key) => {
+        if (state.customMeta[key]) {
+            return state.customMeta[key].type;
+        }
+        const checkbox = columnsGrid.querySelector(`[data-col-key="${key}"]`);
+        return checkbox ? checkbox.dataset.colType : 'checkbox';
+    };
+
+    const columnLabel = (key) => (state.customMeta[key] ? (state.customMeta[key].label || '') : standardLabel(key));
+
+    /**
+     * Disable further additions once the limit is reached; keep everything
+     * already selected untouched. Purely defensive - the state is always
+     * kept at/under the limit by construction.
+     */
+    const enforceColumnLimit = () => {
+        const atLimit = state.orderedKeys.length >= MAX_EXTRA_COLUMNS;
+        columnsWarning.hidden = state.orderedKeys.length <= MAX_EXTRA_COLUMNS;
+        standardCheckboxes().forEach((checkbox) => {
+            if (!checkbox.checked) {
+                checkbox.disabled = atLimit;
+            }
+        });
+        addColumnBtn.disabled = atLimit || Object.keys(state.customMeta).length >= MAX_CUSTOM_COLUMNS;
+    };
+
+    const renderOrderList = () => {
+        orderList.innerHTML = '';
+        state.orderedKeys.forEach((key, index) => {
+            const li = document.createElement('li');
+            li.className = 'lpp-activity-order-item';
+
+            const label = document.createElement('span');
+            label.className = 'lpp-activity-order-label';
+            label.textContent = columnLabel(key) || key;
+            li.appendChild(label);
+
+            const controls = document.createElement('span');
+            controls.className = 'lpp-activity-order-controls';
+
+            const upBtn = document.createElement('button');
+            upBtn.type = 'button';
+            upBtn.className = 'btn btn-sm btn-link';
+            upBtn.textContent = '↑';
+            upBtn.disabled = index === 0;
+            upBtn.addEventListener('click', () => moveColumn(key, -1));
+            controls.appendChild(upBtn);
+
+            const downBtn = document.createElement('button');
+            downBtn.type = 'button';
+            downBtn.className = 'btn btn-sm btn-link';
+            downBtn.textContent = '↓';
+            downBtn.disabled = index === state.orderedKeys.length - 1;
+            downBtn.addEventListener('click', () => moveColumn(key, 1));
+            controls.appendChild(downBtn);
+
+            li.appendChild(controls);
+            orderList.appendChild(li);
+        });
+    };
+
+    const moveColumn = (key, delta) => {
+        const index = state.orderedKeys.indexOf(key);
+        const target = index + delta;
+        if (index === -1 || target < 0 || target >= state.orderedKeys.length) {
+            return;
+        }
+        [state.orderedKeys[index], state.orderedKeys[target]] = [state.orderedKeys[target], state.orderedKeys[index]];
+        renderOrderList();
+    };
+
+    const syncFromCheckboxes = () => {
+        standardCheckboxes().forEach((checkbox) => {
+            const key = checkbox.dataset.colKey;
+            const present = state.orderedKeys.includes(key);
+            if (checkbox.checked && !present) {
+                state.orderedKeys.push(key);
+            } else if (!checkbox.checked && present) {
+                state.orderedKeys = state.orderedKeys.filter((k) => k !== key);
+            }
+        });
+        enforceColumnLimit();
+        renderOrderList();
+    };
+
+    const renderCustomColumnRow = (key) => {
+        getString('activity_customcolumn_name', 'local_profilephoto').then((nameLabel) => {
+            const row = document.createElement('div');
+            row.className = 'lpp-activity-customcolumn-row';
+            row.dataset.key = key;
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.className = 'form-control';
+            nameInput.setAttribute('aria-label', nameLabel);
+            nameInput.maxLength = 40;
+            nameInput.addEventListener('input', () => {
+                state.customMeta[key].label = nameInput.value.trim();
+                renderOrderList();
+            });
+
+            const typeSelect = document.createElement('select');
+            typeSelect.className = 'form-control';
+            return Promise.all([
+                getString('activity_customcolumn_type_checkbox', 'local_profilephoto'),
+                getString('activity_customcolumn_type_text', 'local_profilephoto'),
+                getString('activity_customcolumn_remove', 'local_profilephoto'),
+                getString('activity_customcolumn_placeholder', 'local_profilephoto'),
+            ]).then(([checkboxLabel, textLabel, removeLabel, placeholder]) => {
+                nameInput.placeholder = placeholder;
+
+                const checkboxOption = document.createElement('option');
+                checkboxOption.value = 'checkbox';
+                checkboxOption.textContent = checkboxLabel;
+                typeSelect.appendChild(checkboxOption);
+
+                const textOption = document.createElement('option');
+                textOption.value = 'text';
+                textOption.textContent = textLabel;
+                typeSelect.appendChild(textOption);
+
+                typeSelect.addEventListener('change', () => {
+                    state.customMeta[key].type = typeSelect.value;
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-sm btn-link lpp-activity-customcolumn-remove';
+                removeBtn.textContent = '✕';
+                removeBtn.setAttribute('aria-label', removeLabel);
+                removeBtn.addEventListener('click', () => removeCustomColumn(key));
+
+                row.appendChild(nameInput);
+                row.appendChild(typeSelect);
+                row.appendChild(removeBtn);
+                customColumnsEl.appendChild(row);
+                return null;
+            });
+        }).catch(Notification.exception);
+    };
+
+    const addCustomColumn = () => {
+        if (state.orderedKeys.length >= MAX_EXTRA_COLUMNS
+                || Object.keys(state.customMeta).length >= MAX_CUSTOM_COLUMNS) {
+            enforceColumnLimit();
+            return;
+        }
+        state.customCounter++;
+        const key = 'custom' + state.customCounter;
+        state.customMeta[key] = {label: '', type: 'checkbox'};
+        state.orderedKeys.push(key);
+        renderCustomColumnRow(key);
+        enforceColumnLimit();
+        renderOrderList();
+    };
+
+    const removeCustomColumn = (key) => {
+        delete state.customMeta[key];
+        state.orderedKeys = state.orderedKeys.filter((k) => k !== key);
+        const row = customColumnsEl.querySelector(`[data-key="${key}"]`);
+        if (row) {
+            row.remove();
+        }
+        enforceColumnLimit();
+        renderOrderList();
+    };
+
+    const applyTemplate = (name) => {
+        if (name === 'personalitzat' || !COLUMN_TEMPLATES[name]) {
+            return;
+        }
+        // Clear custom columns.
+        Object.keys(state.customMeta).forEach((key) => removeCustomColumn(key));
+
+        const keys = COLUMN_TEMPLATES[name];
+        standardCheckboxes().forEach((checkbox) => {
+            checkbox.disabled = false;
+            checkbox.checked = keys.includes(checkbox.dataset.colKey);
+        });
+        state.orderedKeys = keys.slice();
+        enforceColumnLimit();
+        renderOrderList();
+    };
+
+    standardCheckboxes().forEach((checkbox) => checkbox.addEventListener('change', syncFromCheckboxes));
+    addColumnBtn.addEventListener('click', addCustomColumn);
+    template.addEventListener('change', () => applyTemplate(template.value));
+
+    // Apply the default template (Sortida) on load, matching the pre-checked columns.
+    applyTemplate(template.value);
+
+    // Cohort search + member-count readout.
+    getActivityCohorts().then((options) => {
+        populateSelect(cohortSelect, options.cohorts, (c) => c.name);
+        return makeSearchable(SELECTORS.ACTIVITY_COHORT);
+    }).catch(Notification.exception);
+
+    cohortSelect.addEventListener('change', () => {
+        const cohortid = parseInt(cohortSelect.value, 10);
+        cohortInfo.textContent = '';
+        if (!cohortid) {
+            return;
+        }
+        getActivityCohortInfo(cohortid).then((info) => {
+            return getString('activity_cohort_membercount', 'local_profilephoto', info.membercount).then((message) => {
+                cohortInfo.textContent = message;
+                return null;
+            });
+        }).catch(Notification.exception);
+    });
+
+    const buildColumnsPayload = () => state.orderedKeys.map((key) => ({
+        key,
+        label: columnLabel(key),
+        type: columnType(key),
+    }));
+
+    const collectActivityFields = () => ({
+        name: document.querySelector(SELECTORS.ACTIVITY_NAME).value.trim(),
+        date: document.querySelector(SELECTORS.ACTIVITY_DATE).value,
+        place: document.querySelector(SELECTORS.ACTIVITY_PLACE).value.trim(),
+        responsables: document.querySelector(SELECTORS.ACTIVITY_RESPONSABLES).value.trim(),
+    });
+
+    const runGeneration = (onReady) => {
+        const cohortid = parseInt(cohortSelect.value, 10);
+        if (!cohortid) {
+            getString('activity_nocohort', 'local_profilephoto').then((message) => {
+                status.textContent = message;
+                return null;
+            }).catch(Notification.exception);
+            return;
+        }
+
+        previewBtn.disabled = true;
+        generateBtn.disabled = true;
+
+        getString('activity_generating', 'local_profilephoto').then((message) => {
+            status.textContent = message;
+            return createActivityExport({
+                cohortid,
+                activity: collectActivityFields(),
+                columns: buildColumnsPayload(),
+                language: document.querySelector(SELECTORS.ACTIVITY_LANGUAGE).value,
+                stage: document.querySelector(SELECTORS.ACTIVITY_STAGE).value,
+                showphotos: document.querySelector(SELECTORS.ACTIVITY_SHOWPHOTOS).value === '1',
+                showgeneralobs: document.querySelector(SELECTORS.ACTIVITY_SHOWGENERALOBS).checked,
+                order: document.querySelector(SELECTORS.ACTIVITY_ORDER).value,
+            });
+        }).then((result) => {
+            return getString('export_ready', 'local_profilephoto', result.count).then((message) => {
+                status.textContent = message;
+                const url = M.cfg.wwwroot + '/local/profilephoto/export.php?token=' + result.token;
+                onReady(url);
+                return null;
+            });
+        }).catch(Notification.exception).finally(() => {
+            previewBtn.disabled = false;
+            generateBtn.disabled = false;
+        });
+    };
+
+    generateBtn.addEventListener('click', () => runGeneration((url) => {
+        window.location.href = url;
+    }));
+
+    previewBtn.addEventListener('click', () => runGeneration((url) => {
+        window.open(url, '_blank');
+    }));
 };
 
 export default {init};
