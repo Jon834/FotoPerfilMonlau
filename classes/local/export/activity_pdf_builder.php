@@ -66,11 +66,18 @@ class activity_pdf_builder {
     /** @var int Maximum number of columns beyond the mandatory Núm./Alumne. */
     public const MAX_EXTRA_COLUMNS = 6;
 
-    /** @var float Minimum row height, used for large cohorts / many columns. */
-    private const MIN_ROW_HEIGHT = 5.6;
-
-    /** @var float Maximum row height, used for small cohorts. */
-    private const MAX_ROW_HEIGHT = 8.6;
+    /**
+     * Row height bounds (min, max) in mm, by density option. "normal" keeps the
+     * original bounds; "large" trades pages for legibility (roughly 20 rows per
+     * page on a full page of content) with bigger avatars and more room to write
+     * in Observacions; "compact" tightens them for cohorts that need to fit more
+     * densely.
+     */
+    private const DENSITY_ROW_BOUNDS = [
+        'compact' => [4.6, 6.4],
+        'normal' => [5.6, 8.6],
+        'large' => [7.2, 9.6],
+    ];
 
     /** @var float Height of the table header row. */
     private const TABLE_HEADER_HEIGHT = 6.0;
@@ -144,6 +151,8 @@ class activity_pdf_builder {
         $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx', 'corporate'], true) ? $options['stage'] : 'fp';
         $order = in_array($options['order'] ?? 'lastname', ['lastname', 'firstname', 'cohort'], true)
             ? $options['order'] : 'lastname';
+        $density = in_array($options['density'] ?? 'normal', ['compact', 'normal', 'large'], true)
+            ? $options['density'] : 'normal';
         $showphotos = (bool) ($options['showphotos'] ?? true);
         $showgeneralobs = (bool) ($options['showgeneralobs'] ?? true);
         $generatedby = trim((string) ($options['generatedby'] ?? ''));
@@ -228,7 +237,7 @@ class activity_pdf_builder {
         $blocktop = self::render_activity_block($pdf, $activity, $activitydate, $count, $language, $brand);
 
         self::render_table($pdf, $users, $extracolumns, $colwidths, $alumnewidth, $blocktop, $language, $brand,
-            $showphotos, $showgeneralobs);
+            $showphotos, $showgeneralobs, $density);
 
         $pdf->Output($path, 'F');
 
@@ -329,13 +338,26 @@ class activity_pdf_builder {
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, self::PAGE_WIDTH, 22, 'F');
 
-        $logo = self::resolve_logo_path($stage);
         $logosize = 12;
-        $svg = ($logo !== null && preg_match('/\.svg(\?|$)/i', $logo)) ? self::fetch_logo_svg($logo) : null;
-        if ($svg !== null) {
-            $pdf->ImageSVG('@' . $svg, 8, 5, $logosize, '', '', '', 'T', false);
-        } else if ($logo !== null) {
-            $pdf->Image($logo, 8, 5, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+        if ($stage === 'corporate') {
+            // The remote "Monlau Group" asset is a 306x31 wide logotype, not an icon: at
+            // this box size it renders as an illegible sliver. Corporate gets its own
+            // self-contained square mark instead, so it always looks right with no
+            // network dependency (see corporate_square_logo()).
+            $pdf->Image('@' . self::corporate_square_logo(), 8, 5, $logosize, $logosize, 'PNG', '', 'T', false, 300,
+                '', false, false, 0, false, false, false);
+        } else {
+            $logo = self::resolve_logo_path($stage);
+            $issvg = $logo !== null && preg_match('/\.svg(\?|$)/i', $logo);
+            $svg = $issvg ? self::fetch_logo_svg($logo) : null;
+            if ($svg !== null) {
+                $pdf->ImageSVG('@' . $svg, 8, 5, $logosize, '', '', '', 'T', false);
+            } else if ($logo !== null && !$issvg) {
+                // Never hand an .svg URL to the raster Image() path: it cannot decode SVG
+                // XML and would render corrupted noise instead of just skipping the logo.
+                $pdf->Image($logo, 8, 5, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false,
+                    false);
+            }
         }
 
         $pdf->SetTextColor(255, 255, 255);
@@ -487,11 +509,13 @@ class activity_pdf_builder {
      * @param array{r:int,g:int,b:int} $brand
      * @param bool $showphotos
      * @param bool $showgeneralobs
+     * @param string $density compact|normal|large - controls the row-height bounds.
      */
     private static function render_table(\TCPDF &$pdf, array $users, array $extracolumns, array $colwidths,
             float $alumnewidth, float $firstpagetop, string $language, array $brand, bool $showphotos,
-            bool $showgeneralobs): void {
+            bool $showgeneralobs, string $density = 'normal'): void {
         $count = count($users);
+        [$minrowheight, $maxrowheight] = self::DENSITY_ROW_BOUNDS[$density] ?? self::DENSITY_ROW_BOUNDS['normal'];
 
         $tableheaderdraw = static function(float $y) use ($pdf, $extracolumns, $colwidths, $alumnewidth, $language): void {
             self::draw_table_header($pdf, $y, $extracolumns, $colwidths, $alumnewidth, $language);
@@ -500,8 +524,8 @@ class activity_pdf_builder {
         $availablefirstpage = self::PAGE_HEIGHT - $firstpagetop - self::TABLE_HEADER_HEIGHT - self::BOTTOM_MARGIN;
 
         $rowheight = $count > 0
-            ? self::clamp($availablefirstpage / max($count, 1), self::MIN_ROW_HEIGHT, self::MAX_ROW_HEIGHT)
-            : self::MAX_ROW_HEIGHT;
+            ? self::clamp($availablefirstpage / max($count, 1), $minrowheight, $maxrowheight)
+            : $maxrowheight;
 
         $tableheaderdraw($firstpagetop);
         $y = $firstpagetop + self::TABLE_HEADER_HEIGHT;
@@ -606,7 +630,9 @@ class activity_pdf_builder {
 
         $textx = $x + 2.0;
         if ($showphotos) {
-            $photod = min($rowheight - 1.6, 7.5);
+            // Capped well above the "normal"/"compact" row heights so their look is
+            // unchanged, but "large" rows (taller) actually show a visibly bigger photo.
+            $photod = min($rowheight - 1.6, 11.0);
             $photod = max($photod, 3.2);
             self::draw_avatar($pdf, $user, $x + 1.6 + $photod / 2, $y + $rowheight / 2, $photod);
             $textx = $x + 1.6 + $photod + 2.0;
@@ -843,7 +869,8 @@ class activity_pdf_builder {
     }
 
     /**
-     * Resolve a Monlau logo URL for the given stage (mirrors pdf_builder).
+     * Resolve a Monlau logo URL for the given stage (mirrors pdf_builder). Not used for
+     * "corporate", which renders {@see corporate_square_logo()} instead.
      *
      * @param string $stage
      * @return string|null
@@ -853,9 +880,43 @@ class activity_pdf_builder {
             'fp' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_fp.jpg',
             'eso' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_eso.jpg',
             'batx' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
-            'corporate' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
         ];
         return $urls[$stage] ?? $urls['fp'];
+    }
+
+    /**
+     * Generate a self-contained square logo for the "corporate" stage: a light square
+     * tile with a solid black square badge and a white "M" monogram. Deliberately
+     * code-generated rather than fetched, so it (a) is always genuinely square, unlike
+     * the 306x31 "Monlau Group" wordmark asset the other stages' logos use, which
+     * renders as an illegible sliver at icon size, and (b) never depends on a network
+     * fetch that could fail or (per resolve_logo_path()'s SVG asset) render as corrupted
+     * noise if handed to the raster Image() path.
+     *
+     * @return string raw PNG bytes.
+     */
+    private static function corporate_square_logo(): string {
+        $size = 64;
+        $im = imagecreatetruecolor($size, $size);
+        $white = imagecolorallocate($im, 255, 255, 255);
+        imagefilledrectangle($im, 0, 0, $size, $size, $white);
+
+        $inset = 5;
+        $black = imagecolorallocate($im, 15, 15, 15);
+        imagefilledrectangle($im, $inset, $inset, $size - $inset, $size - $inset, $black);
+
+        $text = 'M';
+        $font = 5;
+        $textw = imagefontwidth($font) * strlen($text);
+        $texth = imagefontheight($font);
+        imagestring($im, $font, (int) (($size - $textw) / 2), (int) (($size - $texth) / 2), $text, $white);
+
+        ob_start();
+        imagepng($im);
+        $png = ob_get_clean();
+        imagedestroy($im);
+
+        return $png;
     }
 
     /**

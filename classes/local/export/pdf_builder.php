@@ -198,17 +198,26 @@ class pdf_builder {
         $pdf->Rect(0, 0, 210, 30, 'F');
 
         // Logo: constrain to fit without distortion.
-        $logo = self::resolve_logo_path($stage);
         $logosize = 16;
-        $svg = ($logo !== null && preg_match('/\.svg(\?|$)/i', $logo)) ? self::fetch_logo_svg($logo) : null;
-        if ($svg !== null) {
-            $pdf->ImageSVG('@' . $svg, 10, 7, $logosize, '', '', '', 'T', false);
-        } else if ($logo !== null && !preg_match('/\.svg(\?|$)/i', $logo)) {
-            // Use Image with max height, let width scale proportionally.
-            $pdf->Image($logo, 10, 7, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false, false);
+        if ($stage === 'corporate') {
+            // The remote "Monlau Group" asset is a 306x31 wide logotype, not an icon: at
+            // icon size it renders as an illegible sliver. Corporate gets its own
+            // self-contained square mark instead (see corporate_square_logo()).
+            $pdf->Image('@' . self::corporate_square_logo(), 10, 7, $logosize, $logosize, 'PNG', '', 'T', false, 300,
+                '', false, false, 0, false, false, false);
         } else {
-            $pdf->Image('@' . self::monlau_logo($stage), 10, 7, $logosize, '', 'PNG', '', 'T', false, 300, '',
-                false, false, 0, false, false, false);
+            $logo = self::resolve_logo_path($stage);
+            $svg = ($logo !== null && preg_match('/\.svg(\?|$)/i', $logo)) ? self::fetch_logo_svg($logo) : null;
+            if ($svg !== null) {
+                $pdf->ImageSVG('@' . $svg, 10, 7, $logosize, '', '', '', 'T', false);
+            } else if ($logo !== null && !preg_match('/\.svg(\?|$)/i', $logo)) {
+                // Use Image with max height, let width scale proportionally.
+                $pdf->Image($logo, 10, 7, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false,
+                    false);
+            } else {
+                $pdf->Image('@' . self::monlau_logo($stage), 10, 7, $logosize, '', 'PNG', '', 'T', false, 300, '',
+                    false, false, 0, false, false, false);
+            }
         }
 
         $pdf->SetTextColor(255, 255, 255);
@@ -480,7 +489,9 @@ class pdf_builder {
     }
 
     /**
-     * Resolve a Monlau logo from the Moodle installation using the exact asset URLs provided.
+     * Resolve a Monlau logo from the Moodle installation using the exact asset URLs
+     * provided. Not used for "corporate", which renders
+     * {@see corporate_square_logo()} instead.
      *
      * @param string $stage
      * @return string|null
@@ -490,7 +501,6 @@ class pdf_builder {
             'fp' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_fp.jpg',
             'eso' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_eso.jpg',
             'batx' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
-            'corporate' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
         ];
 
         $url = $urls[$stage] ?? $urls['fp'];
@@ -558,6 +568,40 @@ class pdf_builder {
         $text = 'MONLAU';
         $font = 5;
         imagestring($im, $font, 24, 20, $text, $dark);
+
+        ob_start();
+        imagepng($im);
+        $png = ob_get_clean();
+        imagedestroy($im);
+
+        return $png;
+    }
+
+    /**
+     * Generate a self-contained square logo for the "corporate" stage: a light square
+     * tile with a solid black square badge and a white "M" monogram. Deliberately
+     * code-generated rather than fetched, so it (a) is always genuinely square, unlike
+     * the 306x31 "Monlau Group" wordmark asset the other stages' logos use, which
+     * renders as an illegible sliver at icon size, and (b) never depends on a network
+     * fetch.
+     *
+     * @return string raw PNG bytes.
+     */
+    private static function corporate_square_logo(): string {
+        $size = 64;
+        $im = imagecreatetruecolor($size, $size);
+        $white = imagecolorallocate($im, 255, 255, 255);
+        imagefilledrectangle($im, 0, 0, $size, $size, $white);
+
+        $inset = 5;
+        $black = imagecolorallocate($im, 15, 15, 15);
+        imagefilledrectangle($im, $inset, $inset, $size - $inset, $size - $inset, $black);
+
+        $text = 'M';
+        $font = 5;
+        $textw = imagefontwidth($font) * strlen($text);
+        $texth = imagefontheight($font);
+        imagestring($im, $font, (int) (($size - $textw) / 2), (int) (($size - $texth) / 2), $text, $white);
 
         ob_start();
         imagepng($im);

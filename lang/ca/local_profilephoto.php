@@ -283,6 +283,7 @@ $string['activity_order_help'] = 'Ordre en què apareixen els alumnes al PDF. «
 $string['activity_order_lastname'] = 'Cognoms / Nom';
 $string['activity_order_firstname'] = 'Nom / Cognoms';
 $string['activity_order_cohort'] = 'Ordre de la cohort';
+$string['activity_density_large'] = 'Gran (fotos més grans, ~20 alumnes/pàgina)';
 $string['activity_preview'] = 'Vista prèvia';
 $string['activity_generate'] = 'Generar PDF';
 $string['activity_generating'] = 'Generant el PDF…';

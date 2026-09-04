@@ -337,6 +337,16 @@
                         </div>
                         <div class="lpp-field">
                             <span class="lpp-field-label">
+                                <label for="lpp-activity-density">{{#str}}export_density, local_profilephoto{{/str}}</label> {{{helpicons.density}}}
+                            </span>
+                            <select id="lpp-activity-density" class="form-control">
+                                <option value="normal" selected>{{#str}}export_density_normal, local_profilephoto{{/str}}</option>
+                                <option value="compact">{{#str}}export_density_compact, local_profilephoto{{/str}}</option>
+                                <option value="large">{{#str}}activity_density_large, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
+                        <div class="lpp-field">
+                            <span class="lpp-field-label">
                                 <label for="lpp-activity-stage">{{#str}}export_stage, local_profilephoto{{/str}}</label> {{{helpicons.stage}}}
                             </span>
                             <select id="lpp-activity-stage" class="form-control">

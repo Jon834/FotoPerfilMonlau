@@ -81,6 +81,7 @@ class create_activity_export extends external_api {
             'showphotos' => new external_value(PARAM_BOOL, 'Show a photo/avatar next to each name', VALUE_DEFAULT, true),
             'showgeneralobs' => new external_value(PARAM_BOOL, 'Add a general incidents/notes box', VALUE_DEFAULT, true),
             'order' => new external_value(PARAM_ALPHA, 'lastname | firstname | cohort', VALUE_DEFAULT, 'lastname'),
+            'density' => new external_value(PARAM_ALPHA, 'compact | normal | large', VALUE_DEFAULT, 'normal'),
         ]);
     }
 
@@ -105,7 +106,8 @@ class create_activity_export extends external_api {
         string $stage = 'fp',
         bool $showphotos = true,
         bool $showgeneralobs = true,
-        string $order = 'lastname'
+        string $order = 'lastname',
+        string $density = 'normal'
     ): array {
         global $DB, $USER;
 
@@ -118,6 +120,7 @@ class create_activity_export extends external_api {
             'showphotos' => $showphotos,
             'showgeneralobs' => $showgeneralobs,
             'order' => $order,
+            'density' => $density,
         ]);
 
         $context = context_system::instance();
@@ -163,6 +166,7 @@ class create_activity_export extends external_api {
                 'showphotos' => $params['showphotos'],
                 'showgeneralobs' => $params['showgeneralobs'],
                 'order' => $order,
+                'density' => $params['density'],
                 'generatedby' => fullname($USER),
             ]
         );

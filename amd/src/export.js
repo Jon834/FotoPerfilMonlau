@@ -62,6 +62,7 @@ const SELECTORS = {
     ACTIVITY_SHOWPHOTOS: '#lpp-activity-showphotos',
     ACTIVITY_SHOWGENERALOBS: '#lpp-activity-showgeneralobs',
     ACTIVITY_ORDER: '#lpp-activity-order',
+    ACTIVITY_DENSITY: '#lpp-activity-density',
     ACTIVITY_STAGE: '#lpp-activity-stage',
     ACTIVITY_LANGUAGE: '#lpp-activity-language',
     ACTIVITY_PREVIEW_BTN: '#lpp-activity-preview-btn',
@@ -567,6 +568,7 @@ const initActivityMode = () => {
                 showphotos: document.querySelector(SELECTORS.ACTIVITY_SHOWPHOTOS).value === '1',
                 showgeneralobs: document.querySelector(SELECTORS.ACTIVITY_SHOWGENERALOBS).checked,
                 order: document.querySelector(SELECTORS.ACTIVITY_ORDER).value,
+                density: document.querySelector(SELECTORS.ACTIVITY_DENSITY).value,
             });
         }).then((result) => {
             return getString('export_ready', 'local_profilephoto', result.count).then((message) => {
