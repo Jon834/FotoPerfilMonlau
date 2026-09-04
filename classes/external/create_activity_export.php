@@ -107,7 +107,7 @@ class create_activity_export extends external_api {
         bool $showgeneralobs = true,
         string $order = 'lastname'
     ): array {
-        global $CFG, $DB, $USER;
+        global $DB, $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'cohortid' => $cohortid,
@@ -136,8 +136,7 @@ class create_activity_export extends external_api {
 
         $extracolumns = self::normalize_columns($params['columns']);
 
-        require_once($CFG->dirroot . '/cohort/lib.php');
-        $members = cohort_get_members($cohort->id);
+        $members = self::get_cohort_member_users((int) $cohort->id);
 
         $maxsync = (int) get_config('local_profilephoto', 'maxsyncexportusers') ?: 300;
         if (count($members) > $maxsync) {
@@ -189,6 +188,32 @@ class create_activity_export extends external_api {
             'filename' => $built['filename'],
             'count' => $built['count'],
         ];
+    }
+
+    /**
+     * Fetch a cohort's current, non-deleted members with just the fields
+     * activity_pdf_builder needs.
+     *
+     * There is no core API for this (cohort/lib.php has no
+     * "get member user records" function, only cohort_is_member() for a
+     * single user and cohort_get_user_cohorts() for the reverse direction),
+     * so this queries {cohort_members} directly - the same approach
+     * {@see create_export}'s own cohort branch already uses.
+     *
+     * @param int $cohortid
+     * @return \stdClass[] indexed by userid, each with id/firstname/lastname/picture.
+     */
+    private static function get_cohort_member_users(int $cohortid): array {
+        global $DB;
+
+        return $DB->get_records_sql(
+            "SELECT u.id, u.firstname, u.lastname, u.picture
+               FROM {user} u
+               JOIN {cohort_members} cm ON cm.userid = u.id
+              WHERE cm.cohortid = :cohortid AND u.deleted = 0
+           ORDER BY u.firstname, u.lastname",
+            ['cohortid' => $cohortid]
+        );
     }
 
     /**

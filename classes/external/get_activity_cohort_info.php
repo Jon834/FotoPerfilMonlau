@@ -55,7 +55,7 @@ class get_activity_cohort_info extends external_api {
      * @return array
      */
     public static function execute(int $cohortid): array {
-        global $CFG, $DB;
+        global $DB;
 
         $params = self::validate_parameters(self::execute_parameters(), ['cohortid' => $cohortid]);
 
@@ -74,13 +74,14 @@ class get_activity_cohort_info extends external_api {
             throw new moodle_exception('error_outofscope', 'local_profilephoto');
         }
 
-        require_once($CFG->dirroot . '/cohort/lib.php');
-        $members = cohort_get_members($cohort->id);
+        // No core API returns just a cohort's member count; {cohort_members} is the
+        // canonical source and a plain count is the cheapest possible read of it.
+        $membercount = $DB->count_records('cohort_members', ['cohortid' => $cohort->id]);
 
         return [
             'id' => (int) $cohort->id,
             'name' => format_string($cohort->name),
-            'membercount' => count($members),
+            'membercount' => $membercount,
         ];
     }
 

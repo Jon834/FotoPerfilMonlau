@@ -531,12 +531,21 @@ tocar el comportamiento de los formatos existentes.
 `get_activity_cohorts.php` lista las cohortes visibles; al elegir una,
 `get_activity_cohort_info.php` resuelve su nombre y recuento actual de
 miembros; `create_activity_export.php` valida cohorte, permisos y columnas,
-resuelve los miembros con `cohort_get_members()` (API core de
-`cohort/lib.php`, no SQL directo) y delega el renderizado a
-`activity_pdf_builder::build()`. El token de descarga resultante se guarda
-en la misma cache `local_profilephoto/exports` y se sirve por el mismo
-`export.php?token=...` que ya usan el ZIP y los demás PDF - no hay
-endpoint de descarga nuevo.
+resuelve los miembros y delega el renderizado a `activity_pdf_builder::build()`.
+El token de descarga resultante se guarda en la misma cache
+`local_profilephoto/exports` y se sirve por el mismo `export.php?token=...`
+que ya usan el ZIP y los demás PDF - no hay endpoint de descarga nuevo.
+
+**Corrección tras revisar el `cohort/lib.php` real de `MOODLE_501_STABLE`**:
+no existe ninguna función core `cohort_get_members()` (se asumió por error
+al diseñar esta entrega, basándose en versiones antiguas de Moodle;
+`cohort/lib.php` solo ofrece `cohort_is_member()` para un usuario concreto
+y `cohort_get_user_cohorts()` en la dirección contraria). Por eso
+`get_activity_cohort_info.php` y `create_activity_export.php` consultan
+`{cohort_members}` directamente (un `COUNT` simple y un `JOIN` con `{user}`
+respectivamente) - el mismo patrón que ya usaba `create_export.php` para su
+propia rama de cohorte (ver 12.5), no una regresión respecto al resto del
+plugin.
 
 ### 13.2. Modelo de permisos
 
