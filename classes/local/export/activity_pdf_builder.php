@@ -386,21 +386,23 @@ class activity_pdf_builder {
         $name = trim((string) ($activity['name'] ?? ''));
         $place = trim((string) ($activity['place'] ?? ''));
         $responsables = self::format_responsables((string) ($activity['responsables'] ?? ''));
-        $datestr = $activitydate !== null ? $activitydate->format('d/m/Y') : '—';
+        // An empty field is left blank (just the label) rather than filled with a "—"
+        // placeholder, which reads as noise once several fields on the sheet are unused.
+        $datestr = $activitydate !== null ? $activitydate->format('d/m/Y') : '';
 
         $row1y = $top + 3.0;
         $row2y = $top + 10.5;
         $padx = $left + 4.0;
 
         self::render_kv_row($pdf, $padx, $row1y, $width - 8.0, [
-            [self::translate_word('activity', $language), $name !== '' ? $name : '—', 78.0],
+            [self::translate_word('activity', $language), $name, 78.0],
             [self::translate_word('date', $language), $datestr, 34.0],
-            [self::translate_word('place', $language), $place !== '' ? $place : '—', 60.0],
+            [self::translate_word('place', $language), $place, 60.0],
         ]);
 
         self::render_kv_row($pdf, $padx, $row2y, $width - 8.0, [
-            [self::translate_word('responsables', $language), $responsables !== '' ? $responsables : '—', 92.0],
-            [ucfirst(self::translate_word('students', $language)), (string) $count, 24.0],
+            [self::translate_word('responsables', $language), $responsables, 86.0],
+            [ucfirst(self::translate_word('students', $language)), (string) $count, 30.0],
             [self::translate_word('present', $language), null, 28.0],
             [self::translate_word('absent', $language), null, 28.0],
         ]);
@@ -436,13 +438,16 @@ class activity_pdf_builder {
             $pdf->SetFont('helvetica', 'B', 9);
             $pdf->SetTextColor(70, 78, 90);
             $labeltext = $label . ': ';
-            $labelw = min($pdf->GetStringWidth($labeltext) + 1.0, $contentwidth * 0.55);
+            // Never shrink the label below its actual rendered width: Cell() prints at
+            // the exact width given, so under-allocating it here doesn't save space, it
+            // just makes the value start printing before the label ends and overlap it.
+            $labelw = min($pdf->GetStringWidth($labeltext) + 1.0, $contentwidth);
             $pdf->SetXY($cursor, $y);
             $pdf->Cell($labelw, 5, $labeltext, 0, 0, 'L');
 
             $pdf->SetFont('helvetica', '', 9);
             $pdf->SetTextColor(30, 34, 40);
-            $valuew = $contentwidth - $labelw;
+            $valuew = max(0.0, $contentwidth - $labelw);
             $pdf->SetXY($cursor + $labelw, $y);
             $valuetext = $value === null ? self::fill_line($pdf, $valuew) : self::fit_text($pdf, $value, $valuew);
             $pdf->Cell($valuew, 5, $valuetext, 0, 0, 'L');
