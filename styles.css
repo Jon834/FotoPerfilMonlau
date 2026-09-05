@@ -542,23 +542,32 @@
 }
 
 /* Two-column layout: form on the left, live PDF preview on the right. Only
-   takes effect while shown - [hidden] still wins while the mode is inactive. */
+   takes effect while shown - [hidden] still wins while the mode is inactive.
+   auto-fit/minmax (not a fixed max-width breakpoint) so it responds to
+   whatever width is actually available inside Moodle's own page chrome
+   (nav/block drawers can leave much less room than the raw window width) -
+   two 360px-minimum columns side by side when there's space for both,
+   stacked otherwise. Same technique .lpp-grid already uses. */
 .lpp-activity-layout:not([hidden]) {
     display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     align-items: start;
     gap: 1.5rem;
 }
 
-@media (max-width: 900px) {
-    .lpp-activity-layout:not([hidden]) {
-        grid-template-columns: 1fr;
-    }
+.lpp-activity-formcol {
+    min-width: 0;
 }
 
-.lpp-activity-previewcol {
-    position: sticky;
-    top: 1rem;
+/* Keep the preview in view while scrolling a tall form - but only once there is
+   actually room for the two columns side by side (matches the auto-fit
+   breakpoint above); stacked on narrow screens, sticky would just pin the
+   preview awkwardly mid-page while scrolling past the form above it. */
+@media (min-width: 760px) {
+    .lpp-activity-previewcol {
+        position: sticky;
+        top: 1rem;
+    }
 }
 
 .lpp-activity-preview-panel {
