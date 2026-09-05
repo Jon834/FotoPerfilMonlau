@@ -285,6 +285,7 @@ $string['activity_order_firstname'] = 'First name / Surname';
 $string['activity_order_cohort'] = 'Cohort order';
 $string['activity_density_large'] = 'Large (bigger photos, ~20 students/page)';
 $string['activity_preview'] = 'Preview';
+$string['activity_preview_placeholder'] = 'Click "Preview" to see how the document will look here.';
 $string['activity_generate'] = 'Generate PDF';
 $string['activity_generating'] = 'Generating the PDF…';
 $string['activity_nocohort'] = 'Select a cohort to continue.';

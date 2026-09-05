@@ -183,7 +183,8 @@
             </div>
 
             {{#canexportactivity}}
-            <div data-mode="activity" hidden>
+            <div data-mode="activity" class="lpp-activity-layout" hidden>
+              <div class="lpp-activity-formcol">
 
                 <fieldset class="lpp-export-section">
                     <legend>{{#str}}export_section_activity_cohort, local_profilephoto{{/str}}</legend>
@@ -384,6 +385,21 @@
                         {{#pix}}i/export, core{{/pix}} {{#str}}activity_generate, local_profilephoto{{/str}}
                     </button>
                 </div>
+
+              </div>
+
+              <div class="lpp-activity-previewcol">
+                <div class="lpp-activity-preview-panel">
+                    <p class="lpp-activity-preview-caption">{{#str}}activity_preview, local_profilephoto{{/str}}</p>
+                    <div class="lpp-activity-preview-frame-wrap">
+                        <p id="lpp-activity-preview-placeholder" class="lpp-activity-preview-placeholder">
+                            {{#str}}activity_preview_placeholder, local_profilephoto{{/str}}
+                        </p>
+                        <iframe id="lpp-activity-preview-frame" class="lpp-activity-preview-frame" hidden
+                            title="{{#str}}activity_preview, local_profilephoto{{/str}}"></iframe>
+                    </div>
+                </div>
+              </div>
 
             </div>
             {{/canexportactivity}}

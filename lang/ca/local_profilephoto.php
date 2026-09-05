@@ -285,6 +285,7 @@ $string['activity_order_firstname'] = 'Nom / Cognoms';
 $string['activity_order_cohort'] = 'Ordre de la cohort';
 $string['activity_density_large'] = 'Gran (fotos més grans, ~20 alumnes/pàgina)';
 $string['activity_preview'] = 'Vista prèvia';
+$string['activity_preview_placeholder'] = 'Prem «Vista prèvia» per veure aquí com quedarà el document.';
 $string['activity_generate'] = 'Generar PDF';
 $string['activity_generating'] = 'Generant el PDF…';
 $string['activity_nocohort'] = 'Selecciona una cohort per continuar.';

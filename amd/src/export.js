@@ -67,7 +67,14 @@ const SELECTORS = {
     ACTIVITY_LANGUAGE: '#lpp-activity-language',
     ACTIVITY_PREVIEW_BTN: '#lpp-activity-preview-btn',
     ACTIVITY_GENERATE_BTN: '#lpp-activity-generate-btn',
+    ACTIVITY_PREVIEW_FRAME: '#lpp-activity-preview-frame',
+    ACTIVITY_PREVIEW_PLACEHOLDER: '#lpp-activity-preview-placeholder',
+    EXPORT_ROOT: '.local-profilephoto-export',
 };
+
+/** @var {string} Class toggled on SELECTORS.EXPORT_ROOT while "Control d'activitat" is
+ *  active, to make room for the live preview panel next to the form. */
+const WIDE_CLASS = 'lpp-export--wide';
 
 /** @var {number} Maximum extra columns (beyond Núm./Alumne), mirrors activity_pdf_builder::MAX_EXTRA_COLUMNS. */
 const MAX_EXTRA_COLUMNS = 6;
@@ -272,6 +279,7 @@ const initModeToggle = () => {
     const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
     const standardBlocks = document.querySelectorAll(SELECTORS.MODE_STANDARD);
     const activityBlocks = document.querySelectorAll(SELECTORS.MODE_ACTIVITY);
+    const root = document.querySelector(SELECTORS.EXPORT_ROOT);
 
     const update = () => {
         const isActivity = exportType.value === 'activity';
@@ -281,6 +289,10 @@ const initModeToggle = () => {
         activityBlocks.forEach((el) => {
             el.hidden = !isActivity;
         });
+        // Widen the page while the form shares space with the live preview panel.
+        if (root) {
+            root.classList.toggle(WIDE_CLASS, isActivity);
+        }
     };
 
     exportType.addEventListener('change', update);
@@ -303,6 +315,8 @@ const initActivityMode = () => {
     const orderList = document.querySelector(SELECTORS.ACTIVITY_ORDER_LIST);
     const previewBtn = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_BTN);
     const generateBtn = document.querySelector(SELECTORS.ACTIVITY_GENERATE_BTN);
+    const previewFrame = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_FRAME);
+    const previewPlaceholder = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_PLACEHOLDER);
     const status = document.querySelector(SELECTORS.STATUS);
 
     // Ordered list of extra column keys (beyond Núm./Alumne). Custom columns'
@@ -588,7 +602,12 @@ const initActivityMode = () => {
     }));
 
     previewBtn.addEventListener('click', () => runGeneration((url) => {
-        window.open(url, '_blank');
+        // export.php?preview=1 serves the same file with Content-Disposition: inline
+        // (see export.php), so the browser's built-in PDF viewer renders it in place
+        // instead of only offering a download.
+        previewFrame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + 'preview=1';
+        previewFrame.hidden = false;
+        previewPlaceholder.hidden = true;
     }));
 };
 

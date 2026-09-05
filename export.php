@@ -16,13 +16,20 @@
 
 /**
  * Export screen (Entrega 4): filter selection page, plus the one-time,
- * token-protected download endpoint for a ZIP already built by
- * classes/external/create_export.php.
+ * token-protected download endpoint for a ZIP or PDF already built by
+ * classes/external/create_export.php or create_activity_export.php.
  *
  * The token is unguessable (20 random bytes) and single-use: it is
  * deleted from cache the moment it is consumed, whether the download
  * succeeds or the entry has already expired (encargo section 15:
  * "impedir acceso mediante URL pública predecible").
+ *
+ * ?token=...&preview=1 serves the exact same file inline (Content-Disposition:
+ * inline via send_file(), instead of send_temp_file()'s hardcoded "attachment")
+ * so the "Control d'activitat" screen can embed it in an <iframe> as a live
+ * preview. Still governed by the same one-time token: each "Vista prèvia"
+ * click asks for a fresh export/token first, so this never needs the token to
+ * be reusable.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -49,6 +56,7 @@ if (!get_config('local_profilephoto', 'enabled')) {
 }
 
 $token = optional_param('token', '', PARAM_ALPHANUM);
+$preview = optional_param('preview', 0, PARAM_BOOL);
 
 if ($token !== '') {
     $cache = cache::make('local_profilephoto', 'exports');
@@ -65,6 +73,15 @@ if ($token !== '') {
 
     \local_profilephoto\local\audit\logger::log('export_downloaded', $USER->id);
     \local_profilephoto\event\export_downloaded::create(['context' => $context])->trigger();
+
+    if ($preview) {
+        // Inline display for the embedded <iframe> preview - send_temp_file() always
+        // forces "Content-Disposition: attachment", which a browser can only offer to
+        // download, never render in place. send_file() leaves the temp file behind for
+        // cleanup_exports.php's scheduled task to sweep, same as an abandoned download.
+        send_file($entry['path'], $entry['filename'], 0, 0, false, false, 'application/pdf');
+        // send_file() does not return.
+    }
 
     send_temp_file($entry['path'], $entry['filename']);
     // send_temp_file() does not return.

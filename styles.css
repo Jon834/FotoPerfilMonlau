@@ -348,6 +348,13 @@
 .local-profilephoto-export {
     max-width: 700px;
     margin: 0 auto;
+    transition: max-width 0.15s ease;
+}
+
+/* Widened while "Control d'activitat" is active, to fit the form next to its
+   live preview panel; toggled by amd/src/export.js alongside the mode switch. */
+.local-profilephoto-export.lpp-export--wide {
+    max-width: 1200px;
 }
 
 .lpp-export-card {
@@ -532,4 +539,72 @@
 
 .lpp-activity-actions .btn {
     flex: 1;
+}
+
+/* Two-column layout: form on the left, live PDF preview on the right. Only
+   takes effect while shown - [hidden] still wins while the mode is inactive. */
+.lpp-activity-layout:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .lpp-activity-layout:not([hidden]) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.lpp-activity-previewcol {
+    position: sticky;
+    top: 1rem;
+}
+
+.lpp-activity-preview-panel {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: var(--body-bg, #fff);
+}
+
+.lpp-activity-preview-caption {
+    margin: 0 0 0.6rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+}
+
+.lpp-activity-preview-frame-wrap {
+    position: relative;
+    width: 100%;
+    /* A4 landscape aspect ratio (297:210), so the frame reads roughly full-size
+       instead of leaving awkward blank space above/below it. */
+    aspect-ratio: 297 / 210;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.35rem;
+    background: #f4f5f7;
+    overflow: hidden;
+}
+
+.lpp-activity-preview-frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+.lpp-activity-preview-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0;
+    padding: 1.5rem;
+    color: var(--secondary, #6c757d);
+    font-size: 0.9rem;
 }

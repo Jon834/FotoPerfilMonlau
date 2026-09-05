@@ -635,7 +635,6 @@ class pdf_builder {
         $namemaxh = $nameh * 2.4 + 1.0;
         $badger = max(2.6, min(4.2, $cardw * 0.105));
         $badgefont = (int) round(max(5, min(7, $badger * 1.7)));
-        $namechars = (int) round($cardw * 0.82);
 
         // 1. Card panel.
         $pdf->RoundedRect($x, $y, $cardw, $cardh, $small ? 1.8 : 2.4, '1111', 'DF',
@@ -646,12 +645,15 @@ class pdf_builder {
         $imgy = $y + $pad + 1.0;
         self::draw_avatar($pdf, $user, $cx, $imgy + $imgd / 2, $imgd);
 
-        // 3. Name block under the avatar (up to two lines).
+        // 3. Name block under the avatar (up to two-ish lines). The full name is always
+        // shown: $fitcell=true makes MultiCell shrink the font just enough to fit within
+        // $namemaxh instead of the previous behaviour of truncating with "…" at a
+        // single-line character budget before MultiCell ever got a chance to wrap it.
         $pdf->SetFont('helvetica', 'B', $namefont);
         $pdf->SetTextColor(45, 55, 72);
         $pdf->SetXY($x + 1, $imgy + $imgd + ($small ? 1.0 : 1.6));
-        $pdf->MultiCell($cardw - 2, $nameh, self::fit_name(self::format_student_name($user), $namechars),
-            0, 'C', false, 0, '', '', true, 0, false, true, $namemaxh, 'T');
+        $pdf->MultiCell($cardw - 2, $nameh, self::format_student_name($user),
+            0, 'C', false, 0, '', '', true, 0, false, true, $namemaxh, 'T', true);
 
         // 4. Number badge in the top-left corner of the card.
         self::draw_number_badge($pdf, $x + $badger + 1.2, $y + $badger + 1.2, $badger, $badgefont, $number, $brand);
