@@ -89,7 +89,10 @@ if ($token !== '') {
 
 $PAGE->set_url(new moodle_url('/local/profilephoto/export.php'));
 $PAGE->set_context($context);
-$PAGE->set_pagelayout('standard');
+// "report" (not "standard") so Boost does not cap the content region at
+// $course-content-maxwidth (~830px) - the "Control d'activitat" mode needs the
+// room for its form-beside-preview two-column layout. Same header/nav/drawers.
+$PAGE->set_pagelayout('report');
 $PAGE->set_title(get_string('export_title', 'local_profilephoto'));
 $PAGE->set_heading(get_string('export_title', 'local_profilephoto'));
 

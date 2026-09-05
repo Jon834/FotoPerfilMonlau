@@ -346,11 +346,11 @@
 }
 
 /* Wide (was 700px, ZIP/PDF-form-only): "Control d'activitat" puts the form
-   next to a live preview, so it wants the room. Fine for the plainer forms too.
-   The two-column split itself (below) is flex-based and does not depend on
-   this actually reaching 1300px - Moodle's page region may cap it narrower. */
+   next to a live preview, so it wants the room. export.php uses the "report"
+   page layout so Boost does not cap the content region, letting this take
+   effect. Fine for the plainer forms too. */
 .local-profilephoto-export {
-    max-width: 1300px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -552,12 +552,12 @@
 }
 
 .lpp-activity-formcol {
-    flex: 3 1 320px;
+    flex: 3 1 380px;
     min-width: 0;
 }
 
 .lpp-activity-previewcol {
-    flex: 2 1 300px;
+    flex: 2 1 340px;
     min-width: 0;
     position: sticky;
     top: 1rem;
