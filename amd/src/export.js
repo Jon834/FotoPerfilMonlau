@@ -74,7 +74,7 @@ const SELECTORS = {
 };
 
 /** @var {number} Maximum extra columns (beyond Núm./Alumne), mirrors activity_pdf_builder::MAX_EXTRA_COLUMNS. */
-const MAX_EXTRA_COLUMNS = 8;
+const MAX_EXTRA_COLUMNS = 10;
 
 /** @var {number} Maximum custom (user-defined) columns. */
 const MAX_CUSTOM_COLUMNS = 4;
@@ -85,6 +85,20 @@ const COLUMN_TEMPLATES = {
     activitat: ['present', 'material', 'observacions'],
     taller: ['present', 'epi', 'grupequip', 'material', 'observacions'],
 };
+
+/* Column widths (mm) - mirror of activity_pdf_builder::STANDARD_COLUMN_DEFS, used only
+   to warn the operator up-front when a selection can't fit the landscape page at a
+   readable size (the PHP side re-checks and is the authority). */
+const COLUMN_WIDTHS = {
+    present: 16, autoritzacio: 20, transport: 18, pagament: 18, menu: 15,
+    epi: 15, material: 18, grupequip: 20, hora: 16, email: 55, phone: 26, idnumber: 24,
+};
+const CUSTOM_WIDTH = {checkbox: 16, text: 22};
+const PAGE_INNER_MM = 297 - 20;
+const NUM_WIDTH_MM = 10;
+const ALUMNE_MIN_MM = 56;
+const OBS_MIN_MM = 26;
+const OBS_MIN_SHORT_MM = 15;
 
 /**
  * @return {Promise}
@@ -338,20 +352,46 @@ const initActivityMode = () => {
 
     const columnLabel = (key) => (state.customMeta[key] ? (state.customMeta[key].label || '') : standardLabel(key));
 
-    /**
-     * Disable further additions once the limit is reached; keep everything
-     * already selected untouched. Purely defensive - the state is always
-     * kept at/under the limit by construction.
-     */
-    const enforceColumnLimit = () => {
-        const atLimit = state.orderedKeys.length >= MAX_EXTRA_COLUMNS;
-        columnsWarning.hidden = state.orderedKeys.length <= MAX_EXTRA_COLUMNS;
-        standardCheckboxes().forEach((checkbox) => {
-            if (!checkbox.checked) {
-                checkbox.disabled = atLimit;
+    const columnWidth = (key) => {
+        if (state.customMeta[key]) {
+            return CUSTOM_WIDTH[state.customMeta[key].type] || CUSTOM_WIDTH.checkbox;
+        }
+        return COLUMN_WIDTHS[key] || 18;
+    };
+
+    // Same check as activity_pdf_builder::columns_fit(): do the selected columns fit
+    // the page next to Núm. + Alumne (min) + a usable Observacions?
+    const columnsFit = () => {
+        let fixed = 0;
+        let obsmin = 0;
+        state.orderedKeys.forEach((key) => {
+            if (key === 'observacions') {
+                obsmin = obsWidth && obsWidth.value === 'short' ? OBS_MIN_SHORT_MM : OBS_MIN_MM;
+            } else {
+                fixed += columnWidth(key);
             }
         });
-        addColumnBtn.disabled = atLimit || Object.keys(state.customMeta).length >= MAX_CUSTOM_COLUMNS;
+        return (NUM_WIDTH_MM + ALUMNE_MIN_MM + fixed + obsmin) <= PAGE_INNER_MM + 0.5;
+    };
+
+    /**
+     * Warn + block once the selection hits the count cap or won't fit the page,
+     * and keep everything already selected untouched otherwise.
+     */
+    const enforceColumnLimit = () => {
+        const overCount = state.orderedKeys.length >= MAX_EXTRA_COLUMNS;
+        const fits = columnsFit();
+        columnsWarning.hidden = fits && state.orderedKeys.length <= MAX_EXTRA_COLUMNS;
+        standardCheckboxes().forEach((checkbox) => {
+            if (!checkbox.checked) {
+                checkbox.disabled = overCount || !fits;
+            }
+        });
+        addColumnBtn.disabled = overCount || !fits || Object.keys(state.customMeta).length >= MAX_CUSTOM_COLUMNS;
+        if (previewBtn && generateBtn) {
+            previewBtn.disabled = !fits;
+            generateBtn.disabled = !fits;
+        }
     };
 
     const renderOrderList = () => {
@@ -524,6 +564,10 @@ const initActivityMode = () => {
     standardCheckboxes().forEach((checkbox) => checkbox.addEventListener('change', syncFromCheckboxes));
     addColumnBtn.addEventListener('click', addCustomColumn);
     template.addEventListener('change', () => applyTemplate(template.value));
+    if (obsWidth) {
+        // Switching Observacions to "curta" frees width, which can lift the fit warning.
+        obsWidth.addEventListener('change', enforceColumnLimit);
+    }
 
     // Apply the default template (Sortida) on load, matching the pre-checked columns.
     applyTemplate(template.value);

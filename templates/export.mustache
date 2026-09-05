@@ -27,6 +27,8 @@
       activitycolumns, activityorder.
     * canexportactivity bool - whether to offer the "Control d'activitat"
       format at all (local/profilephoto:exportactivity).
+    * canviewidentifiers bool - whether to offer the email / phone / idnumber
+      columns (local/profilephoto:viewidentifiers).
 
     Example context (json):
     {
@@ -36,7 +38,8 @@
             "density": "", "stage": "", "language": "", "heading": "",
             "activitycohort": "", "activitytemplate": "", "activitycolumns": "", "activityorder": ""
         },
-        "canexportactivity": true
+        "canexportactivity": true,
+        "canviewidentifiers": true
     }
 }}
 <div class="local-profilephoto-export" data-region="lpp-export-app">
@@ -291,6 +294,20 @@
                             <input type="checkbox" data-col-key="hora" data-col-type="text">
                             {{#str}}activity_col_hora, local_profilephoto{{/str}}
                         </label>
+                        {{#canviewidentifiers}}
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="email" data-col-type="value">
+                            {{#str}}activity_col_email, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="phone" data-col-type="value">
+                            {{#str}}activity_col_phone, local_profilephoto{{/str}}
+                        </label>
+                        <label class="lpp-activity-col-check">
+                            <input type="checkbox" data-col-key="idnumber" data-col-type="value">
+                            {{#str}}activity_col_idnumber, local_profilephoto{{/str}}
+                        </label>
+                        {{/canviewidentifiers}}
                         <label class="lpp-activity-col-check">
                             <input type="checkbox" data-col-key="observacions" data-col-type="text" checked>
                             {{#str}}activity_col_observacions, local_profilephoto{{/str}}
@@ -315,7 +332,9 @@
                         </button>
                     </div>
 
-                    <p id="lpp-activity-columns-warning" class="lpp-activity-columns-warning" role="alert" hidden></p>
+                    <p id="lpp-activity-columns-warning" class="lpp-activity-columns-warning" role="alert" hidden>
+                        {{#str}}activity_columns_warning, local_profilephoto{{/str}}
+                    </p>
 
                     <div class="lpp-field">
                         <span class="lpp-field-label">{{#str}}activity_reorder, local_profilephoto{{/str}}</span>

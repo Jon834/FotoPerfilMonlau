@@ -112,10 +112,12 @@ $helpicons = [
 ];
 
 $canexportactivity = has_capability('local/profilephoto:exportactivity', $context);
+$canviewidentifiers = has_capability('local/profilephoto:viewidentifiers', $context);
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_profilephoto/export', [
     'helpicons' => $helpicons,
     'canexportactivity' => $canexportactivity,
+    'canviewidentifiers' => $canviewidentifiers,
 ]);
 echo $OUTPUT->footer();

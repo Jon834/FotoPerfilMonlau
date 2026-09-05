@@ -142,6 +142,15 @@ class create_activity_export extends external_api {
 
         $extracolumns = self::normalize_columns($params['columns']);
 
+        // Columns that print a student's email / phone / idnumber need the same
+        // capability the rest of the plugin uses to gate personal identifiers.
+        $wantsidentifiers = (bool) array_filter($extracolumns, static function(array $column): bool {
+            return in_array($column['key'], activity_pdf_builder::IDENTIFIER_COLUMNS, true);
+        });
+        if ($wantsidentifiers) {
+            require_capability('local/profilephoto:viewidentifiers', $context);
+        }
+
         $members = self::get_cohort_member_users((int) $cohort->id);
 
         $maxsync = (int) get_config('local_profilephoto', 'maxsyncexportusers') ?: 300;
@@ -208,13 +217,15 @@ class create_activity_export extends external_api {
      * {@see create_export}'s own cohort branch already uses.
      *
      * @param int $cohortid
-     * @return \stdClass[] indexed by userid, each with id/firstname/lastname/picture.
+     * @return \stdClass[] indexed by userid, each with id/firstname/lastname/picture and
+     *     email/phone1/idnumber (only rendered when an identifier column is selected and
+     *     the operator holds local/profilephoto:viewidentifiers).
      */
     private static function get_cohort_member_users(int $cohortid): array {
         global $DB;
 
         return $DB->get_records_sql(
-            "SELECT u.id, u.firstname, u.lastname, u.picture
+            "SELECT u.id, u.firstname, u.lastname, u.picture, u.email, u.phone1, u.idnumber
                FROM {user} u
                JOIN {cohort_members} cm ON cm.userid = u.id
               WHERE cm.cohortid = :cohortid AND u.deleted = 0
@@ -282,6 +293,11 @@ class create_activity_export extends external_api {
             $label = mb_substr($label, 0, self::MAX_CUSTOM_LABEL_LENGTH);
 
             $normalized[] = ['key' => $key, 'label' => $label, 'type' => $type];
+        }
+
+        if (!activity_pdf_builder::columns_fit($normalized)) {
+            throw new moodle_exception('error_activitytoomanycolumns', 'local_profilephoto', '',
+                activity_pdf_builder::MAX_EXTRA_COLUMNS);
         }
 
         return $normalized;

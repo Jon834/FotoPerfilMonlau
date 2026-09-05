@@ -580,21 +580,33 @@ visual en los cuatro formatos ya en producción.
 marcada como absorbente (`Observacions` si está seleccionada, si no
 `Alumne`) se lleva el resto del ancho disponible.
 
+Tipos de columna: `checkbox` (casilla), `text` (celda en blanco para
+escribir) y `value` (muestra un dato del perfil del alumno). Las columnas
+`value` disponibles - `email`, `phone`, `idnumber` - están protegidas por
+la capability `local/profilephoto:viewidentifiers` (la misma que ya usa
+`scope::can_view_identifiers()`): `export.php` solo muestra sus casillas
+si el operador la tiene, y `create_activity_export.php` la vuelve a exigir
+si el payload las incluye.
+
 `Observacions` admite dos anchuras (`width` en el payload de columnas):
 `normal` (absorbe todo el espacio libre) y `short` (solo la mitad; el
 resto va a `Alumne` en lugar de quedar como margen en blanco), pensada
 para dejar sitio a más columnas.
 
-El máximo de columnas adicionales
-(`activity_pdf_builder::MAX_EXTRA_COLUMNS`, actualmente **8** - subido
-desde 6 tras comprobar que a los anchos por tipo definidos aún sobra
-espacio para una `Observacions`/`Alumne` cómoda) se valida en
-`amd/src/export.js` (deshabilita más checkboxes y "Afegir columna" al
-llegar al límite), en `create_activity_export.php` (excepción si se
-supera, por si alguien evita el JS) y de nuevo dentro de
-`activity_pdf_builder::build()` como última línea de defensa. El
-`MAX_EXTRA_COLUMNS` de JS es una constante espejo que hay que mantener en
-sincronía con la de PHP.
+Hay **dos límites**, ambos validados en cliente
+(`amd/src/export.js`: aviso + botones bloqueados) y servidor
+(`activity_pdf_builder::build()` / `create_activity_export.php`:
+excepción):
+
+1. Recuento: `MAX_EXTRA_COLUMNS` = **10** (constante espejo en JS que hay
+   que mantener sincronizada con la de PHP).
+2. Anchura real: `activity_pdf_builder::columns_fit()` comprueba que la
+   suma de anchos por tipo + `Núm.` + `Alumne` (mínimo) + una
+   `Observacions` legible cabe en el A4 apaisado. La tabla de anchos por
+   tipo también está espejada en JS (`COLUMN_WIDTHS`). Si aun así algo se
+   colara, `compute_column_widths()` escala todas las columnas de forma
+   proporcional como última red de seguridad para que nunca se salga de
+   la página.
 
 ### 13.5. Altura de fila y paginación
 

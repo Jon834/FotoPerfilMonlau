@@ -64,14 +64,21 @@ class activity_pdf_builder {
     private const CONTINUATION_TOP = 14.0;
 
     /**
-     * Maximum number of columns beyond the mandatory Núm./Alumne. At the per-column
-     * widths in STANDARD_COLUMN_DEFS, 8 narrow/medium columns still leave a
-     * comfortable Observacions/Alumne width - confirmed both by hand (8 columns
-     * average ~17mm = ~136mm, out of ~211mm available beyond Núm./Alumne's minimum)
-     * and by rendering it, so the limit is a legibility/practicality choice, not a
-     * hard width constraint.
+     * Maximum number of columns beyond the mandatory Núm./Alumne. A
+     * legibility/practicality cap, not a hard width limit: compute_column_widths()
+     * scales the fixed columns down proportionally (to a ~12mm floor) if the
+     * selection would otherwise overflow the page, so the sheet always fits.
      */
-    public const MAX_EXTRA_COLUMNS = 8;
+    public const MAX_EXTRA_COLUMNS = 10;
+
+    /** @var string[] Standard columns that show a value read from the student's profile
+     *  (as opposed to a blank cell to fill in). Gated by local/profilephoto:viewidentifiers
+     *  in create_activity_export.php. */
+    public const IDENTIFIER_COLUMNS = ['email', 'idnumber', 'phone'];
+
+    /** @var float Minimum readable width for the Observacions column ("normal" / "curta"). */
+    private const OBSERVACIONS_MIN_WIDTH = 26.0;
+    private const OBSERVACIONS_MIN_WIDTH_SHORT = 15.0;
 
     /**
      * Row height bounds (min, max) in mm, by density option. "normal" keeps the
@@ -93,7 +100,9 @@ class activity_pdf_builder {
     private const GENERALOBS_HEIGHT = 20.0;
 
     /**
-     * Definitions for the ten selectable standard columns: type and width (mm).
+     * Definitions for the selectable standard columns: type and width (mm).
+     * Types: "checkbox" (empty square to tick), "text" (blank box to write in),
+     * "value" (shows a value read from the student's profile).
      * "observacions" has no fixed width: it always absorbs the remaining space.
      */
     private const STANDARD_COLUMN_DEFS = [
@@ -106,8 +115,39 @@ class activity_pdf_builder {
         'material' => ['type' => 'checkbox', 'width' => 18.0],
         'grupequip' => ['type' => 'text', 'width' => 20.0],
         'hora' => ['type' => 'text', 'width' => 16.0],
+        'email' => ['type' => 'value', 'width' => 55.0],
+        'phone' => ['type' => 'value', 'width' => 26.0],
+        'idnumber' => ['type' => 'value', 'width' => 24.0],
         'observacions' => ['type' => 'text', 'width' => 0.0],
     ];
+
+    /**
+     * Whether the given extra columns fit on the page at a readable size, alongside
+     * the mandatory Núm. + Alumne (minimum) and a usable Observacions.
+     *
+     * @param array $columns list of {key, type, short?} entries.
+     * @return bool
+     */
+    public static function columns_fit(array $columns): bool {
+        $available = self::PAGE_WIDTH - (self::MARGIN * 2);
+
+        $fixed = 0.0;
+        $obsmin = 0.0;
+        foreach ($columns as $column) {
+            $key = (string) ($column['key'] ?? '');
+            if ($key === '') {
+                continue;
+            }
+            if ($key === 'observacions') {
+                $obsmin = !empty($column['short'])
+                    ? self::OBSERVACIONS_MIN_WIDTH_SHORT : self::OBSERVACIONS_MIN_WIDTH;
+                continue;
+            }
+            $fixed += self::column_width($key, (string) ($column['type'] ?? 'checkbox'));
+        }
+
+        return (self::NUM_WIDTH + self::ALUMNE_MIN_WIDTH + $fixed + $obsmin) <= $available + 0.5;
+    }
 
     /**
      * Whether a column key is one of the ten built-in standard columns.
@@ -150,7 +190,7 @@ class activity_pdf_builder {
         $extracolumns = array_values(array_filter($columns, static function(array $column): bool {
             return ($column['key'] ?? '') !== '';
         }));
-        if (count($extracolumns) > self::MAX_EXTRA_COLUMNS) {
+        if (count($extracolumns) > self::MAX_EXTRA_COLUMNS || !self::columns_fit($extracolumns)) {
             throw new moodle_exception('error_activitytoomanycolumns', 'local_profilephoto', '', self::MAX_EXTRA_COLUMNS);
         }
 
@@ -170,6 +210,9 @@ class activity_pdf_builder {
             $user->id = (int) $member->id;
             $user->firstname = (string) ($member->firstname ?? '');
             $user->lastname = (string) ($member->lastname ?? '');
+            $user->email = (string) ($member->email ?? '');
+            $user->phone = (string) ($member->phone1 ?? $member->phone ?? '');
+            $user->idnumber = (string) ($member->idnumber ?? '');
             $user->photo = $showphotos && ((int) ($member->picture ?? 0)) > 0
                 ? self::get_icon_content($user->id) : null;
             $users[] = $user;
@@ -287,12 +330,14 @@ class activity_pdf_builder {
         }
 
         if ($hasobservacions) {
-            $remaining = max($available - self::ALUMNE_MIN_WIDTH - $fixedsum, 26.0);
+            // Observacions absorbs whatever is left (down to a readable minimum -
+            // columns_fit() already rejected selections where that wouldn't hold);
+            // "curta" takes only half of that and hands the rest to Alumne rather
+            // than leaving it as blank margin.
+            $obsmin = $observacionsshort ? self::OBSERVACIONS_MIN_WIDTH_SHORT : self::OBSERVACIONS_MIN_WIDTH;
+            $remaining = max($available - self::ALUMNE_MIN_WIDTH - $fixedsum, $obsmin);
             if ($observacionsshort) {
-                // "Curta": Observacions only claims half of what it would normally get,
-                // freeing the other half for Alumne (or, once selected, for more
-                // columns) instead of leaving it as unused blank margin.
-                $observacionswidth = max($remaining / 2, 18.0);
+                $observacionswidth = max($remaining / 2, $obsmin);
                 $alumnewidth = self::ALUMNE_MIN_WIDTH + max($remaining - $observacionswidth, 0.0);
             } else {
                 $observacionswidth = $remaining;
@@ -301,6 +346,16 @@ class activity_pdf_builder {
             $widths['observacions'] = $observacionswidth;
         } else {
             $alumnewidth = max(self::ALUMNE_MIN_WIDTH, $available - $fixedsum);
+        }
+
+        // Final guarantee: whatever slips through, the row never runs off the page.
+        $total = $alumnewidth + array_sum($widths);
+        if ($total > $available && $total > 0.0) {
+            $scale = $available / $total;
+            $alumnewidth *= $scale;
+            foreach ($widths as $key => $width) {
+                $widths[$key] = $width * $scale;
+            }
         }
 
         return [$widths, $alumnewidth];
@@ -600,10 +655,14 @@ class activity_pdf_builder {
 
         foreach ($extracolumns as $column) {
             $key = (string) $column['key'];
-            $width = $colwidths[$key] ?? self::column_width($key, (string) ($column['type'] ?? 'checkbox'));
+            $type = (string) ($column['type'] ?? 'checkbox');
+            $width = $colwidths[$key] ?? self::column_width($key, $type);
             $label = self::column_label($column, $language);
+            // Value columns (email, phone...) hold left-aligned text, like Alumne;
+            // the rest are centred like their checkbox/blank cells below.
+            $align = $type === 'value' ? 'L' : 'C';
             $pdf->SetXY($x, $y);
-            $pdf->Cell($width, $h, self::fit_text($pdf, $label, $width - 1.5), 1, 0, 'C', true);
+            $pdf->Cell($width, $h, self::fit_text($pdf, $label, $width - 1.5), 1, 0, $align, true);
             $x += $width;
         }
 
@@ -680,6 +739,16 @@ class activity_pdf_builder {
                 $pdf->SetDrawColor(120, 128, 140);
                 $pdf->Rect($cx - $side / 2, $cy - $side / 2, $side, $side, 'D');
                 $pdf->SetDrawColor(216, 221, 229);
+            } else if ($type === 'value') {
+                $value = self::user_field_value($user, $key);
+                if ($value !== '') {
+                    $pdf->SetFont('helvetica', '', min(7.5, max(5.5, $rowheight * 0.85)));
+                    $pdf->SetTextColor(60, 66, 76);
+                    $pdf->SetXY($x + 1.5, $y);
+                    $pdf->Cell($width - 3.0, $rowheight, self::fit_text($pdf, $value, $width - 3.0),
+                        0, 0, 'L', false, '', 0, false, 'T', 'M');
+                    $pdf->SetTextColor(0, 0, 0);
+                }
             }
             // Text-type columns are left as an empty boxed cell: the box itself is the
             // space to write in, no extra line needed inside it.
@@ -865,6 +934,26 @@ class activity_pdf_builder {
     }
 
     /**
+     * The profile value shown in a "value"-type column.
+     *
+     * @param stdClass $user
+     * @param string $key email|phone|idnumber
+     * @return string
+     */
+    private static function user_field_value(stdClass $user, string $key): string {
+        switch ($key) {
+            case 'email':
+                return trim((string) ($user->email ?? ''));
+            case 'phone':
+                return trim((string) ($user->phone ?? ''));
+            case 'idnumber':
+                return trim((string) ($user->idnumber ?? ''));
+            default:
+                return '';
+        }
+    }
+
+    /**
      * Provide the Monlau brand palette (mirrors pdf_builder::brand_colors()).
      *
      * @param string $stage
@@ -1012,16 +1101,19 @@ class activity_pdf_builder {
                 'present' => 'Present', 'autoritzacio' => 'Autorització', 'transport' => 'Transport',
                 'pagament' => 'Pagament', 'menu' => 'Menú', 'epi' => 'EPI', 'material' => 'Material',
                 'grupequip' => 'Grup / Equip', 'hora' => 'Hora', 'observacions' => 'Observacions',
+                'email' => 'Correu', 'phone' => 'Telèfon', 'idnumber' => 'ID',
             ],
             'es' => [
                 'present' => 'Presente', 'autoritzacio' => 'Autorización', 'transport' => 'Transporte',
                 'pagament' => 'Pago', 'menu' => 'Menú', 'epi' => 'EPI', 'material' => 'Material',
                 'grupequip' => 'Grupo / Equipo', 'hora' => 'Hora', 'observacions' => 'Observaciones',
+                'email' => 'Correo', 'phone' => 'Teléfono', 'idnumber' => 'ID',
             ],
             'en' => [
                 'present' => 'Present', 'autoritzacio' => 'Authorisation', 'transport' => 'Transport',
                 'pagament' => 'Payment', 'menu' => 'Menu', 'epi' => 'PPE', 'material' => 'Material',
                 'grupequip' => 'Group / Team', 'hora' => 'Time', 'observacions' => 'Notes',
+                'email' => 'Email', 'phone' => 'Phone', 'idnumber' => 'ID',
             ],
         ];
         return $map[$language][$key] ?? ($map['ca'][$key] ?? $key);

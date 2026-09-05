@@ -345,14 +345,12 @@
     padding: 0.6rem 1.5rem;
 }
 
-/* 1100px unconditionally (was 700px, ZIP/PDF-form-only width): wide enough
-   for "Control d'activitat"'s two-column form+preview layout to always have
-   room, without depending on JS toggling a class on this element to widen it
-   only in that mode - one less moving part that could silently fail (e.g.
-   from a stale cached AMD module) and leave the preview panel squeezed into
-   the old narrow width. Comfortably fine for the plainer ZIP/PDF form too. */
+/* Wide (was 700px, ZIP/PDF-form-only): "Control d'activitat" puts the form
+   next to a live preview, so it wants the room. Fine for the plainer forms too.
+   The two-column split itself (below) is flex-based and does not depend on
+   this actually reaching 1300px - Moodle's page region may cap it narrower. */
 .local-profilephoto-export {
-    max-width: 1100px;
+    max-width: 1300px;
     margin: 0 auto;
 }
 
@@ -540,33 +538,29 @@
     flex: 1;
 }
 
-/* Two-column layout: form on the left, live PDF preview on the right. Only
-   takes effect while shown - [hidden] still wins while the mode is inactive.
-   auto-fit/minmax (not a fixed max-width breakpoint) so it responds to
-   whatever width is actually available inside Moodle's own page chrome
-   (nav/block drawers can leave much less room than the raw window width) -
-   two 360px-minimum columns side by side when there's space for both,
-   stacked otherwise. Same technique .lpp-grid already uses. */
+/* Two-column layout: form on the left, live PDF preview on the right.
+   flex-wrap (not a viewport @media query, and not a grid that needs the
+   container to be a fixed width) so the two columns sit side by side
+   whenever the card is wider than roughly 640px - which it is on any
+   desktop, even with Moodle's block/nav drawers open narrowing the page
+   region - and only stack on a genuinely narrow (phone) card. */
 .lpp-activity-layout:not([hidden]) {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    align-items: start;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 1.5rem;
 }
 
 .lpp-activity-formcol {
+    flex: 3 1 320px;
     min-width: 0;
 }
 
-/* Keep the preview in view while scrolling a tall form - but only once there is
-   actually room for the two columns side by side (matches the auto-fit
-   breakpoint above); stacked on narrow screens, sticky would just pin the
-   preview awkwardly mid-page while scrolling past the form above it. */
-@media (min-width: 760px) {
-    .lpp-activity-previewcol {
-        position: sticky;
-        top: 1rem;
-    }
+.lpp-activity-previewcol {
+    flex: 2 1 300px;
+    min-width: 0;
+    position: sticky;
+    top: 1rem;
 }
 
 .lpp-activity-preview-panel {
