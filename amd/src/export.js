@@ -69,15 +69,12 @@ const SELECTORS = {
     ACTIVITY_GENERATE_BTN: '#lpp-activity-generate-btn',
     ACTIVITY_PREVIEW_FRAME: '#lpp-activity-preview-frame',
     ACTIVITY_PREVIEW_PLACEHOLDER: '#lpp-activity-preview-placeholder',
-    EXPORT_ROOT: '.local-profilephoto-export',
+    ACTIVITY_OBS_WIDTH: '#lpp-activity-obs-width',
+    ACTIVITY_OBS_WIDTH_FIELD: '#lpp-activity-obs-width-field',
 };
 
-/** @var {string} Class toggled on SELECTORS.EXPORT_ROOT while "Control d'activitat" is
- *  active, to make room for the live preview panel next to the form. */
-const WIDE_CLASS = 'lpp-export--wide';
-
 /** @var {number} Maximum extra columns (beyond Núm./Alumne), mirrors activity_pdf_builder::MAX_EXTRA_COLUMNS. */
-const MAX_EXTRA_COLUMNS = 6;
+const MAX_EXTRA_COLUMNS = 8;
 
 /** @var {number} Maximum custom (user-defined) columns. */
 const MAX_CUSTOM_COLUMNS = 4;
@@ -279,7 +276,6 @@ const initModeToggle = () => {
     const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
     const standardBlocks = document.querySelectorAll(SELECTORS.MODE_STANDARD);
     const activityBlocks = document.querySelectorAll(SELECTORS.MODE_ACTIVITY);
-    const root = document.querySelector(SELECTORS.EXPORT_ROOT);
 
     const update = () => {
         const isActivity = exportType.value === 'activity';
@@ -289,10 +285,6 @@ const initModeToggle = () => {
         activityBlocks.forEach((el) => {
             el.hidden = !isActivity;
         });
-        // Widen the page while the form shares space with the live preview panel.
-        if (root) {
-            root.classList.toggle(WIDE_CLASS, isActivity);
-        }
     };
 
     exportType.addEventListener('change', update);
@@ -317,6 +309,8 @@ const initActivityMode = () => {
     const generateBtn = document.querySelector(SELECTORS.ACTIVITY_GENERATE_BTN);
     const previewFrame = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_FRAME);
     const previewPlaceholder = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_PLACEHOLDER);
+    const obsWidth = document.querySelector(SELECTORS.ACTIVITY_OBS_WIDTH);
+    const obsWidthField = document.querySelector(SELECTORS.ACTIVITY_OBS_WIDTH_FIELD);
     const status = document.querySelector(SELECTORS.STATUS);
 
     // Ordered list of extra column keys (beyond Núm./Alumne). Custom columns'
@@ -405,6 +399,13 @@ const initActivityMode = () => {
         renderOrderList();
     };
 
+    // The "Observacions width" control only matters while that column is selected.
+    const updateObsWidthVisibility = () => {
+        if (obsWidthField) {
+            obsWidthField.hidden = state.orderedKeys.indexOf('observacions') === -1;
+        }
+    };
+
     const syncFromCheckboxes = () => {
         standardCheckboxes().forEach((checkbox) => {
             const key = checkbox.dataset.colKey;
@@ -416,6 +417,7 @@ const initActivityMode = () => {
             }
         });
         enforceColumnLimit();
+        updateObsWidthVisibility();
         renderOrderList();
     };
 
@@ -515,6 +517,7 @@ const initActivityMode = () => {
         });
         state.orderedKeys = keys.slice();
         enforceColumnLimit();
+        updateObsWidthVisibility();
         renderOrderList();
     };
 
@@ -549,6 +552,7 @@ const initActivityMode = () => {
         key,
         label: columnLabel(key),
         type: columnType(key),
+        width: key === 'observacions' ? obsWidth.value : 'normal',
     }));
 
     const collectActivityFields = () => ({

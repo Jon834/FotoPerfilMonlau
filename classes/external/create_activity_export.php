@@ -75,6 +75,9 @@ class create_activity_export extends external_api {
                 'key' => new external_value(PARAM_ALPHANUMEXT, 'Column key'),
                 'label' => new external_value(PARAM_TEXT, 'Column label (custom columns only)', VALUE_DEFAULT, ''),
                 'type' => new external_value(PARAM_ALPHA, 'checkbox | text', VALUE_DEFAULT, 'checkbox'),
+                'width' => new external_value(PARAM_ALPHA,
+                    'normal | short - Observacions only: "short" halves its width, giving the rest to Alumne',
+                    VALUE_DEFAULT, 'normal'),
             ]), 'Ordered list of extra columns, beyond the mandatory Núm./Alumne', VALUE_DEFAULT, []),
             'language' => new external_value(PARAM_ALPHA, 'ca | es | en', VALUE_DEFAULT, 'ca'),
             'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx | corporate', VALUE_DEFAULT, 'fp'),
@@ -254,6 +257,9 @@ class create_activity_export extends external_api {
                     'key' => $key,
                     'label' => '',
                     'type' => activity_pdf_builder::standard_column_type($key),
+                    // Only meaningful for 'observacions'; harmless no-op on every other
+                    // standard column, which ignores it.
+                    'short' => ($column['width'] ?? 'normal') === 'short',
                 ];
                 continue;
             }

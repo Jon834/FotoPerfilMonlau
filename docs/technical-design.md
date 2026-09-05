@@ -573,17 +573,28 @@ Moodle real para correr `tests/pdf_builder_test.php` tras un refactor,
 duplicar ~150 líneas resultaba más seguro que arriesgar una regresión
 visual en los cuatro formatos ya en producción.
 
-### 13.4. Columnas: cálculo de anchos y límite de 6
+### 13.4. Columnas: cálculo de anchos y límite
 
 `Núm.` (10mm) y `Alumne` (mínimo ~56mm) son fijas. Cada columna extra
 (estándar o personalizada) tiene un ancho fijo por tipo; la columna
 marcada como absorbente (`Observacions` si está seleccionada, si no
-`Alumne`) se lleva el resto del ancho disponible. El máximo de 6 columnas
-adicionales (`activity_pdf_builder::MAX_EXTRA_COLUMNS`) se valida tanto en
-`amd/src/export.js` (deshabilita más checkboxes y el botón "Afegir
-columna" al llegar al límite) como en `create_activity_export.php`
-(excepción si se supera, por si alguien evita el JS) y de nuevo dentro de
-`activity_pdf_builder::build()` como última línea de defensa.
+`Alumne`) se lleva el resto del ancho disponible.
+
+`Observacions` admite dos anchuras (`width` en el payload de columnas):
+`normal` (absorbe todo el espacio libre) y `short` (solo la mitad; el
+resto va a `Alumne` en lugar de quedar como margen en blanco), pensada
+para dejar sitio a más columnas.
+
+El máximo de columnas adicionales
+(`activity_pdf_builder::MAX_EXTRA_COLUMNS`, actualmente **8** - subido
+desde 6 tras comprobar que a los anchos por tipo definidos aún sobra
+espacio para una `Observacions`/`Alumne` cómoda) se valida en
+`amd/src/export.js` (deshabilita más checkboxes y "Afegir columna" al
+llegar al límite), en `create_activity_export.php` (excepción si se
+supera, por si alguien evita el JS) y de nuevo dentro de
+`activity_pdf_builder::build()` como última línea de defensa. El
+`MAX_EXTRA_COLUMNS` de JS es una constante espejo que hay que mantener en
+sincronía con la de PHP.
 
 ### 13.5. Altura de fila y paginación
 

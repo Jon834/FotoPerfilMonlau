@@ -345,16 +345,15 @@
     padding: 0.6rem 1.5rem;
 }
 
+/* 1100px unconditionally (was 700px, ZIP/PDF-form-only width): wide enough
+   for "Control d'activitat"'s two-column form+preview layout to always have
+   room, without depending on JS toggling a class on this element to widen it
+   only in that mode - one less moving part that could silently fail (e.g.
+   from a stale cached AMD module) and leave the preview panel squeezed into
+   the old narrow width. Comfortably fine for the plainer ZIP/PDF form too. */
 .local-profilephoto-export {
-    max-width: 700px;
+    max-width: 1100px;
     margin: 0 auto;
-    transition: max-width 0.15s ease;
-}
-
-/* Widened while "Control d'activitat" is active, to fit the form next to its
-   live preview panel; toggled by amd/src/export.js alongside the mode switch. */
-.local-profilephoto-export.lpp-export--wide {
-    max-width: 1200px;
 }
 
 .lpp-export-card {

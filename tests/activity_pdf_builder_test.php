@@ -119,10 +119,13 @@ final class activity_pdf_builder_test extends advanced_testcase {
     public function test_build_rejects_too_many_columns(): void {
         $this->resetAfterTest();
 
+        // One more than activity_pdf_builder::MAX_EXTRA_COLUMNS.
         $columns = [];
-        foreach (['present', 'autoritzacio', 'transport', 'pagament', 'menu', 'epi', 'material'] as $key) {
+        foreach (['present', 'autoritzacio', 'transport', 'pagament', 'menu', 'epi', 'material', 'grupequip',
+                'hora'] as $key) {
             $columns[] = ['key' => $key, 'label' => '', 'type' => 'checkbox'];
         }
+        $this->assertGreaterThan(activity_pdf_builder::MAX_EXTRA_COLUMNS, count($columns));
 
         $this->expectException(moodle_exception::class);
         activity_pdf_builder::build([$this->member(1, 'Nora', 'Assali')], 'Grup X', [], $columns);

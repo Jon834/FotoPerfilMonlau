@@ -63,8 +63,15 @@ class activity_pdf_builder {
     /** @var float Y coordinate content starts at on pages after the first. */
     private const CONTINUATION_TOP = 14.0;
 
-    /** @var int Maximum number of columns beyond the mandatory Núm./Alumne. */
-    public const MAX_EXTRA_COLUMNS = 6;
+    /**
+     * Maximum number of columns beyond the mandatory Núm./Alumne. At the per-column
+     * widths in STANDARD_COLUMN_DEFS, 8 narrow/medium columns still leave a
+     * comfortable Observacions/Alumne width - confirmed both by hand (8 columns
+     * average ~17mm = ~136mm, out of ~211mm available beyond Núm./Alumne's minimum)
+     * and by rendering it, so the limit is a legibility/practicality choice, not a
+     * hard width constraint.
+     */
+    public const MAX_EXTRA_COLUMNS = 8;
 
     /**
      * Row height bounds (min, max) in mm, by density option. "normal" keeps the
@@ -258,9 +265,11 @@ class activity_pdf_builder {
         $available = self::PAGE_WIDTH - (self::MARGIN * 2) - self::NUM_WIDTH;
 
         $hasobservacions = false;
+        $observacionsshort = false;
         foreach ($columns as $column) {
             if (($column['key'] ?? '') === 'observacions') {
                 $hasobservacions = true;
+                $observacionsshort = !empty($column['short']);
                 break;
             }
         }
@@ -278,9 +287,18 @@ class activity_pdf_builder {
         }
 
         if ($hasobservacions) {
-            $alumnewidth = self::ALUMNE_MIN_WIDTH;
-            $remaining = $available - $alumnewidth - $fixedsum;
-            $widths['observacions'] = max($remaining, 25.0);
+            $remaining = max($available - self::ALUMNE_MIN_WIDTH - $fixedsum, 26.0);
+            if ($observacionsshort) {
+                // "Curta": Observacions only claims half of what it would normally get,
+                // freeing the other half for Alumne (or, once selected, for more
+                // columns) instead of leaving it as unused blank margin.
+                $observacionswidth = max($remaining / 2, 18.0);
+                $alumnewidth = self::ALUMNE_MIN_WIDTH + max($remaining - $observacionswidth, 0.0);
+            } else {
+                $observacionswidth = $remaining;
+                $alumnewidth = self::ALUMNE_MIN_WIDTH;
+            }
+            $widths['observacions'] = $observacionswidth;
         } else {
             $alumnewidth = max(self::ALUMNE_MIN_WIDTH, $available - $fixedsum);
         }
@@ -398,7 +416,7 @@ class activity_pdf_builder {
     private static function render_activity_block(\TCPDF &$pdf, array $activity, ?\DateTime $activitydate, int $count,
             string $language, array $brand): float {
         $top = 24.0;
-        $height = 19.0;
+        $height = 12.5;
         $left = self::MARGIN;
         $width = self::PAGE_WIDTH - self::MARGIN * 2;
 
@@ -412,21 +430,18 @@ class activity_pdf_builder {
         // placeholder, which reads as noise once several fields on the sheet are unused.
         $datestr = $activitydate !== null ? $activitydate->format('d/m/Y') : '';
 
-        $row1y = $top + 3.0;
-        $row2y = $top + 10.5;
         $padx = $left + 4.0;
 
-        self::render_kv_row($pdf, $padx, $row1y, $width - 8.0, [
-            [self::translate_word('activity', $language), $name, 78.0],
-            [self::translate_word('date', $language), $datestr, 34.0],
-            [self::translate_word('place', $language), $place, 60.0],
-        ]);
-
-        self::render_kv_row($pdf, $padx, $row2y, $width - 8.0, [
-            [self::translate_word('responsables', $language), $responsables, 86.0],
-            [ucfirst(self::translate_word('students', $language)), (string) $count, 30.0],
-            [self::translate_word('present', $language), null, 28.0],
-            [self::translate_word('absent', $language), null, 28.0],
+        // All seven fields on a single line (was two): keeps the block compact so the
+        // table gets more of the page. render_kv_row already truncates long values.
+        self::render_kv_row($pdf, $padx, $top + 4.0, $width - 8.0, [
+            [self::translate_word('activity', $language), $name, 45.0],
+            [self::translate_word('date', $language), $datestr, 31.0],
+            [self::translate_word('place', $language), $place, 33.0],
+            [self::translate_word('responsables', $language), $responsables, 56.0],
+            [ucfirst(self::translate_word('students', $language)), (string) $count, 27.0],
+            [self::translate_word('present', $language), null, 27.0],
+            [self::translate_word('absent', $language), null, 27.0],
         ]);
 
         $pdf->SetTextColor(0, 0, 0);
