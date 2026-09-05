@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_profilephoto';
-$plugin->version   = 2026090502;
+$plugin->version   = 2026090503;
 // Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
 // against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
 $plugin->requires  = 2025100600;
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.7.3 (Exportar: disposició de pàgina "report" perquè Boost no limiti l\'amplada de la pantalla de Control d\'activitat)';
+$plugin->release   = '0.7.4 (Control d\'activitat: joc de columnes reduït - fora Pagament, Menú, Grup/Equip, Telèfon, ID)';

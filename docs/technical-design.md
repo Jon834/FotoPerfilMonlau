@@ -581,12 +581,16 @@ marcada como absorbente (`Observacions` si está seleccionada, si no
 `Alumne`) se lleva el resto del ancho disponible.
 
 Tipos de columna: `checkbox` (casilla), `text` (celda en blanco para
-escribir) y `value` (muestra un dato del perfil del alumno). Las columnas
-`value` disponibles - `email`, `phone`, `idnumber` - están protegidas por
-la capability `local/profilephoto:viewidentifiers` (la misma que ya usa
-`scope::can_view_identifiers()`): `export.php` solo muestra sus casillas
+escribir) y `value` (muestra un dato del perfil del alumno). La columna
+`value` disponible - `email` (ver `IDENTIFIER_COLUMNS`) - está protegida
+por la capability `local/profilephoto:viewidentifiers` (la misma que ya
+usa `scope::can_view_identifiers()`): `export.php` solo muestra su casilla
 si el operador la tiene, y `create_activity_export.php` la vuelve a exigir
-si el payload las incluye.
+si el payload la incluye.
+
+Columnas estándar actuales: `present`, `autoritzacio`, `transport`,
+`epi`, `material`, `hora`, `email`, `observacions` (más hasta 4
+personalizadas).
 
 `Observacions` admite dos anchuras (`width` en el payload de columnas):
 `normal` (absorbe todo el espacio libre) y `short` (solo la mitad; el

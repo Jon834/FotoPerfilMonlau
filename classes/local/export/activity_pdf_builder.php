@@ -74,7 +74,7 @@ class activity_pdf_builder {
     /** @var string[] Standard columns that show a value read from the student's profile
      *  (as opposed to a blank cell to fill in). Gated by local/profilephoto:viewidentifiers
      *  in create_activity_export.php. */
-    public const IDENTIFIER_COLUMNS = ['email', 'idnumber', 'phone'];
+    public const IDENTIFIER_COLUMNS = ['email'];
 
     /** @var float Minimum readable width for the Observacions column ("normal" / "curta"). */
     private const OBSERVACIONS_MIN_WIDTH = 26.0;
@@ -109,15 +109,10 @@ class activity_pdf_builder {
         'present' => ['type' => 'checkbox', 'width' => 16.0],
         'autoritzacio' => ['type' => 'checkbox', 'width' => 20.0],
         'transport' => ['type' => 'checkbox', 'width' => 18.0],
-        'pagament' => ['type' => 'checkbox', 'width' => 18.0],
-        'menu' => ['type' => 'checkbox', 'width' => 15.0],
         'epi' => ['type' => 'checkbox', 'width' => 15.0],
         'material' => ['type' => 'checkbox', 'width' => 18.0],
-        'grupequip' => ['type' => 'text', 'width' => 20.0],
         'hora' => ['type' => 'text', 'width' => 16.0],
         'email' => ['type' => 'value', 'width' => 55.0],
-        'phone' => ['type' => 'value', 'width' => 26.0],
-        'idnumber' => ['type' => 'value', 'width' => 24.0],
         'observacions' => ['type' => 'text', 'width' => 0.0],
     ];
 
@@ -211,8 +206,6 @@ class activity_pdf_builder {
             $user->firstname = (string) ($member->firstname ?? '');
             $user->lastname = (string) ($member->lastname ?? '');
             $user->email = (string) ($member->email ?? '');
-            $user->phone = (string) ($member->phone1 ?? $member->phone ?? '');
-            $user->idnumber = (string) ($member->idnumber ?? '');
             $user->photo = $showphotos && ((int) ($member->picture ?? 0)) > 0
                 ? self::get_icon_content($user->id) : null;
             $users[] = $user;
@@ -941,16 +934,10 @@ class activity_pdf_builder {
      * @return string
      */
     private static function user_field_value(stdClass $user, string $key): string {
-        switch ($key) {
-            case 'email':
-                return trim((string) ($user->email ?? ''));
-            case 'phone':
-                return trim((string) ($user->phone ?? ''));
-            case 'idnumber':
-                return trim((string) ($user->idnumber ?? ''));
-            default:
-                return '';
+        if ($key === 'email') {
+            return trim((string) ($user->email ?? ''));
         }
+        return '';
     }
 
     /**
@@ -1099,21 +1086,18 @@ class activity_pdf_builder {
         $map = [
             'ca' => [
                 'present' => 'Present', 'autoritzacio' => 'Autorització', 'transport' => 'Transport',
-                'pagament' => 'Pagament', 'menu' => 'Menú', 'epi' => 'EPI', 'material' => 'Material',
-                'grupequip' => 'Grup / Equip', 'hora' => 'Hora', 'observacions' => 'Observacions',
-                'email' => 'Correu', 'phone' => 'Telèfon', 'idnumber' => 'ID',
+                'epi' => 'EPI', 'material' => 'Material', 'hora' => 'Hora',
+                'email' => 'Correu', 'observacions' => 'Observacions',
             ],
             'es' => [
                 'present' => 'Presente', 'autoritzacio' => 'Autorización', 'transport' => 'Transporte',
-                'pagament' => 'Pago', 'menu' => 'Menú', 'epi' => 'EPI', 'material' => 'Material',
-                'grupequip' => 'Grupo / Equipo', 'hora' => 'Hora', 'observacions' => 'Observaciones',
-                'email' => 'Correo', 'phone' => 'Teléfono', 'idnumber' => 'ID',
+                'epi' => 'EPI', 'material' => 'Material', 'hora' => 'Hora',
+                'email' => 'Correo', 'observacions' => 'Observaciones',
             ],
             'en' => [
                 'present' => 'Present', 'autoritzacio' => 'Authorisation', 'transport' => 'Transport',
-                'pagament' => 'Payment', 'menu' => 'Menu', 'epi' => 'PPE', 'material' => 'Material',
-                'grupequip' => 'Group / Team', 'hora' => 'Time', 'observacions' => 'Notes',
-                'email' => 'Email', 'phone' => 'Phone', 'idnumber' => 'ID',
+                'epi' => 'PPE', 'material' => 'Material', 'hora' => 'Time',
+                'email' => 'Email', 'observacions' => 'Notes',
             ],
         ];
         return $map[$language][$key] ?? ($map['ca'][$key] ?? $key);

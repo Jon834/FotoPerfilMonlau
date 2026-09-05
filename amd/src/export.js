@@ -81,17 +81,16 @@ const MAX_CUSTOM_COLUMNS = 4;
 
 /** @var {Object} Quick-template column presets. "personalitzat" leaves the current selection untouched. */
 const COLUMN_TEMPLATES = {
-    sortida: ['present', 'autoritzacio', 'transport', 'menu', 'observacions'],
+    sortida: ['present', 'autoritzacio', 'transport', 'observacions'],
     activitat: ['present', 'material', 'observacions'],
-    taller: ['present', 'epi', 'grupequip', 'material', 'observacions'],
+    taller: ['present', 'epi', 'material', 'observacions'],
 };
 
 /* Column widths (mm) - mirror of activity_pdf_builder::STANDARD_COLUMN_DEFS, used only
    to warn the operator up-front when a selection can't fit the landscape page at a
    readable size (the PHP side re-checks and is the authority). */
 const COLUMN_WIDTHS = {
-    present: 16, autoritzacio: 20, transport: 18, pagament: 18, menu: 15,
-    epi: 15, material: 18, grupequip: 20, hora: 16, email: 55, phone: 26, idnumber: 24,
+    present: 16, autoritzacio: 20, transport: 18, epi: 15, material: 18, hora: 16, email: 55,
 };
 const CUSTOM_WIDTH = {checkbox: 16, text: 22};
 const PAGE_INNER_MM = 297 - 20;
@@ -473,6 +472,9 @@ const initActivityMode = () => {
             nameInput.setAttribute('aria-label', nameLabel);
             nameInput.maxLength = 40;
             nameInput.addEventListener('input', () => {
+                if (!state.customMeta[key]) {
+                    return;
+                }
                 state.customMeta[key].label = nameInput.value.trim();
                 renderOrderList();
             });
@@ -498,7 +500,9 @@ const initActivityMode = () => {
                 typeSelect.appendChild(textOption);
 
                 typeSelect.addEventListener('change', () => {
-                    state.customMeta[key].type = typeSelect.value;
+                    if (state.customMeta[key]) {
+                        state.customMeta[key].type = typeSelect.value;
+                    }
                 });
 
                 const removeBtn = document.createElement('button');
@@ -508,6 +512,11 @@ const initActivityMode = () => {
                 removeBtn.setAttribute('aria-label', removeLabel);
                 removeBtn.addEventListener('click', () => removeCustomColumn(key));
 
+                // The column may have been removed (e.g. a template switch) while these
+                // strings were loading - don't append an orphan row.
+                if (!state.customMeta[key]) {
+                    return null;
+                }
                 row.appendChild(nameInput);
                 row.appendChild(typeSelect);
                 row.appendChild(removeBtn);

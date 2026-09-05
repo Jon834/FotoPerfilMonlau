@@ -218,14 +218,14 @@ class create_activity_export extends external_api {
      *
      * @param int $cohortid
      * @return \stdClass[] indexed by userid, each with id/firstname/lastname/picture and
-     *     email/phone1/idnumber (only rendered when an identifier column is selected and
-     *     the operator holds local/profilephoto:viewidentifiers).
+     *     email (only rendered when the email column is selected and the operator holds
+     *     local/profilephoto:viewidentifiers).
      */
     private static function get_cohort_member_users(int $cohortid): array {
         global $DB;
 
         return $DB->get_records_sql(
-            "SELECT u.id, u.firstname, u.lastname, u.picture, u.email, u.phone1, u.idnumber
+            "SELECT u.id, u.firstname, u.lastname, u.picture, u.email
                FROM {user} u
                JOIN {cohort_members} cm ON cm.userid = u.id
               WHERE cm.cohortid = :cohortid AND u.deleted = 0

@@ -117,41 +117,36 @@ final class activity_pdf_builder_test extends advanced_testcase {
     }
 
     public function test_columns_fit(): void {
-        // Fits: a handful of narrow columns + Observacions.
+        // Fits: every standard column at once + Observacions.
         $this->assertTrue(activity_pdf_builder::columns_fit([
             ['key' => 'present', 'type' => 'checkbox'],
             ['key' => 'autoritzacio', 'type' => 'checkbox'],
-            ['key' => 'email', 'type' => 'value'],
-            ['key' => 'observacions', 'type' => 'text'],
-        ]));
-        // Doesn't fit: many checkbox columns + email + phone leave no room for Observacions.
-        $this->assertFalse(activity_pdf_builder::columns_fit([
-            ['key' => 'present', 'type' => 'checkbox'],
-            ['key' => 'autoritzacio', 'type' => 'checkbox'],
             ['key' => 'transport', 'type' => 'checkbox'],
-            ['key' => 'pagament', 'type' => 'checkbox'],
-            ['key' => 'menu', 'type' => 'checkbox'],
             ['key' => 'epi', 'type' => 'checkbox'],
             ['key' => 'material', 'type' => 'checkbox'],
+            ['key' => 'hora', 'type' => 'text'],
             ['key' => 'email', 'type' => 'value'],
-            ['key' => 'phone', 'type' => 'value'],
             ['key' => 'observacions', 'type' => 'text'],
         ]));
-        // "short" Observacions needs less room than "normal", so it can only ever help.
-        $borderline = [
+        // Doesn't fit: email + four wide custom text columns leave no room for Observacions.
+        $doesnotfit = [
             ['key' => 'present', 'type' => 'checkbox'],
             ['key' => 'autoritzacio', 'type' => 'checkbox'],
             ['key' => 'transport', 'type' => 'checkbox'],
-            ['key' => 'pagament', 'type' => 'checkbox'],
-            ['key' => 'menu', 'type' => 'checkbox'],
             ['key' => 'epi', 'type' => 'checkbox'],
             ['key' => 'email', 'type' => 'value'],
-            ['key' => 'observacions', 'type' => 'text', 'short' => true],
+            ['key' => 'c1', 'type' => 'text'],
+            ['key' => 'c2', 'type' => 'text'],
+            ['key' => 'c3', 'type' => 'text'],
+            ['key' => 'c4', 'type' => 'text'],
+            ['key' => 'observacions', 'type' => 'text'],
         ];
-        $normal = $borderline;
-        $normal[7]['short'] = false;
+        $this->assertFalse(activity_pdf_builder::columns_fit($doesnotfit));
+        // The same set with a "short" Observacions needs less room, so it can only help.
+        $short = $doesnotfit;
+        $short[9]['short'] = true;
         $this->assertTrue(
-            activity_pdf_builder::columns_fit($borderline) || !activity_pdf_builder::columns_fit($normal),
+            !activity_pdf_builder::columns_fit($doesnotfit) || activity_pdf_builder::columns_fit($short),
             'short Observacions never makes a fitting selection stop fitting'
         );
     }
@@ -159,12 +154,18 @@ final class activity_pdf_builder_test extends advanced_testcase {
     public function test_build_rejects_columns_that_do_not_fit(): void {
         $this->resetAfterTest();
 
-        $columns = [];
-        foreach (['present', 'autoritzacio', 'transport', 'pagament', 'menu', 'epi', 'material', 'email',
-                'phone'] as $key) {
-            $columns[] = ['key' => $key, 'label' => '', 'type' => activity_pdf_builder::standard_column_type($key)];
-        }
-        $columns[] = ['key' => 'observacions', 'label' => '', 'type' => 'text'];
+        $columns = [
+            ['key' => 'present', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'autoritzacio', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'transport', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'epi', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'email', 'label' => '', 'type' => 'value'],
+            ['key' => 'c1', 'label' => 'Camp 1', 'type' => 'text'],
+            ['key' => 'c2', 'label' => 'Camp 2', 'type' => 'text'],
+            ['key' => 'c3', 'label' => 'Camp 3', 'type' => 'text'],
+            ['key' => 'c4', 'label' => 'Camp 4', 'type' => 'text'],
+            ['key' => 'observacions', 'label' => '', 'type' => 'text'],
+        ];
         $this->assertFalse(activity_pdf_builder::columns_fit($columns));
 
         $this->expectException(moodle_exception::class);
@@ -183,7 +184,7 @@ final class activity_pdf_builder_test extends advanced_testcase {
             ['key' => 'present', 'label' => '', 'type' => 'checkbox'],
             ['key' => 'autoritzacio', 'label' => '', 'type' => 'checkbox'],
             ['key' => 'transport', 'label' => '', 'type' => 'checkbox'],
-            ['key' => 'menu', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'material', 'label' => '', 'type' => 'checkbox'],
             ['key' => 'observacions', 'label' => '', 'type' => 'text'],
         ]);
 
