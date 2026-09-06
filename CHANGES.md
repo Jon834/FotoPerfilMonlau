@@ -1,5 +1,10 @@
 # Changelog — local_profilephoto
 
+## 0.7.12 (etapa «Corporate»)
+
+* La etapa se muestra como **«Corporate»** en los tres idiomas (antes
+  «Corporativo» / «Corporatiu»), igual que «Monlau Group».
+
 ## 0.7.11 (etapas de los PDF: ESO/BATX unificadas, nueva Monlau Group)
 
 * **ESO** y **Bachillerato/Batxillerat** pasan a ser una sola opción
