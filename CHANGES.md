@@ -1,5 +1,15 @@
 # Changelog — local_profilephoto
 
+## 0.7.9 (exportar: tolerancia a caché de plantilla obsoleta)
+
+* `groupValue()` en `amd/{src,build}/export.js` vuelve a leer `.value` si
+  no encuentra radios dentro del contenedor, para que la pantalla siga
+  funcionando mientras la caché de plantillas de Moodle todavía sirve el
+  `<select>` antiguo tras actualizar.
+* Si el buscador de grupo/cohorte no aparece (parpadea y desaparece):
+  purga todas las cachés y recarga con Ctrl+F5. Es un desajuste
+  plantilla/JS en caché, no un fallo de datos.
+
 ## 0.7.8 (Control de actividad: cohortes acotadas al ámbito del docente)
 
 * En el Control de Actividad, un operador **sin**

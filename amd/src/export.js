@@ -168,12 +168,22 @@ const populateSelect = (selectEl, options, labelFn) => {
  * (#lpp-export-filtertype, #lpp-export-type). Change events from the radios
  * bubble to the container, so existing 'change' listeners keep working.
  *
+ * Falls back to the element's own .value so a stale cached template that
+ * still renders a plain <select> under the same id keeps working until
+ * Moodle's template cache catches up.
+ *
  * @param {HTMLElement} groupEl
  * @return {string}
  */
 const groupValue = (groupEl) => {
-    const checked = groupEl.querySelector('input:checked');
-    return checked ? checked.value : '';
+    if (!groupEl) {
+        return '';
+    }
+    const checked = groupEl.querySelector ? groupEl.querySelector('input:checked') : null;
+    if (checked) {
+        return checked.value;
+    }
+    return groupEl.value || '';
 };
 
 /**
