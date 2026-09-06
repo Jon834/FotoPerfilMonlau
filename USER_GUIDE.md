@@ -62,9 +62,9 @@ Se pueden desactivar desde la configuración del plugin. Un lector/disparador
 USB que emule estas teclas funciona igual que el teclado, sin configuración
 adicional.
 
-## Exportar fotografías
+## Generador de orlas y listados
 
-1. Pulsa **Exportar fotografías descargables** (arriba de la pantalla de
+1. Pulsa **Generador de orlas y listados** (arriba de la pantalla de
    captura), o ve directamente a `export.php`.
 2. En **Qué exportar**, elige el origen (**cohorte** por defecto, o
    **curso** / **sesión**) y escribe para buscarlo en el selector.

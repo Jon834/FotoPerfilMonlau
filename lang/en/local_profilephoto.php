@@ -33,7 +33,7 @@ $string['profilephoto:replaceexisting'] = 'Replace an already existing profile p
 $string['profilephoto:viewidentifiers'] = 'View personal identifiers (email, idnumber, username)';
 $string['profilephoto:viewallusers'] = 'View and photograph students site-wide, with no scope restriction';
 $string['profilephoto:exportsession'] = 'Export photos from a session of your own';
-$string['profilephoto:exportactivity'] = 'Generate an Activity control sheet (printable cohort roster)';
+$string['profilephoto:exportactivity'] = 'Generate an Activity control / Custom sheet (printable roster of a group or class)';
 $string['profilephoto:exportall'] = 'Export photos from any session';
 $string['profilephoto:managesessions'] = 'Manage photo sessions';
 $string['profilephoto:configure'] = 'Configure the profile photo capture plugin';
@@ -128,9 +128,9 @@ $string['settings_exportretentionminutes_desc'] = 'Generated ZIPs that are never
 $string['task_cleanup_exports'] = 'Delete expired export ZIPs';
 
 $string['session_filtertype'] = 'Session scope';
-$string['session_filtertype_help'] = 'Choose "Course" or "Cohort" to automatically build a queue with all its students, in whichever order you prefer. Useful when photographing a whole group in a row. If you only need one specific student, you don\'t need to start a session: use the search box below directly.';
-$string['session_filter_course'] = 'Course';
-$string['session_filter_cohort'] = 'Cohort';
+$string['session_filtertype_help'] = 'Choose "Module or subject" or "Group or class" to automatically build a queue with all its students, in whichever order you prefer. Useful when photographing a whole group in a row. If you only need one specific student, you don\'t need to start a session: use the search box below directly.';
+$string['session_filter_course'] = 'Module or subject';
+$string['session_filter_cohort'] = 'Group or class';
 $string['session_order'] = 'Order';
 $string['session_order_help'] = 'Determines the order students appear in the queue when you click "Save and next". Last name by default.';
 $string['order_lastname'] = 'Last name';
@@ -140,47 +140,47 @@ $string['order_idnumber'] = 'ID';
 $string['order_username'] = 'Username';
 $string['session_start'] = 'Start photo session';
 $string['session_end'] = 'End session';
-$string['session_end_confirm'] = 'End the current photo session? Students already photographed stay saved; pending ones can be resumed by starting a new session with the same course or cohort.';
+$string['session_end_confirm'] = 'End the current photo session? Students already photographed stay saved; pending ones can be resumed by starting a new session with the same module, subject, group or class.';
 $string['session_progress_template'] = '{$a->captured}/{$a->total} captured — {$a->pending} pending';
 $string['queue_skip'] = 'Skip';
 $string['queue_absent'] = 'Absent';
 
-$string['ux_step1'] = 'Search for a student, or start a session by course/cohort';
+$string['ux_step1'] = 'Search for a student, or start a session by module/subject or group/class';
 $string['ux_step2'] = 'Activate the camera and take the photo';
 $string['ux_step3'] = 'Save: the next student loads on its own';
 $string['camera_placeholder'] = 'Click "Activate camera" to get started';
 $string['search_label_help'] = 'Type at least 2 letters of the student\'s name, surname, email, username or ID. Results appear on their own, no need to press anything.';
 
-$string['export_title'] = 'Export photos';
-$string['export_link'] = 'Export downloadable photos';
+$string['export_title'] = 'Class photo & roster generator';
+$string['export_link'] = 'Class photo & roster generator';
 $string['export_filtertype'] = 'Export by';
 $string['export_filter_session'] = 'Photography session';
-$string['export_filter_course'] = 'Course';
-$string['export_filter_cohort'] = 'Cohort';
+$string['export_filter_course'] = 'Module or subject';
+$string['export_filter_cohort'] = 'Group or class';
 $string['export_target'] = 'Selection';
 $string['export_target_none'] = 'Nothing selected';
 $string['export_search'] = 'Type to search…';
-$string['export_intro'] = 'Generate class photo boards, rosters and photo downloads from a cohort, a course or a photography session.';
+$string['export_intro'] = 'Generate class photo boards, rosters and photo downloads from a group or class, a module or subject, or a photography session.';
 $string['export_section_what'] = 'What to export';
-$string['export_section_document'] = 'Document format';
+$string['export_section_document'] = 'Document settings';
 $string['export_section_files'] = 'Files';
-$string['export_roleset'] = 'Course participants';
+$string['export_roleset'] = 'Module or subject participants';
 $string['export_roleset_students'] = 'Students only';
 $string['export_roleset_studentsteachers'] = 'Students and teachers';
 $string['export_roleset_all'] = 'All participants';
-$string['export_roleset_help'] = 'Only applies when exporting by course. Filters who is included based on their role:
+$string['export_roleset_help'] = 'Only applies when exporting by module or subject. Filters who is included based on their role:
 
 * **Students only** (default): users with a student-type role.
 * **Students and teachers**: also includes the teacher and editing teacher roles.
-* **All participants**: anyone enrolled in the course.
+* **All participants**: anyone enrolled.
 
-Cohorts always export all of their members.';
+Groups and classes always export all of their members.';
 $string['export_filtertype_help'] = 'Source of the students included in the export:
 
-* **Cohort**: a site cohort (groups defined by administration).
-* **Course**: users enrolled in a course.
+* **Group or class**: a group or class at the centre (a Moodle *cohort*, defined by administration).
+* **Module or subject**: users enrolled in a Moodle *course*.
 * **Photography session**: a capture session you ran yourself.';
-$string['export_target_help'] = 'Type to filter the list. Only the cohorts, courses or sessions you have access to are shown.';
+$string['export_target_help'] = 'Type to filter the list. Only the groups, classes, modules, subjects or sessions you have access to are shown.';
 $string['export_filetype_help'] = 'What gets generated:
 
 * **Compact orla**: PDF with many students per page (photo and name).
@@ -188,20 +188,26 @@ $string['export_filetype_help'] = 'What gets generated:
 * **Student directory**: PDF with photo, name and email.
 * **Signature sheet**: PDF with photo, name and a box to sign.
 * **Photo ZIP**: compressed file with each student photo separately.
-* **Activity control sheet**: landscape PDF for outings, workshops and activities, with configurable columns (attendance, authorisation, transport...) to mark by hand.';
+* **Activity control / Custom sheet**: landscape PDF for outings, workshops and activities of a group or class, with configurable columns (attendance, authorisation, transport...) to mark by hand.';
 $string['export_filenamestrategy_help'] = 'Only applies to the photo ZIP. Sets how each student file is named. If the chosen field is empty, the username is used.';
 $string['export_density_help'] = 'PDF only. Adjusts how many students fit per page and the photo size.';
 $string['export_stage_help'] = 'PDF only. Pick the education stage to apply the matching orla template and style.';
 $string['export_language_help'] = 'Language of the document fixed texts (titles and headers). Does not affect student names.';
 $string['export_heading_help'] = 'Optional text shown under the document title. For example the academic year or the group.';
 $string['export_filenamestrategy'] = 'Name files by';
-$string['export_filetype'] = 'Export format';
+$string['export_filetype'] = 'Document type';
 $string['export_filetype_zip'] = 'Photo ZIP';
 $string['export_filetype_roster'] = 'Photo list';
 $string['export_filetype_orla'] = 'Card orla';
 $string['export_filetype_grid6'] = 'Compact orla';
 $string['export_filetype_directory'] = 'Student directory';
 $string['export_filetype_signatures'] = 'Signature sheet';
+$string['export_filetype_grid6_desc'] = 'Many students per page, with photo and name. For the classroom wall.';
+$string['export_filetype_orla_desc'] = 'Each student on their own card, with full name.';
+$string['export_filetype_directory_desc'] = 'A list with each student\'s photo, name and email.';
+$string['export_filetype_signatures_desc'] = 'Photo, name and a box to sign. For attendance checks.';
+$string['export_filetype_zip_desc'] = 'The photos as separate files in a ZIP, with a manifest.csv mapping each one.';
+$string['export_filetype_activity_desc'] = 'Landscape PDF with columns to tick by hand (attendance, authorisation, transport…). For outings and workshops.';
 $string['export_density'] = 'Density';
 $string['export_density_normal'] = 'Normal';
 $string['export_density_compact'] = 'Compact (more per page)';
@@ -223,23 +229,23 @@ $string['export_ready'] = 'Export ready with {$a} photos. Downloading…';
 $string['export_pdf_title_default'] = 'Student list';
 
 $string['error_exportexpired'] = 'This download link has expired or has already been used. Generate the export again.';
-$string['error_exporttoobig'] = 'The selection exceeds the maximum of {$a} students for one export. Narrow the filter (a smaller course, cohort or session).';
+$string['error_exporttoobig'] = 'The selection exceeds the maximum of {$a} students for one export. Narrow the filter (a smaller module, subject, group, class or session).';
 $string['error_invalidexportfilter'] = 'Invalid export filter.';
 $string['error_invalidstatus'] = 'Invalid queue status.';
-$string['error_activitycohortnotfound'] = 'The selected cohort does not exist.';
+$string['error_activitycohortnotfound'] = 'The selected group or class does not exist.';
 $string['error_activitytoomanycolumns'] = 'You have selected too many columns to generate a readable document. Reduce the number of columns or remove one (maximum {$a} beyond No. and Student).';
 $string['error_activitytoomanycustomcolumns'] = 'Only up to {$a} custom columns can be added.';
 $string['error_activityinvalidcolumn'] = 'One of the selected columns is not valid.';
 
-$string['export_filetype_activity'] = 'Activity control sheet';
-$string['export_section_activity_cohort'] = 'Cohort';
+$string['export_filetype_activity'] = 'Activity control / Custom sheet';
+$string['export_section_activity_cohort'] = 'Group or class';
 $string['export_section_activity_info'] = 'Activity';
 $string['export_section_activity_template'] = 'Template';
 $string['export_section_activity_columns'] = 'Columns';
 $string['export_section_activity_options'] = 'Options';
 
-$string['activity_cohort'] = 'Cohort';
-$string['activity_cohort_help'] = 'A site cohort, its current members are read for the roster. The PDF always reflects the cohort\'s current membership: no list of your own is saved.';
+$string['activity_cohort'] = 'Group or class';
+$string['activity_cohort_help'] = 'A group or class at the centre (a Moodle cohort); its current members are read for the roster. The PDF always reflects the group\'s current membership: no list of your own is saved. Only groups with students enrolled in your courses are listed, unless you have site-wide access.';
 $string['activity_cohort_membercount'] = '{$a} students';
 $string['activity_name'] = 'Activity name';
 $string['activity_name_placeholder'] = 'e.g. CosmoCaixa visit';
@@ -281,21 +287,21 @@ $string['activity_showphotos_yes'] = 'Yes';
 $string['activity_showphotos_no'] = 'No';
 $string['activity_showgeneralobs'] = 'Show general notes box';
 $string['activity_order'] = 'Sort students by';
-$string['activity_order_help'] = 'Order students appear in on the PDF. "Cohort order" keeps the order returned by the system, without sorting.';
+$string['activity_order_help'] = 'Order students appear in on the PDF. "Group or class order" keeps the order returned by the system, without sorting.';
 $string['activity_order_lastname'] = 'Surname / First name';
 $string['activity_order_firstname'] = 'First name / Surname';
-$string['activity_order_cohort'] = 'Cohort order';
+$string['activity_order_cohort'] = 'Group or class order';
 $string['activity_density_large'] = 'Large (bigger photos, ~20 students/page)';
 $string['activity_preview'] = 'Preview';
 $string['activity_preview_placeholder'] = 'Click "Preview" to see how the document will look here.';
 $string['activity_generate'] = 'Generate PDF';
 $string['activity_generating'] = 'Generating the PDF…';
-$string['activity_nocohort'] = 'Select a cohort to continue.';
+$string['activity_nocohort'] = 'Select a group or class to continue.';
 
 $string['privacy:metadata:session'] = 'Data about each photography session opened by an operator.';
 $string['privacy:metadata:session:operatorid'] = 'The user who opened the session.';
-$string['privacy:metadata:session:filtertype'] = 'Whether the session was built from a course or a cohort.';
-$string['privacy:metadata:session:filterdata'] = 'The course or cohort id used as the filter.';
+$string['privacy:metadata:session:filtertype'] = 'Whether the session was built from a module/subject or a group/class.';
+$string['privacy:metadata:session:filterdata'] = 'The module/subject or group/class id used as the filter.';
 $string['privacy:metadata:session:timecreated'] = 'When the session was created.';
 $string['privacy:metadata:session_user'] = 'The capture status of each student within a photography session.';
 $string['privacy:metadata:session_user:userid'] = 'The queued student.';

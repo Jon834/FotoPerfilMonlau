@@ -55,14 +55,23 @@
                 <legend>{{#str}}export_section_what, local_profilephoto{{/str}}</legend>
 
                 <div class="lpp-field">
-                    <span class="lpp-field-label">
-                        <label for="lpp-export-filtertype">{{#str}}export_filtertype, local_profilephoto{{/str}}</label> {{{helpicons.filtertype}}}
+                    <span class="lpp-field-label" id="lpp-export-filtertype-label">
+                        {{#str}}export_filtertype, local_profilephoto{{/str}} {{{helpicons.filtertype}}}
                     </span>
-                    <select id="lpp-export-filtertype" class="form-control">
-                        <option value="cohort" selected>{{#str}}export_filter_cohort, local_profilephoto{{/str}}</option>
-                        <option value="course">{{#str}}export_filter_course, local_profilephoto{{/str}}</option>
-                        <option value="session">{{#str}}export_filter_session, local_profilephoto{{/str}}</option>
-                    </select>
+                    <div id="lpp-export-filtertype" class="lpp-segmented" role="radiogroup" aria-labelledby="lpp-export-filtertype-label">
+                        <label class="lpp-segmented-item">
+                            <input type="radio" name="lpp-export-filtertype" value="cohort" checked>
+                            <span>{{#str}}export_filter_cohort, local_profilephoto{{/str}}</span>
+                        </label>
+                        <label class="lpp-segmented-item">
+                            <input type="radio" name="lpp-export-filtertype" value="course">
+                            <span>{{#str}}export_filter_course, local_profilephoto{{/str}}</span>
+                        </label>
+                        <label class="lpp-segmented-item">
+                            <input type="radio" name="lpp-export-filtertype" value="session">
+                            <span>{{#str}}export_filter_session, local_profilephoto{{/str}}</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="lpp-field lpp-export-target" data-target="session" hidden>
@@ -95,23 +104,60 @@
                     </select>
                 </div>
 
-                <div class="lpp-field">
-                    <span class="lpp-field-label">
-                        <label for="lpp-export-type">{{#str}}export_filetype, local_profilephoto{{/str}}</label> {{{helpicons.filetype}}}
-                    </span>
-                    <select id="lpp-export-type" class="form-control">
-                        <option value="grid6" selected>{{#str}}export_filetype_grid6, local_profilephoto{{/str}}</option>
-                        <option value="orla">{{#str}}export_filetype_orla, local_profilephoto{{/str}}</option>
-                        <option value="directory">{{#str}}export_filetype_directory, local_profilephoto{{/str}}</option>
-                        <option value="signatures">{{#str}}export_filetype_signatures, local_profilephoto{{/str}}</option>
-                        <option value="zip">{{#str}}export_filetype_zip, local_profilephoto{{/str}}</option>
-                        {{#canexportactivity}}
-                        <option value="activity">{{#str}}export_filetype_activity, local_profilephoto{{/str}}</option>
-                        {{/canexportactivity}}
-                    </select>
+            </fieldset>
+            </div>
+
+            <fieldset class="lpp-export-section lpp-doctype-section">
+                <legend>{{#str}}export_filetype, local_profilephoto{{/str}} {{{helpicons.filetype}}}</legend>
+                <div id="lpp-export-type" class="lpp-doctype-list" role="radiogroup" aria-label="{{#str}}export_filetype, local_profilephoto{{/str}}">
+                    <label class="lpp-doctype">
+                        <input type="radio" name="lpp-export-type" value="grid6" checked>
+                        <span class="lpp-doctype-text">
+                            <span class="lpp-doctype-title">{{#str}}export_filetype_grid6, local_profilephoto{{/str}}</span>
+                            <span class="lpp-doctype-desc">{{#str}}export_filetype_grid6_desc, local_profilephoto{{/str}}</span>
+                        </span>
+                    </label>
+                    <label class="lpp-doctype">
+                        <input type="radio" name="lpp-export-type" value="orla">
+                        <span class="lpp-doctype-text">
+                            <span class="lpp-doctype-title">{{#str}}export_filetype_orla, local_profilephoto{{/str}}</span>
+                            <span class="lpp-doctype-desc">{{#str}}export_filetype_orla_desc, local_profilephoto{{/str}}</span>
+                        </span>
+                    </label>
+                    <label class="lpp-doctype">
+                        <input type="radio" name="lpp-export-type" value="directory">
+                        <span class="lpp-doctype-text">
+                            <span class="lpp-doctype-title">{{#str}}export_filetype_directory, local_profilephoto{{/str}}</span>
+                            <span class="lpp-doctype-desc">{{#str}}export_filetype_directory_desc, local_profilephoto{{/str}}</span>
+                        </span>
+                    </label>
+                    <label class="lpp-doctype">
+                        <input type="radio" name="lpp-export-type" value="signatures">
+                        <span class="lpp-doctype-text">
+                            <span class="lpp-doctype-title">{{#str}}export_filetype_signatures, local_profilephoto{{/str}}</span>
+                            <span class="lpp-doctype-desc">{{#str}}export_filetype_signatures_desc, local_profilephoto{{/str}}</span>
+                        </span>
+                    </label>
+                    <label class="lpp-doctype">
+                        <input type="radio" name="lpp-export-type" value="zip">
+                        <span class="lpp-doctype-text">
+                            <span class="lpp-doctype-title">{{#str}}export_filetype_zip, local_profilephoto{{/str}}</span>
+                            <span class="lpp-doctype-desc">{{#str}}export_filetype_zip_desc, local_profilephoto{{/str}}</span>
+                        </span>
+                    </label>
+                    {{#canexportactivity}}
+                    <label class="lpp-doctype">
+                        <input type="radio" name="lpp-export-type" value="activity">
+                        <span class="lpp-doctype-text">
+                            <span class="lpp-doctype-title">{{#str}}export_filetype_activity, local_profilephoto{{/str}}</span>
+                            <span class="lpp-doctype-desc">{{#str}}export_filetype_activity_desc, local_profilephoto{{/str}}</span>
+                        </span>
+                    </label>
+                    {{/canexportactivity}}
                 </div>
             </fieldset>
 
+            <div data-mode="standard">
             <fieldset class="lpp-export-section" data-section="document">
                 <legend>{{#str}}export_section_document, local_profilephoto{{/str}}</legend>
 

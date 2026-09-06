@@ -17,7 +17,6 @@
 namespace local_profilephoto\external;
 
 use cache;
-use context;
 use context_system;
 use core_external\external_api;
 use core_external\external_function_parameters;
@@ -25,6 +24,7 @@ use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
 use local_profilephoto\event\export_created;
+use local_profilephoto\local\access\scope;
 use local_profilephoto\local\audit\logger;
 use local_profilephoto\local\export\activity_pdf_builder;
 use moodle_exception;
@@ -131,12 +131,13 @@ class create_activity_export extends external_api {
         require_capability('local/profilephoto:exportactivity', $context);
         require_sesskey();
 
-        $cohort = $DB->get_record('cohort', ['id' => $params['cohortid']], 'id, name, contextid', IGNORE_MISSING);
+        $cohort = $DB->get_record('cohort', ['id' => $params['cohortid']], 'id, name', IGNORE_MISSING);
         if (!$cohort) {
             throw new moodle_exception('error_activitycohortnotfound', 'local_profilephoto');
         }
-        $cohortcontext = context::instance_by_id((int) $cohort->contextid, IGNORE_MISSING);
-        if (!$cohortcontext || !has_capability('moodle/cohort:view', $cohortcontext)) {
+        // Cohorts are not tied to teaching roles in core; the plugin scopes them
+        // through the operator's own courses (@see scope::get_allowed_cohortids).
+        if (!scope::can_use_cohort((int) $USER->id, (int) $cohort->id)) {
             throw new moodle_exception('error_outofscope', 'local_profilephoto');
         }
 

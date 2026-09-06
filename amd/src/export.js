@@ -164,6 +164,19 @@ const populateSelect = (selectEl, options, labelFn) => {
 };
 
 /**
+ * Read the value of the checked radio inside a radiogroup container
+ * (#lpp-export-filtertype, #lpp-export-type). Change events from the radios
+ * bubble to the container, so existing 'change' listeners keep working.
+ *
+ * @param {HTMLElement} groupEl
+ * @return {string}
+ */
+const groupValue = (groupEl) => {
+    const checked = groupEl.querySelector('input:checked');
+    return checked ? checked.value : '';
+};
+
+/**
  * Turn a plain <select> into a type-to-search autocomplete field.
  *
  * @param {string} selector
@@ -210,18 +223,19 @@ const initStandardMode = () => {
     // Show only the target select matching the chosen source (cohort / course / session).
     // The role filter only makes sense for a course (cohorts have no roles).
     const updateFilterVisibility = () => {
+        const value = groupValue(filterType);
         targets.forEach((target) => {
-            target.hidden = target.dataset.target !== filterType.value;
+            target.hidden = target.dataset.target !== value;
         });
         if (roleFilter) {
-            roleFilter.hidden = filterType.value !== 'course';
+            roleFilter.hidden = value !== 'course';
         }
     };
 
     // The filename strategy only applies to the ZIP; density / stage / language /
     // heading only apply to the PDF layouts. Show whichever block is relevant.
     const updateSectionVisibility = () => {
-        const isZip = exportType.value === 'zip';
+        const isZip = groupValue(exportType) === 'zip';
         documentSections.forEach((el) => {
             el.hidden = isZip;
         });
@@ -247,7 +261,7 @@ const initStandardMode = () => {
     }).catch(Notification.exception);
 
     generateBtn.addEventListener('click', () => {
-        const filtertype = filterType.value;
+        const filtertype = groupValue(filterType);
         const select = filtertype === 'session' ? sessionSelect : (filtertype === 'course' ? courseSelect : cohortSelect);
         const filterid = parseInt(select.value, 10);
 
@@ -262,7 +276,7 @@ const initStandardMode = () => {
                 filtertype,
                 filterid,
                 filenameStrategy.value,
-                exportType.value,
+                groupValue(exportType),
                 language.value,
                 stage.value,
                 heading.value.trim(),
@@ -283,7 +297,7 @@ const initStandardMode = () => {
 
 /**
  * Toggle between the pre-existing form and the "Control d'activitat" mode
- * based on the shared #lpp-export-type select.
+ * based on the shared #lpp-export-type radiogroup.
  */
 const initModeToggle = () => {
     const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
@@ -291,7 +305,7 @@ const initModeToggle = () => {
     const activityBlocks = document.querySelectorAll(SELECTORS.MODE_ACTIVITY);
 
     const update = () => {
-        const isActivity = exportType.value === 'activity';
+        const isActivity = groupValue(exportType) === 'activity';
         standardBlocks.forEach((el) => {
             el.hidden = isActivity;
         });

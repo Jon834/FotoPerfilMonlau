@@ -142,6 +142,57 @@ class scope {
     }
 
     /**
+     * Cohort ids the operator may build a "Control d'activitat" roster from.
+     *
+     * Core does not tie cohorts to teaching roles, so "the operator's
+     * cohorts" is resolved through the same course scope as everything else
+     * in this plugin: a cohort is in scope when at least one of its members
+     * is actively enrolled in a course where the operator holds
+     * local/profilephoto:capture.
+     *
+     * Returns null when the operator has an unrestricted scope (no cohort
+     * filtering should be applied). Returns an empty array when the operator
+     * has no scope at all.
+     *
+     * @param int $operatorid
+     * @return array|null
+     */
+    public static function get_allowed_cohortids(int $operatorid): ?array {
+        global $DB;
+
+        $courseids = self::get_allowed_courseids($operatorid);
+        if ($courseids === null) {
+            return null;
+        }
+        if (empty($courseids)) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'c');
+        $params['active'] = ENROL_USER_ACTIVE;
+        $params['enabled'] = ENROL_INSTANCE_ENABLED;
+        $sql = "SELECT DISTINCT cm.cohortid
+                  FROM {cohort_members} cm
+                  JOIN {user_enrolments} ue ON ue.userid = cm.userid AND ue.status = :active
+                  JOIN {enrol} e ON e.id = ue.enrolmentid AND e.status = :enabled AND e.courseid $insql";
+
+        return array_map('intval', array_keys($DB->get_records_sql($sql, $params)));
+    }
+
+    /**
+     * Whether the operator may build a "Control d'activitat" roster from this cohort.
+     *
+     * @param int $operatorid
+     * @param int $cohortid
+     * @return bool
+     */
+    public static function can_use_cohort(int $operatorid, int $cohortid): bool {
+        $cohortids = self::get_allowed_cohortids($operatorid);
+
+        return $cohortids === null || in_array($cohortid, $cohortids, true);
+    }
+
+    /**
      * Whether the operator is allowed to see suspended accounts.
      *
      * @param int $operatorid

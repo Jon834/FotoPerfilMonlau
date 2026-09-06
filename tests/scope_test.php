@@ -102,6 +102,54 @@ final class scope_test extends advanced_testcase {
         $this->assertFalse(scope::can_use_course($operator->id, $course2->id));
     }
 
+    public function test_cohort_scope_follows_the_operators_course_scope(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/cohort/lib.php');
+        $this->resetAfterTest();
+
+        $mycourse = $this->getDataGenerator()->create_course();
+        $othercourse = $this->getDataGenerator()->create_course();
+
+        $operator = $this->getDataGenerator()->create_user();
+        $this->assign_course_capability($operator->id, $mycourse->id, 'local/profilephoto:capture');
+
+        $mystudent = $this->getDataGenerator()->create_user();
+        $otherstudent = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($mystudent->id, $mycourse->id, 'student');
+        $this->getDataGenerator()->enrol_user($otherstudent->id, $othercourse->id, 'student');
+
+        $mycohort = $this->getDataGenerator()->create_cohort();
+        $othercohort = $this->getDataGenerator()->create_cohort();
+        cohort_add_member($mycohort->id, $mystudent->id);
+        cohort_add_member($othercohort->id, $otherstudent->id);
+
+        $allowed = scope::get_allowed_cohortids($operator->id);
+        $this->assertEqualsCanonicalizing([(int) $mycohort->id], $allowed);
+        $this->assertTrue(scope::can_use_cohort($operator->id, (int) $mycohort->id));
+        $this->assertFalse(scope::can_use_cohort($operator->id, (int) $othercohort->id));
+    }
+
+    public function test_unrestricted_operator_may_use_any_cohort(): void {
+        $this->resetAfterTest();
+
+        $operator = $this->getDataGenerator()->create_user();
+        $this->assign_system_capability($operator->id, 'local/profilephoto:viewallusers');
+        $cohort = $this->getDataGenerator()->create_cohort();
+
+        $this->assertNull(scope::get_allowed_cohortids($operator->id));
+        $this->assertTrue(scope::can_use_cohort($operator->id, (int) $cohort->id));
+    }
+
+    public function test_operator_without_scope_may_use_no_cohort(): void {
+        $this->resetAfterTest();
+
+        $operator = $this->getDataGenerator()->create_user();
+        $cohort = $this->getDataGenerator()->create_cohort();
+
+        $this->assertSame([], scope::get_allowed_cohortids($operator->id));
+        $this->assertFalse(scope::can_use_cohort($operator->id, (int) $cohort->id));
+    }
+
     public function test_siteadmin_status_alone_is_not_the_access_check(): void {
         // Regression guard for encargo section 17: scope must come from
         // capabilities, not is_siteadmin(). A plain user promoted to admin

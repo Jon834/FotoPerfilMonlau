@@ -427,6 +427,113 @@
     margin-bottom: 0.9rem;
 }
 
+/* Segmented control ("Exportar por" / "Exportar per") - replaces a
+   three-option <select> so all sources are visible and one click away. */
+.lpp-segmented {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.lpp-segmented-item {
+    margin: 0;
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 8rem;
+}
+
+.lpp-segmented-item input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.lpp-segmented-item > span {
+    display: block;
+    text-align: center;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 0.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.lpp-segmented-item input:hover + span {
+    border-color: var(--primary, #0f6cbf);
+}
+
+.lpp-segmented-item input:checked + span {
+    background: var(--primary, #0f6cbf);
+    border-color: var(--primary, #0f6cbf);
+    color: #fff;
+}
+
+.lpp-segmented-item input:focus-visible + span {
+    outline: 2px solid var(--primary, #0f6cbf);
+    outline-offset: 2px;
+}
+
+/* Document-type picker ("Tipo de documento") - replaces a six-option
+   <select> with a labelled radio-card list, so every document and what it
+   produces is visible without opening a menu. */
+.lpp-doctype-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.5rem;
+}
+
+.lpp-doctype {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 0;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 400;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.lpp-doctype:hover {
+    border-color: var(--primary, #0f6cbf);
+}
+
+.lpp-doctype input {
+    margin: 0.2rem 0 0;
+    flex: none;
+}
+
+.lpp-doctype-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.lpp-doctype-title {
+    font-weight: 600;
+}
+
+.lpp-doctype-desc {
+    font-size: 0.85rem;
+    color: #6c757d;
+    line-height: 1.35;
+}
+
+.lpp-doctype:has(input:checked) {
+    border-color: var(--primary, #0f6cbf);
+    background: rgba(13, 110, 191, 0.06);
+    box-shadow: inset 0 0 0 1px var(--primary, #0f6cbf);
+}
+
+.lpp-doctype:focus-within {
+    outline: 2px solid var(--primary, #0f6cbf);
+    outline-offset: 2px;
+}
+
 .lpp-export-actions {
     margin-top: 0.5rem;
     padding-top: 1.25rem;

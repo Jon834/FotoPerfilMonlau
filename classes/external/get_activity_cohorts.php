@@ -16,25 +16,25 @@
 
 namespace local_profilephoto\external;
 
-use context;
 use context_system;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
+use local_profilephoto\local\access\scope;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
  * List the cohorts the operator may use for a "Control d'activitat" export.
  *
- * Scope is the intersection of the plugin's own
- * local/profilephoto:exportactivity capability (system level: gates the
- * whole feature) and the core moodle/cohort:view capability on each
- * cohort's own context (category or system: reuses Moodle's own notion of
- * "cohorts I may see" instead of inventing a parallel one, and naturally
- * separates "own cohorts" from "all cohorts" by context).
+ * The whole feature is gated by local/profilephoto:exportactivity (system
+ * level). Which cohorts an operator then sees follows the plugin's own
+ * course scope (@see scope::get_allowed_cohortids): an unrestricted
+ * operator (local/profilephoto:viewallusers) sees every cohort; anyone
+ * else sees only cohorts with a member enrolled in a course they hold
+ * local/profilephoto:capture in.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -57,7 +57,7 @@ class get_activity_cohorts extends external_api {
      * @return array
      */
     public static function execute(): array {
-        global $DB;
+        global $DB, $USER;
 
         self::validate_parameters(self::execute_parameters(), []);
 
@@ -66,16 +66,16 @@ class get_activity_cohorts extends external_api {
         require_capability('local/profilephoto:exportactivity', $context);
         require_sesskey();
 
-        $records = $DB->get_records('cohort', [], 'name', 'id, name, contextid', 0, 500);
+        $allowedcohortids = scope::get_allowed_cohortids((int) $USER->id);
+        if ($allowedcohortids !== null && empty($allowedcohortids)) {
+            return ['cohorts' => []];
+        }
+
+        $records = $DB->get_records('cohort', [], 'name', 'id, name', 0, 500);
 
         $cohorts = [];
         foreach ($records as $record) {
-            try {
-                $cohortcontext = context::instance_by_id((int) $record->contextid, IGNORE_MISSING);
-            } catch (\Throwable $e) {
-                $cohortcontext = null;
-            }
-            if (!$cohortcontext || !has_capability('moodle/cohort:view', $cohortcontext)) {
+            if ($allowedcohortids !== null && !in_array((int) $record->id, $allowedcohortids, true)) {
                 continue;
             }
             $cohorts[] = [

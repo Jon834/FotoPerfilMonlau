@@ -34,7 +34,7 @@ $string['profilephoto:viewidentifiers'] = 'Veure identificadors personals (corre
 $string['profilephoto:viewallusers'] = 'Veure i fotografiar alumnes de tot el sistema, sense restricció d\'àmbit';
 $string['profilephoto:exportsession'] = 'Exportar les fotografies d\'una sessió pròpia';
 $string['profilephoto:exportall'] = 'Exportar fotografies de qualsevol sessió';
-$string['profilephoto:exportactivity'] = 'Generar un Control d\'activitat (llistat imprimible d\'una cohort)';
+$string['profilephoto:exportactivity'] = 'Generar un Control d\'activitat/Full personalitzable (llistat imprimible d\'un grup o classe)';
 $string['profilephoto:managesessions'] = 'Gestionar sessions fotogràfiques';
 $string['profilephoto:configure'] = 'Configurar el connector de captura de fotografies';
 $string['profilephoto:viewlogs'] = 'Veure el registre d\'auditoria de fotografies';
@@ -128,9 +128,9 @@ $string['settings_exportretentionminutes_desc'] = 'Els fitxers ZIP generats i no
 $string['task_cleanup_exports'] = 'Eliminar exportacions ZIP caducades';
 
 $string['session_filtertype'] = 'Àmbit de la sessió';
-$string['session_filtertype_help'] = 'Tria "Curs" o "Cohort" per generar automàticament una cua amb tots els seus alumnes, en l\'ordre que prefereixis. Útil quan fotografies un grup sencer seguit. Si només necessites un alumne concret, no cal iniciar una sessió: fes servir el cercador de més avall directament.';
-$string['session_filter_course'] = 'Curs';
-$string['session_filter_cohort'] = 'Cohort';
+$string['session_filtertype_help'] = 'Tria "Mòdul o Assignatura" o "Grup o Classe" per generar automàticament una cua amb tots els seus alumnes, en l\'ordre que prefereixis. Útil quan fotografies un grup sencer seguit. Si només necessites un alumne concret, no cal iniciar una sessió: fes servir el cercador de més avall directament.';
+$string['session_filter_course'] = 'Mòdul o Assignatura';
+$string['session_filter_cohort'] = 'Grup o Classe';
 $string['session_order'] = 'Ordre';
 $string['session_order_help'] = 'Determina en quin ordre apareixeran els alumnes de la cua en prémer "Desar i següent". Per defecte, per cognoms.';
 $string['order_lastname'] = 'Cognoms';
@@ -140,47 +140,47 @@ $string['order_idnumber'] = 'ID';
 $string['order_username'] = 'Nom d\'usuari';
 $string['session_start'] = 'Iniciar sessió de fotos';
 $string['session_end'] = 'Finalitzar sessió';
-$string['session_end_confirm'] = 'Finalitzar la sessió de fotos actual? Els alumnes ja fotografiats queden desats; els pendents es podran reprendre iniciant una nova sessió amb el mateix curs o cohort.';
+$string['session_end_confirm'] = 'Finalitzar la sessió de fotos actual? Els alumnes ja fotografiats queden desats; els pendents es podran reprendre iniciant una nova sessió amb el mateix mòdul, assignatura, grup o classe.';
 $string['session_progress_template'] = '{$a->captured}/{$a->total} fotografiats — {$a->pending} pendents';
 $string['queue_skip'] = 'Saltar';
 $string['queue_absent'] = 'Absent';
 
-$string['ux_step1'] = 'Cerca un alumne, o inicia una sessió per curs/cohort';
+$string['ux_step1'] = 'Cerca un alumne, o inicia una sessió per mòdul/assignatura o grup/classe';
 $string['ux_step2'] = 'Activa la càmera i fes la foto';
 $string['ux_step3'] = 'Desa: el següent alumne es carrega sol';
 $string['camera_placeholder'] = 'Prem «Activar càmera» per començar';
 $string['search_label_help'] = 'Escriu almenys 2 lletres del nom, cognoms, correu, usuari o ID de l\'alumne. Els resultats apareixen sols, sense necessitat de prémer res.';
 
-$string['export_title'] = 'Exportar fotografies';
-$string['export_link'] = 'Exportar fotografies descarregables';
+$string['export_title'] = 'Generador d\'orles i llistats';
+$string['export_link'] = 'Generador d\'orles i llistats';
 $string['export_filtertype'] = 'Exportar per';
 $string['export_filter_session'] = 'Sessió fotogràfica';
-$string['export_filter_course'] = 'Curs';
-$string['export_filter_cohort'] = 'Cohort';
+$string['export_filter_course'] = 'Mòdul o Assignatura';
+$string['export_filter_cohort'] = 'Grup o Classe';
 $string['export_target'] = 'Selecció';
 $string['export_target_none'] = 'Res seleccionat';
 $string['export_search'] = 'Escriu per cercar…';
-$string['export_intro'] = 'Genera orles, llistats i descàrregues de fotos a partir d\'una cohort, un curs o una sessió fotogràfica.';
+$string['export_intro'] = 'Genera orles, llistats i descàrregues de fotos a partir d\'un grup o classe, un mòdul o assignatura, o una sessió fotogràfica.';
 $string['export_section_what'] = 'Què exportar';
-$string['export_section_document'] = 'Format del document';
+$string['export_section_document'] = 'Ajustaments del document';
 $string['export_section_files'] = 'Fitxers';
-$string['export_roleset'] = 'Participants del curs';
+$string['export_roleset'] = 'Participants del mòdul o assignatura';
 $string['export_roleset_students'] = 'Només estudiants';
 $string['export_roleset_studentsteachers'] = 'Estudiants i professorat';
 $string['export_roleset_all'] = 'Tots els participants';
-$string['export_roleset_help'] = 'Només s\'aplica quan exportes per curs. Filtra qui s\'inclou segons el seu rol:
+$string['export_roleset_help'] = 'Només s\'aplica quan exportes per mòdul o assignatura. Filtra qui s\'inclou segons el seu rol:
 
 * **Només estudiants** (per defecte): usuaris amb un rol de tipus estudiant.
 * **Estudiants i professorat**: també inclou els rols de professor i professor editor.
-* **Tots els participants**: qualsevol persona matriculada al curs.
+* **Tots els participants**: qualsevol persona matriculada.
 
-Les cohorts exporten sempre tots els seus membres.';
+Els grups o classes exporten sempre tots els seus membres.';
 $string['export_filtertype_help'] = 'Origen de l\'alumnat que s\'inclou a l\'exportació:
 
-* **Cohort**: una cohort del sistema (grups definits per administració).
-* **Curs**: l\'alumnat matriculat en un curs.
+* **Grup o Classe**: un grup o classe del centre (una *cohort* de Moodle, definida per administració).
+* **Mòdul o Assignatura**: l\'alumnat matriculat en un *curs* de Moodle.
 * **Sessió fotogràfica**: una sessió de captura que hagis fet tu.';
-$string['export_target_help'] = 'Escriu per filtrar la llista. Només apareixen les cohorts, cursos o sessions als quals tens accés.';
+$string['export_target_help'] = 'Escriu per filtrar la llista. Només apareixen els grups, classes, mòduls, assignatures o sessions als quals tens accés.';
 $string['export_filetype_help'] = 'Què es genera:
 
 * **Orla compacta**: PDF amb molts alumnes per pàgina (foto i nom).
@@ -188,20 +188,26 @@ $string['export_filetype_help'] = 'Què es genera:
 * **Directori d\'alumnes**: PDF amb foto, nom i correu.
 * **Full de signatures**: PDF amb foto, nom i una casella per signar.
 * **ZIP de fotografies**: fitxer comprimit amb la foto de cada alumne per separat.
-* **Control d\'activitat**: PDF horitzontal per a sortides, tallers i activitats, amb columnes configurables (assistència, autorització, transport...) per marcar amb bolígraf.';
+* **Control d\'activitat/Full personalitzable**: PDF horitzontal per a sortides, tallers i activitats d\'un grup o classe, amb columnes configurables (assistència, autorització, transport...) per marcar amb bolígraf.';
 $string['export_filenamestrategy_help'] = 'Només s\'aplica al ZIP de fotografies. Determina com s\'anomena el fitxer de cada alumne. Si la dada triada és buida, s\'utilitza el nom d\'usuari.';
 $string['export_density_help'] = 'Només per als PDF. Ajusta quants alumnes caben per pàgina i la mida de les fotos.';
 $string['export_stage_help'] = 'Només per als PDF. Selecciona l\'etapa educativa per aplicar la plantilla i l\'estil d\'orla corresponent.';
 $string['export_language_help'] = 'Idioma dels textos fixos del document (títols i capçaleres). No afecta els noms dels alumnes.';
 $string['export_heading_help'] = 'Text opcional que apareix sota el títol del document. Per exemple, el curs acadèmic o el grup.';
 $string['export_filenamestrategy'] = 'Anomenar fitxers per';
-$string['export_filetype'] = 'Tipus d’exportació';
+$string['export_filetype'] = 'Tipus de document';
 $string['export_filetype_zip'] = 'ZIP de fotografies';
 $string['export_filetype_roster'] = 'Llistat fotogràfic';
 $string['export_filetype_orla'] = 'Orla en targetes';
 $string['export_filetype_grid6'] = 'Orla compacta';
 $string['export_filetype_directory'] = 'Directori d’alumnes';
 $string['export_filetype_signatures'] = 'Full de signatures';
+$string['export_filetype_grid6_desc'] = 'Molts alumnes per pàgina, amb foto i nom. Per al tauler de l\'aula.';
+$string['export_filetype_orla_desc'] = 'Cada alumne a la seva targeta, amb el nom complet.';
+$string['export_filetype_directory_desc'] = 'Llistat amb foto, nom i correu de cada alumne.';
+$string['export_filetype_signatures_desc'] = 'Foto, nom i una casella per signar. Per controlar l\'assistència.';
+$string['export_filetype_zip_desc'] = 'Les fotos soltes en un ZIP, amb un manifest.csv que indica de qui és cadascuna.';
+$string['export_filetype_activity_desc'] = 'PDF horitzontal amb columnes per marcar a mà (assistència, autorització, transport…). Per a sortides i tallers.';
 $string['export_density'] = 'Densitat';
 $string['export_density_normal'] = 'Normal';
 $string['export_density_compact'] = 'Compacta (més per pàgina)';
@@ -223,23 +229,23 @@ $string['export_ready'] = 'Exportació preparada amb {$a} fotografies. Descarreg
 $string['export_pdf_title_default'] = 'Llistat d’alumnes';
 
 $string['error_exportexpired'] = 'Aquest enllaç de descàrrega ha caducat o ja s\'ha utilitzat. Genera l\'exportació de nou.';
-$string['error_exporttoobig'] = 'La selecció supera el màxim de {$a} alumnes per a una exportació. Acota el filtre (curs, cohort o sessió més petits).';
+$string['error_exporttoobig'] = 'La selecció supera el màxim de {$a} alumnes per a una exportació. Acota el filtre (un mòdul, assignatura, grup, classe o sessió més petits).';
 $string['error_invalidexportfilter'] = 'Filtre d\'exportació no vàlid.';
 $string['error_invalidstatus'] = 'Estat de cua no vàlid.';
-$string['error_activitycohortnotfound'] = 'La cohort seleccionada no existeix.';
+$string['error_activitycohortnotfound'] = 'El grup o classe seleccionat no existeix.';
 $string['error_activitytoomanycolumns'] = 'Has seleccionat massa columnes per generar un document llegible. Redueix el nombre de columnes o elimina alguna columna (màxim {$a} a més de Núm. i Alumne).';
 $string['error_activitytoomanycustomcolumns'] = 'Només es poden afegir fins a {$a} columnes personalitzades.';
 $string['error_activityinvalidcolumn'] = 'Alguna de les columnes seleccionades no és vàlida.';
 
-$string['export_filetype_activity'] = 'Control d’activitat';
-$string['export_section_activity_cohort'] = 'Cohort';
+$string['export_filetype_activity'] = 'Control d’activitat/Full personalitzable';
+$string['export_section_activity_cohort'] = 'Grup o Classe';
 $string['export_section_activity_info'] = 'Activitat';
 $string['export_section_activity_template'] = 'Plantilla';
 $string['export_section_activity_columns'] = 'Columnes';
 $string['export_section_activity_options'] = 'Opcions';
 
-$string['activity_cohort'] = 'Cohort';
-$string['activity_cohort_help'] = 'Cohort del sistema de la qual s\'obtenen els membres actuals per al llistat. El PDF sempre reflecteix la composició actual de la cohort: no es desa cap llista pròpia.';
+$string['activity_cohort'] = 'Grup o Classe';
+$string['activity_cohort_help'] = 'Grup o classe del centre (una cohort de Moodle) de la qual s\'obtenen els membres actuals per al llistat. El PDF sempre reflecteix la composició actual del grup: no es desa cap llista pròpia. Només apareixen els grups amb alumnes matriculats als teus cursos, tret que tinguis accés global.';
 $string['activity_cohort_membercount'] = '{$a} alumnes';
 $string['activity_name'] = 'Nom de l’activitat';
 $string['activity_name_placeholder'] = 'p. ex. Visita CosmoCaixa';
@@ -281,21 +287,21 @@ $string['activity_showphotos_yes'] = 'Sí';
 $string['activity_showphotos_no'] = 'No';
 $string['activity_showgeneralobs'] = 'Mostrar observacions generals';
 $string['activity_order'] = 'Ordenar alumnes';
-$string['activity_order_help'] = 'Ordre en què apareixen els alumnes al PDF. «Ordre de la cohort» manté l\'ordre retornat pel sistema, sense reordenar.';
+$string['activity_order_help'] = 'Ordre en què apareixen els alumnes al PDF. «Ordre del grup o classe» manté l\'ordre retornat pel sistema, sense reordenar.';
 $string['activity_order_lastname'] = 'Cognoms / Nom';
 $string['activity_order_firstname'] = 'Nom / Cognoms';
-$string['activity_order_cohort'] = 'Ordre de la cohort';
+$string['activity_order_cohort'] = 'Ordre del grup o classe';
 $string['activity_density_large'] = 'Gran (fotos més grans, ~20 alumnes/pàgina)';
 $string['activity_preview'] = 'Vista prèvia';
 $string['activity_preview_placeholder'] = 'Prem «Vista prèvia» per veure aquí com quedarà el document.';
 $string['activity_generate'] = 'Generar PDF';
 $string['activity_generating'] = 'Generant el PDF…';
-$string['activity_nocohort'] = 'Selecciona una cohort per continuar.';
+$string['activity_nocohort'] = 'Selecciona un grup o classe per continuar.';
 
 $string['privacy:metadata:session'] = 'Dades de cada sessió fotogràfica oberta per un operador.';
 $string['privacy:metadata:session:operatorid'] = 'L\'usuari que va obrir la sessió.';
-$string['privacy:metadata:session:filtertype'] = 'Si la sessió es va generar a partir d\'un curs o d\'una cohort.';
-$string['privacy:metadata:session:filterdata'] = 'L\'identificador del curs o la cohort usat com a filtre.';
+$string['privacy:metadata:session:filtertype'] = 'Si la sessió es va generar a partir d\'un mòdul/assignatura o d\'un grup/classe.';
+$string['privacy:metadata:session:filterdata'] = 'L\'identificador del mòdul/assignatura o del grup/classe usat com a filtre.';
 $string['privacy:metadata:session:timecreated'] = 'Quan es va crear la sessió.';
 $string['privacy:metadata:session_user'] = 'L\'estat de captura de cada alumne dins d\'una sessió fotogràfica.';
 $string['privacy:metadata:session_user:userid'] = 'L\'alumne en cua.';

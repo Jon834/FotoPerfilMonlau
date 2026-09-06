@@ -1,5 +1,58 @@
 # Changelog — local_profilephoto
 
+## 0.7.8 (Control de actividad: cohortes acotadas al ámbito del docente)
+
+* En el Control de Actividad, un operador **sin**
+  `local/profilephoto:viewallusers` ya no ve todas las cohortes del sitio:
+  solo las que tienen algún alumno **matriculado activamente en un curso
+  donde el operador tiene `local/profilephoto:capture`**. El listado
+  generado sigue incluyendo a **toda** la cohorte.
+* Un operador **con** `viewallusers` (o administrador) sigue viendo
+  todas.
+* Se sustituye la comprobación de `moodle/cohort:view` por este ámbito
+  propio del plugin, coherente con la pantalla de captura. Ya no hace
+  falta conceder `moodle/cohort:view` al rol del docente.
+* Nuevos métodos `scope::get_allowed_cohortids()` y
+  `scope::can_use_cohort()`, con cobertura en `scope_test.php`.
+* Afecta a `get_activity_cohorts`, `get_activity_cohort_info` y
+  `create_activity_export`.
+
+## 0.7.7 (exportar: selección de documento y origen sin desplegables)
+
+* **«Tipo de documento»** deja de ser un desplegable y pasa a ser una
+  lista de tarjetas seleccionables, cada una con una descripción de una
+  línea de lo que genera. Las 6 opciones (incluido el Control de
+  Actividad/Hoja Personalizable) quedan visibles sin abrir nada.
+* Ese selector sale ahora de la zona que se ocultaba al entrar en el
+  Control de Actividad: se puede cambiar de tipo de documento en ambos
+  sentidos sin recargar.
+* **«Exportar por»** (Grupo o Clase · Módulo o Asignatura · Sesión) pasa
+  a ser un grupo de botones en lugar de un desplegable.
+* Densidad, Etapa e Idioma se mantienen como desplegables.
+* La sección de ajustes del PDF pasa a llamarse «Ajustes del documento».
+* Sin cambios de backend: la plantilla y `amd/{src,build}/export.js`
+  leen el valor del radio marcado; el resto del flujo es idéntico.
+
+## 0.7.6 (exportar: revisión de terminología)
+
+Cambio solo de textos (es/ca/en). No cambia ninguna URL, capacidad ni
+comportamiento.
+
+* La pantalla pasa a llamarse **«Generador de orlas y listados»** (antes
+  «Exportar fotografías»), en el título, la cabecera y el enlace de la
+  pantalla de captura.
+* En «Exportar por» y en el Control de actividad:
+  * **Cohorte** → **«Grupo o Clase»**
+  * **Curso** → **«Módulo o Asignatura»**
+  * Se mantiene entre paréntesis el término técnico de Moodle (cohorte /
+    curso) en la ayuda `?`, para que el administrador sepa a qué mapea.
+* **«Tipo de exportación»** → **«Tipo de documento»**.
+* **«Control de actividad»** → **«Control de Actividad/Hoja
+  Personalizable»**.
+* Se actualizan también las ayudas contextuales, los mensajes de error,
+  la pantalla de captura (sesiones por grupo/módulo) y los textos de la
+  Privacy API afectados.
+
 ## 0.6.3 (exportar: filtro de participantes por rol)
 
 * Al exportar **por curso** aparece un selector **Participantes del curso**:

@@ -100,7 +100,7 @@ En ambos casos, continúa con estos pasos:
     contador de progreso se actualiza.
 12. Pulsa **Saltar** (o `S`) y **Ausente** sobre un alumno de la cola y
     comprueba que el contador refleja el cambio.
-13. Ve a **Exportar fotografías descargables**, elige el curso/sesión
+13. Ve a **Generador de orlas y listados**, elige el curso/sesión
     usado en la prueba anterior, genera el ZIP y comprueba que contiene
     las fotos guardadas más un `manifest.csv` coherente.
 
