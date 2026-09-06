@@ -639,6 +639,7 @@
 .lpp-activity-actions {
     display: flex;
     gap: 0.75rem;
+    margin-top: 0;
 }
 
 .lpp-activity-actions .btn {
@@ -661,6 +662,16 @@
 .lpp-activity-formcol {
     flex: 3 1 380px;
     min-width: 0;
+    /* Same vertical rhythm as the standard form (.lpp-export-form): this mode
+       stacks the same kind of fieldsets, so give them the same gap instead of
+       each legend butting against the field above it. */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.lpp-activity-formcol > .lpp-export-section {
+    margin: 0;
 }
 
 .lpp-activity-previewcol {
@@ -677,10 +688,14 @@
     background: var(--body-bg, #fff);
 }
 
+/* Same treatment as a .lpp-export-section legend, so the preview panel
+   reads as part of the same form. */
 .lpp-activity-preview-caption {
-    margin: 0 0 0.6rem;
+    margin: 0 0 0.75rem;
+    padding: 0 0 0.35rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: #6c757d;

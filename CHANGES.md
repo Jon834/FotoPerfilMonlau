@@ -1,5 +1,16 @@
 # Changelog — local_profilephoto
 
+## 0.7.10 (Control de actividad: mismo aspecto que el resto de la pantalla)
+
+* El formulario del Control de Actividad usa ahora el mismo ritmo
+  vertical que el formulario estándar (`gap` de 1,5 rem entre secciones),
+  así las leyendas «Actividad», «Plantilla», «Columnas», «Opciones» dejan
+  de quedar pegadas al campo anterior.
+* El encabezado «Vista previa» del panel derecho recibe el mismo trato
+  que una leyenda de sección (mayúsculas, línea inferior), para que el
+  panel se lea como parte del mismo formulario.
+* Solo CSS.
+
 ## 0.7.9 (exportar: tolerancia a caché de plantilla obsoleta)
 
 * `groupValue()` en `amd/{src,build}/export.js` vuelve a leer `.value` si
