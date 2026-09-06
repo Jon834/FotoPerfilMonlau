@@ -312,3 +312,6 @@ $string['privacy:metadata:corefiles'] = 'The profile picture itself is stored en
 $string['privacy:path:sessions'] = 'Profile photo capture/Sessions';
 $string['privacy:path:queueentries'] = 'Profile photo capture/Queue';
 $string['privacy:path:logs'] = 'Profile photo capture/Audit log';
+
+$string['internalcredit'] = 'Built by';
+$string['internalcreditbrand'] = 'IT MONLAU';

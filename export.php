@@ -117,10 +117,24 @@ $helpicons = [
 $canexportactivity = has_capability('local/profilephoto:exportactivity', $context);
 $canviewidentifiers = has_capability('local/profilephoto:viewidentifiers', $context);
 
+echo "\n<!-- Developed internally by Monlau IT -->\n";
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_profilephoto/export', [
     'helpicons' => $helpicons,
     'canexportactivity' => $canexportactivity,
     'canviewidentifiers' => $canviewidentifiers,
 ]);
+
+$monlaumark = html_writer::empty_tag('img', [
+    'src' => '//lms.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788691958/molau_mask.png',
+    'alt' => '',
+    'class' => 'lpp-internal-credit-mark',
+]);
+echo html_writer::div(
+    $monlaumark
+    . html_writer::span(get_string('internalcredit', 'local_profilephoto') . ' ')
+    . html_writer::span(get_string('internalcreditbrand', 'local_profilephoto'), 'lpp-internal-credit-brand'),
+    'lpp-internal-credit'
+);
+
 echo $OUTPUT->footer();

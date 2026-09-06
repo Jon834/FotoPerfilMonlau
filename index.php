@@ -56,6 +56,7 @@ $PAGE->requires->js_call_amd('local_profilephoto/capture', 'init', [[
 $canexport = has_capability('local/profilephoto:exportsession', $context)
     || has_capability('local/profilephoto:exportall', $context);
 
+echo "\n<!-- Developed internally by Monlau IT -->\n";
 echo $OUTPUT->header();
 
 echo $OUTPUT->render_from_template('local_profilephoto/index', [
@@ -65,5 +66,17 @@ echo $OUTPUT->render_from_template('local_profilephoto/index', [
     'helpicon_sessionorder' => $OUTPUT->help_icon('session_order', 'local_profilephoto'),
     'helpicon_search' => $OUTPUT->help_icon('search_label', 'local_profilephoto'),
 ]);
+
+$monlaumark = html_writer::empty_tag('img', [
+    'src' => '//lms.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788691958/molau_mask.png',
+    'alt' => '',
+    'class' => 'lpp-internal-credit-mark',
+]);
+echo html_writer::div(
+    $monlaumark
+    . html_writer::span(get_string('internalcredit', 'local_profilephoto') . ' ')
+    . html_writer::span(get_string('internalcreditbrand', 'local_profilephoto'), 'lpp-internal-credit-brand'),
+    'lpp-internal-credit'
+);
 
 echo $OUTPUT->footer();

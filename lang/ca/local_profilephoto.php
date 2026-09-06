@@ -312,3 +312,6 @@ $string['privacy:metadata:corefiles'] = 'La fotografia de perfil en si s\'emmaga
 $string['privacy:path:sessions'] = 'Captura de fotografies de perfil/Sessions';
 $string['privacy:path:queueentries'] = 'Captura de fotografies de perfil/Cua';
 $string['privacy:path:logs'] = 'Captura de fotografies de perfil/Registre d\'auditoria';
+
+$string['internalcredit'] = 'Built by';
+$string['internalcreditbrand'] = 'IT MONLAU';
