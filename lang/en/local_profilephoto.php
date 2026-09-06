@@ -124,6 +124,8 @@ $string['settings_maxsyncexportusers'] = 'Maximum students per export';
 $string['settings_maxsyncexportusers_desc'] = 'If the selected filter includes more students than this, the operator is asked to narrow it instead of generating the export (this delivery builds ZIPs synchronously, with no background task).';
 $string['settings_exportretentionminutes'] = 'Temporary ZIP retention (minutes)';
 $string['settings_exportretentionminutes_desc'] = 'Generated ZIPs that are never downloaded are automatically deleted after this time by a scheduled task.';
+$string['settings_monlauimagesbase'] = 'Monlau images base URL';
+$string['settings_monlauimagesbase_desc'] = 'The theme_monlau "customimages" folder the orla and Activity control logos are read from (monlau_fp.jpg, monlau_eso.jpg, monlau_corp.jpg, monlaugroup.svg). Moodle changes the last path segment every time an image is re-uploaded in the theme; if the logos stop appearing, update this URL.';
 
 $string['task_cleanup_exports'] = 'Delete expired export ZIPs';
 
@@ -214,9 +216,10 @@ $string['export_density_compact'] = 'Compact (more per page)';
 $string['export_density_large'] = 'Large (bigger photos)';
 $string['export_stage'] = 'Stage';
 $string['export_stage_fp'] = 'Vocational';
-$string['export_stage_eso'] = 'Secondary';
-$string['export_stage_batx'] = 'Upper secondary';
+$string['export_stage_eso'] = 'Secondary / Upper secondary';
+$string['export_stage_batx'] = 'Secondary / Upper secondary';
 $string['export_stage_corporate'] = 'Corporate';
+$string['export_stage_monlaugroup'] = 'Monlau Group';
 $string['export_language'] = 'Language';
 $string['export_language_ca'] = 'Catalan';
 $string['export_language_es'] = 'Spanish';

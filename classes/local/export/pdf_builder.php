@@ -65,7 +65,7 @@ class pdf_builder {
         }
 
         $language = in_array($options['language'] ?? 'ca', ['ca', 'es', 'en'], true) ? $options['language'] : 'ca';
-        $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx', 'corporate'], true) ? $options['stage'] : 'fp';
+        $stage = branding::normalise_stage($options['stage'] ?? 'fp');
         $density = in_array($options['density'] ?? 'normal', ['compact', 'normal', 'large'], true)
             ? $options['density'] : 'normal';
         $heading = trim((string) ($options['heading'] ?? ''));
@@ -197,28 +197,8 @@ class pdf_builder {
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, 210, 30, 'F');
 
-        // Logo: constrain to fit without distortion.
-        $logosize = 16;
-        if ($stage === 'corporate') {
-            // The remote "Monlau Group" asset is a 306x31 wide logotype, not an icon: at
-            // icon size it renders as an illegible sliver. Corporate gets its own
-            // self-contained square mark instead (see corporate_square_logo()).
-            $pdf->Image('@' . self::corporate_square_logo(), 10, 7, $logosize, $logosize, 'PNG', '', 'T', false, 300,
-                '', false, false, 0, false, false, false);
-        } else {
-            $logo = self::resolve_logo_path($stage);
-            $svg = ($logo !== null && preg_match('/\.svg(\?|$)/i', $logo)) ? self::fetch_logo_svg($logo) : null;
-            if ($svg !== null) {
-                $pdf->ImageSVG('@' . $svg, 10, 7, $logosize, '', '', '', 'T', false);
-            } else if ($logo !== null && !preg_match('/\.svg(\?|$)/i', $logo)) {
-                // Use Image with max height, let width scale proportionally.
-                $pdf->Image($logo, 10, 7, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false,
-                    false);
-            } else {
-                $pdf->Image('@' . self::monlau_logo($stage), 10, 7, $logosize, '', 'PNG', '', 'T', false, 300, '',
-                    false, false, 0, false, false, false);
-            }
-        }
+        // Logo: fitted into a 26x16 mm box (up to the title at x=40), never distorted.
+        branding::render_logo($pdf, $stage, 10, 7, 26, 16);
 
         $pdf->SetTextColor(255, 255, 255);
         $pdf->SetFont('helvetica', 'B', 17);
@@ -470,145 +450,13 @@ class pdf_builder {
     }
 
     /**
-     * Provide the Monlau brand palette.
+     * Provide the Monlau brand palette for a stage.
      *
      * @param string $stage
      * @return array{r:int,g:int,b:int}
      */
     private static function brand_colors(string $stage): array {
-        if ($stage === 'eso') {
-            return ['r' => 42, 'g' => 134, 'b' => 96];
-        }
-        if ($stage === 'batx') {
-            return ['r' => 116, 'g' => 161, 'b' => 47];
-        }
-        if ($stage === 'corporate') {
-            return ['r' => 0, 'g' => 0, 'b' => 0];
-        }
-        return ['r' => 12, 'g' => 80, 'b' => 160];
-    }
-
-    /**
-     * Resolve a Monlau logo from the Moodle installation using the exact asset URLs
-     * provided. Not used for "corporate", which renders
-     * {@see corporate_square_logo()} instead.
-     *
-     * @param string $stage
-     * @return string|null
-     */
-    private static function resolve_logo_path(string $stage): ?string {
-        $urls = [
-            'fp' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_fp.jpg',
-            'eso' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_eso.jpg',
-            'batx' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
-        ];
-
-        $url = $urls[$stage] ?? $urls['fp'];
-        if ($url !== '') {
-            return $url;
-        }
-
-        return null;
-    }
-
-    /**
-     * Fetch a remote SVG logo and strip clip-path references TCPDF cannot resolve.
-     *
-     * The source file points at <clipPath> ids it does not define; TCPDF then
-     * emits "Undefined array key" / "foreach() on null" warnings from its SVG
-     * parser without applying (or needing) the clip. Removing the references
-     * keeps the same visual result and silences the warnings.
-     *
-     * @param string $url
-     * @return string|null cleaned SVG markup, or null if it could not be fetched
-     */
-    private static function fetch_logo_svg(string $url): ?string {
-        static $cache = [];
-        if (array_key_exists($url, $cache)) {
-            return $cache[$url];
-        }
-
-        $svg = null;
-        try {
-            $curl = new \curl();
-            $response = $curl->get($url, [], ['CURLOPT_TIMEOUT' => 5, 'CURLOPT_CONNECTTIMEOUT' => 5]);
-            if (!$curl->get_errno() && is_string($response) && stripos($response, '<svg') !== false) {
-                $svg = preg_replace('/<clipPath\b[^>]*>.*?<\/clipPath>/is', '', $response);
-                $svg = preg_replace('/\s+clip-path\s*=\s*("[^"]*"|\'[^\']*\')/i', '', $svg);
-                $svg = preg_replace('/clip-path\s*:\s*url\([^)]*\)\s*;?/i', '', $svg);
-            }
-        } catch (\Throwable $e) {
-            $svg = null;
-        }
-
-        return $cache[$url] = $svg;
-    }
-
-    /**
-     * Return a simplified Monlau logo as a PNG data blob.
-     *
-     * @param string $stage
-     * @return string
-     */
-    private static function monlau_logo(string $stage): string {
-        $width = 140;
-        $height = 60;
-        $im = imagecreatetruecolor($width, $height);
-        $bg = imagecolorallocate($im, 255, 255, 255);
-        imagefilledrectangle($im, 0, 0, $width, $height, $bg);
-
-        $brand = self::brand_colors($stage);
-        $blue = imagecolorallocate($im, $brand['r'], $brand['g'], $brand['b']);
-        $dark = imagecolorallocate($im, 20, 30, 40);
-
-        imagefilledrectangle($im, 0, 0, 16, $height, $blue);
-        imagefilledrectangle($im, 20, 16, 132, 22, $blue);
-        imagefilledrectangle($im, 20, 36, 100, 12, $dark);
-
-        $text = 'MONLAU';
-        $font = 5;
-        imagestring($im, $font, 24, 20, $text, $dark);
-
-        ob_start();
-        imagepng($im);
-        $png = ob_get_clean();
-        imagedestroy($im);
-
-        return $png;
-    }
-
-    /**
-     * Generate a self-contained square logo for the "corporate" stage: a light square
-     * tile with a solid black square badge and a white "M" monogram. Deliberately
-     * code-generated rather than fetched, so it (a) is always genuinely square, unlike
-     * the 306x31 "Monlau Group" wordmark asset the other stages' logos use, which
-     * renders as an illegible sliver at icon size, and (b) never depends on a network
-     * fetch.
-     *
-     * @return string raw PNG bytes.
-     */
-    private static function corporate_square_logo(): string {
-        $size = 64;
-        $im = imagecreatetruecolor($size, $size);
-        $white = imagecolorallocate($im, 255, 255, 255);
-        imagefilledrectangle($im, 0, 0, $size, $size, $white);
-
-        $inset = 5;
-        $black = imagecolorallocate($im, 15, 15, 15);
-        imagefilledrectangle($im, $inset, $inset, $size - $inset, $size - $inset, $black);
-
-        $text = 'M';
-        $font = 5;
-        $textw = imagefontwidth($font) * strlen($text);
-        $texth = imagefontheight($font);
-        imagestring($im, $font, (int) (($size - $textw) / 2), (int) (($size - $texth) / 2), $text, $white);
-
-        ob_start();
-        imagepng($im);
-        $png = ob_get_clean();
-        imagedestroy($im);
-
-        return $png;
+        return branding::palette($stage);
     }
 
     /**

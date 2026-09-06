@@ -1,5 +1,28 @@
 # Changelog — local_profilephoto
 
+## 0.7.11 (etapas de los PDF: ESO/BATX unificadas, nueva Monlau Group)
+
+* **ESO** y **Bachillerato/Batxillerat** pasan a ser una sola opción
+  **«ESO / Bachillerato»** (clave interna `eso`, color de cabecera
+  rgb 60,168,83). Los valores `batx` antiguos (formularios guardados,
+  colas) se pliegan a `eso` automáticamente.
+* Nueva etapa **«Monlau Group»** (clave `monlaugroup`), cabecera negra,
+  logo `monlaugroup.svg`.
+* **Corporativo** deja de usar un logo generado por código y toma
+  `monlau_corp.jpg` del tema.
+* Los logos de FP y ESO/BATX se leen del mismo sitio (`monlau_fp.jpg`,
+  `monlau_eso.jpg`), ya no de un host de staging.
+* Nuevo ajuste **«URL base de las imágenes Monlau»**
+  (`local_profilephoto/monlauimagesbase`): la carpeta `customimages` del
+  tema. Su último segmento cambia al resubir una imagen en el tema; si
+  los logos dejan de salir, se actualiza ahí sin tocar código.
+* Se admite el token `[[monlauimage:archivo.ext]]` para referirse a esos
+  activos (`branding::expand_tokens()`).
+* Todo el manejo de color/logo/etapa vive ahora en
+  `classes/local/export/branding.php`, compartido por los dos
+  generadores de PDF (antes estaba duplicado y podía divergir). Cobertura
+  en `branding_test.php`.
+
 ## 0.7.10 (Control de actividad: mismo aspecto que el resto de la pantalla)
 
 * El formulario del Control de Actividad usa ahora el mismo ritmo

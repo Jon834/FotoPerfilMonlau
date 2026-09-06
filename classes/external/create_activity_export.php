@@ -80,7 +80,7 @@ class create_activity_export extends external_api {
                     VALUE_DEFAULT, 'normal'),
             ]), 'Ordered list of extra columns, beyond the mandatory Núm./Alumne', VALUE_DEFAULT, []),
             'language' => new external_value(PARAM_ALPHA, 'ca | es | en', VALUE_DEFAULT, 'ca'),
-            'stage' => new external_value(PARAM_ALPHA, 'fp | eso | batx | corporate', VALUE_DEFAULT, 'fp'),
+            'stage' => new external_value(PARAM_ALPHA, 'fp | eso | corporate | monlaugroup (batx folds into eso)', VALUE_DEFAULT, 'fp'),
             'showphotos' => new external_value(PARAM_BOOL, 'Show a photo/avatar next to each name', VALUE_DEFAULT, true),
             'showgeneralobs' => new external_value(PARAM_BOOL, 'Add a general incidents/notes box', VALUE_DEFAULT, true),
             'order' => new external_value(PARAM_ALPHA, 'lastname | firstname | cohort', VALUE_DEFAULT, 'lastname'),

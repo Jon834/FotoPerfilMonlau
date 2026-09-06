@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_profilephoto';
-$plugin->version   = 2026090606;
+$plugin->version   = 2026090607;
 // Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
 // against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
 $plugin->requires  = 2025100600;
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.7.10 (Control d\'activitat form: same vertical rhythm and section styling as the rest of the export screen)';
+$plugin->release   = '0.7.11 (PDF stages: merge ESO/BATX, add Monlau Group, configurable customimages base, shared branding helper)';

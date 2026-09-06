@@ -124,6 +124,8 @@ $string['settings_maxsyncexportusers'] = 'Màxim d\'alumnes per exportació';
 $string['settings_maxsyncexportusers_desc'] = 'Si el filtre seleccionat inclou més alumnes que aquest número, es demana acotar la selecció en lloc de generar l\'exportació (aquest lliurament genera els ZIP de forma síncrona, sense tasca en segon pla).';
 $string['settings_exportretentionminutes'] = 'Retenció dels ZIP temporals (minuts)';
 $string['settings_exportretentionminutes_desc'] = 'Els fitxers ZIP generats i no descarregats s\'eliminen automàticament passat aquest temps mitjançant una tasca programada.';
+$string['settings_monlauimagesbase'] = 'URL base de les imatges Monlau';
+$string['settings_monlauimagesbase_desc'] = 'Carpeta de «customimages» del tema Monlau d\'on es prenen els logotips de les orles i del Control d\'activitat (monlau_fp.jpg, monlau_eso.jpg, monlau_corp.jpg, monlaugroup.svg). L\'últim segment de la ruta canvia cada vegada que es torna a pujar una imatge al tema; si els logotips deixen de sortir, actualitza aquí aquesta URL.';
 
 $string['task_cleanup_exports'] = 'Eliminar exportacions ZIP caducades';
 
@@ -214,9 +216,10 @@ $string['export_density_compact'] = 'Compacta (més per pàgina)';
 $string['export_density_large'] = 'Gran (fotos més grans)';
 $string['export_stage'] = 'Etapa';
 $string['export_stage_fp'] = 'FP';
-$string['export_stage_eso'] = 'ESO';
-$string['export_stage_batx'] = 'Batxillerat';
+$string['export_stage_eso'] = 'ESO / Batxillerat';
+$string['export_stage_batx'] = 'ESO / Batxillerat';
 $string['export_stage_corporate'] = 'Corporatiu';
+$string['export_stage_monlaugroup'] = 'Monlau Group';
 $string['export_language'] = 'Idioma';
 $string['export_language_ca'] = 'Català';
 $string['export_language_es'] = 'Espanyol';

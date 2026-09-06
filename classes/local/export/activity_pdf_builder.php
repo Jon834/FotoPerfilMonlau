@@ -190,7 +190,7 @@ class activity_pdf_builder {
         }
 
         $language = in_array($options['language'] ?? 'ca', ['ca', 'es', 'en'], true) ? $options['language'] : 'ca';
-        $stage = in_array($options['stage'] ?? 'fp', ['fp', 'eso', 'batx', 'corporate'], true) ? $options['stage'] : 'fp';
+        $stage = branding::normalise_stage($options['stage'] ?? 'fp');
         $order = in_array($options['order'] ?? 'lastname', ['lastname', 'firstname', 'cohort'], true)
             ? $options['order'] : 'lastname';
         $density = in_array($options['density'] ?? 'normal', ['compact', 'normal', 'large'], true)
@@ -404,27 +404,8 @@ class activity_pdf_builder {
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, self::PAGE_WIDTH, 22, 'F');
 
-        $logosize = 12;
-        if ($stage === 'corporate') {
-            // The remote "Monlau Group" asset is a 306x31 wide logotype, not an icon: at
-            // this box size it renders as an illegible sliver. Corporate gets its own
-            // self-contained square mark instead, so it always looks right with no
-            // network dependency (see corporate_square_logo()).
-            $pdf->Image('@' . self::corporate_square_logo(), 8, 5, $logosize, $logosize, 'PNG', '', 'T', false, 300,
-                '', false, false, 0, false, false, false);
-        } else {
-            $logo = self::resolve_logo_path($stage);
-            $issvg = $logo !== null && preg_match('/\.svg(\?|$)/i', $logo);
-            $svg = $issvg ? self::fetch_logo_svg($logo) : null;
-            if ($svg !== null) {
-                $pdf->ImageSVG('@' . $svg, 8, 5, $logosize, '', '', '', 'T', false);
-            } else if ($logo !== null && !$issvg) {
-                // Never hand an .svg URL to the raster Image() path: it cannot decode SVG
-                // XML and would render corrupted noise instead of just skipping the logo.
-                $pdf->Image($logo, 8, 5, 0, $logosize, '', '', 'T', false, 300, '', false, false, 0, false, false,
-                    false);
-            }
-        }
+        // Logo: fitted into a 20x12 mm box (up to the cohort name at x=30), never distorted.
+        branding::render_logo($pdf, $stage, 8, 5, 20, 12);
 
         $pdf->SetTextColor(255, 255, 255);
         $pdf->SetFont('helvetica', 'B', 14);
@@ -941,101 +922,13 @@ class activity_pdf_builder {
     }
 
     /**
-     * Provide the Monlau brand palette (mirrors pdf_builder::brand_colors()).
+     * Provide the Monlau brand palette for a stage.
      *
      * @param string $stage
      * @return array{r:int,g:int,b:int}
      */
     private static function brand_colors(string $stage): array {
-        if ($stage === 'eso') {
-            return ['r' => 42, 'g' => 134, 'b' => 96];
-        }
-        if ($stage === 'batx') {
-            return ['r' => 116, 'g' => 161, 'b' => 47];
-        }
-        if ($stage === 'corporate') {
-            return ['r' => 0, 'g' => 0, 'b' => 0];
-        }
-        return ['r' => 12, 'g' => 80, 'b' => 160];
-    }
-
-    /**
-     * Resolve a Monlau logo URL for the given stage (mirrors pdf_builder). Not used for
-     * "corporate", which renders {@see corporate_square_logo()} instead.
-     *
-     * @param string $stage
-     * @return string|null
-     */
-    private static function resolve_logo_path(string $stage): ?string {
-        $urls = [
-            'fp' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_fp.jpg',
-            'eso' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlau_eso.jpg',
-            'batx' => 'https://falcon-caramel42.monlau.com/pluginfile.php/1/theme_monlau/customimages/1788184148/monlaugroup.svg',
-        ];
-        return $urls[$stage] ?? $urls['fp'];
-    }
-
-    /**
-     * Generate a self-contained square logo for the "corporate" stage: a light square
-     * tile with a solid black square badge and a white "M" monogram. Deliberately
-     * code-generated rather than fetched, so it (a) is always genuinely square, unlike
-     * the 306x31 "Monlau Group" wordmark asset the other stages' logos use, which
-     * renders as an illegible sliver at icon size, and (b) never depends on a network
-     * fetch that could fail or (per resolve_logo_path()'s SVG asset) render as corrupted
-     * noise if handed to the raster Image() path.
-     *
-     * @return string raw PNG bytes.
-     */
-    private static function corporate_square_logo(): string {
-        $size = 64;
-        $im = imagecreatetruecolor($size, $size);
-        $white = imagecolorallocate($im, 255, 255, 255);
-        imagefilledrectangle($im, 0, 0, $size, $size, $white);
-
-        $inset = 5;
-        $black = imagecolorallocate($im, 15, 15, 15);
-        imagefilledrectangle($im, $inset, $inset, $size - $inset, $size - $inset, $black);
-
-        $text = 'M';
-        $font = 5;
-        $textw = imagefontwidth($font) * strlen($text);
-        $texth = imagefontheight($font);
-        imagestring($im, $font, (int) (($size - $textw) / 2), (int) (($size - $texth) / 2), $text, $white);
-
-        ob_start();
-        imagepng($im);
-        $png = ob_get_clean();
-        imagedestroy($im);
-
-        return $png;
-    }
-
-    /**
-     * Fetch a remote SVG logo and strip clip-path references TCPDF cannot resolve.
-     *
-     * @param string $url
-     * @return string|null
-     */
-    private static function fetch_logo_svg(string $url): ?string {
-        static $cache = [];
-        if (array_key_exists($url, $cache)) {
-            return $cache[$url];
-        }
-
-        $svg = null;
-        try {
-            $curl = new \curl();
-            $response = $curl->get($url, [], ['CURLOPT_TIMEOUT' => 5, 'CURLOPT_CONNECTTIMEOUT' => 5]);
-            if (!$curl->get_errno() && is_string($response) && stripos($response, '<svg') !== false) {
-                $svg = preg_replace('/<clipPath\b[^>]*>.*?<\/clipPath>/is', '', $response);
-                $svg = preg_replace('/\s+clip-path\s*=\s*("[^"]*"|\'[^\']*\')/i', '', $svg);
-                $svg = preg_replace('/clip-path\s*:\s*url\([^)]*\)\s*;?/i', '', $svg);
-            }
-        } catch (\Throwable $e) {
-            $svg = null;
-        }
-
-        return $cache[$url] = $svg;
+        return branding::palette($stage);
     }
 
     /**

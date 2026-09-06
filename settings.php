@@ -161,4 +161,12 @@ if ($hassiteconfig) {
         60,
         PARAM_INT
     ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_profilephoto/monlauimagesbase',
+        get_string('settings_monlauimagesbase', 'local_profilephoto'),
+        get_string('settings_monlauimagesbase_desc', 'local_profilephoto'),
+        \local_profilephoto\local\export\branding::DEFAULT_IMAGE_BASE,
+        PARAM_URL
+    ));
 }
