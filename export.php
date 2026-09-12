@@ -74,11 +74,14 @@ if ($token !== '') {
     \local_profilephoto\local\audit\logger::log('export_downloaded', $USER->id);
     \local_profilephoto\event\export_downloaded::create(['context' => $context])->trigger();
 
-    if ($preview) {
+    if ($preview && str_ends_with(strtolower($entry['filename']), '.pdf')) {
         // Inline display for the embedded <iframe> preview - send_temp_file() always
         // forces "Content-Disposition: attachment", which a browser can only offer to
         // download, never render in place. send_file() leaves the temp file behind for
         // cleanup_exports.php's scheduled task to sweep, same as an abandoned download.
+        // Only PDFs get this treatment: the UI never offers a preview button for other
+        // formats (e.g. the Control d'activitat's Excel export), but this guards against
+        // a stray ?preview=1 on a non-PDF token being served mislabeled as application/pdf.
         send_file($entry['path'], $entry['filename'], 0, 0, false, false, 'application/pdf');
         // send_file() does not return.
     }
@@ -112,6 +115,7 @@ $helpicons = [
     'activitytemplate' => $OUTPUT->help_icon('activity_template', 'local_profilephoto'),
     'activitycolumns' => $OUTPUT->help_icon('activity_columns', 'local_profilephoto'),
     'activityorder' => $OUTPUT->help_icon('activity_order', 'local_profilephoto'),
+    'activityformat' => $OUTPUT->help_icon('activity_format', 'local_profilephoto'),
 ];
 
 $canexportactivity = has_capability('local/profilephoto:exportactivity', $context);

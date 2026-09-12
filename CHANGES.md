@@ -1,5 +1,25 @@
 # Changelog — local_profilephoto
 
+## 0.8.0 (Control de actividad: formato por defecto, orientación de página, exportación a Excel)
+
+* **«Control d'activitat»** pasa a ser el tipo de documento seleccionado por
+  defecto en la pantalla de exportación, en lugar de «Orla compacta».
+* Nueva opción **«Orientació de pàgina»** (Vertical A4 / Apaïsat A4) en el
+  Control d'activitat. Apaïsat sigue siendo el comportamiento de siempre; en
+  vertical, la cabecera de marca y el bloque Activitat/Data/Lloc/Responsables
+  se adaptan al ancho más estrecho (el bloque de actividad pasa a dos líneas).
+* Nueva opción **«Format de sortida»**: además de PDF, el Control d'activitat
+  se puede generar como **Excel (.xlsx)** (`classes/local/export/activity_xlsx_builder.php`),
+  con las mismas columnas, orden y colores de marca configurados — sin
+  fotografías ni orientación de página, ya que no aplican a una hoja de
+  cálculo. Las columnas de casella/texto se generan como celdas vacías con
+  borde, listas para rellenar en el ordenador.
+* `activity_pdf_builder` expone ahora varios ayudantes de solo datos
+  (`translate_word`, `column_label`, `sort_users`...) que el nuevo generador
+  de Excel reutiliza, en lugar de duplicar el modelo de columnas.
+* Cobertura en `tests/activity_xlsx_builder_test.php` y casos nuevos en
+  `tests/activity_pdf_builder_test.php` para la orientación vertical.
+
 ## 0.7.12 (etapa «Corporate»)
 
 * La etapa se muestra como **«Corporate»** en los tres idiomas (antes

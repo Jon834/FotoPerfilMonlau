@@ -71,6 +71,9 @@ const SELECTORS = {
     ACTIVITY_PREVIEW_PLACEHOLDER: '#lpp-activity-preview-placeholder',
     ACTIVITY_OBS_WIDTH: '#lpp-activity-obs-width',
     ACTIVITY_OBS_WIDTH_FIELD: '#lpp-activity-obs-width-field',
+    ACTIVITY_FORMAT: '#lpp-activity-format',
+    ACTIVITY_ORIENTATION: '#lpp-activity-orientation',
+    ACTIVITY_ORIENTATION_FIELD: '#lpp-activity-orientation-field',
 };
 
 /** @var {number} Maximum extra columns (beyond Núm./Alumne), mirrors activity_pdf_builder::MAX_EXTRA_COLUMNS. */
@@ -93,7 +96,8 @@ const COLUMN_WIDTHS = {
     present: 16, autoritzacio: 20, transport: 18, epi: 15, material: 18, hora: 16, email: 55,
 };
 const CUSTOM_WIDTH = {checkbox: 16, text: 22};
-const PAGE_INNER_MM = 297 - 20;
+/* Full A4 page width (mm) by orientation - mirrors activity_pdf_builder::PAGE_SIZE. */
+const PAGE_WIDTH_MM = {landscape: 297, portrait: 210};
 const NUM_WIDTH_MM = 10;
 const ALUMNE_MIN_MM = 56;
 const OBS_MIN_MM = 26;
@@ -348,7 +352,12 @@ const initActivityMode = () => {
     const previewPlaceholder = document.querySelector(SELECTORS.ACTIVITY_PREVIEW_PLACEHOLDER);
     const obsWidth = document.querySelector(SELECTORS.ACTIVITY_OBS_WIDTH);
     const obsWidthField = document.querySelector(SELECTORS.ACTIVITY_OBS_WIDTH_FIELD);
+    const formatSelect = document.querySelector(SELECTORS.ACTIVITY_FORMAT);
+    const orientationSelect = document.querySelector(SELECTORS.ACTIVITY_ORIENTATION);
+    const orientationField = document.querySelector(SELECTORS.ACTIVITY_ORIENTATION_FIELD);
     const status = document.querySelector(SELECTORS.STATUS);
+
+    const isExcelFormat = () => formatSelect && formatSelect.value === 'excel';
 
     // Ordered list of extra column keys (beyond Núm./Alumne). Custom columns'
     // name/type live in customMeta, keyed by the same generated key.
@@ -383,8 +392,15 @@ const initActivityMode = () => {
     };
 
     // Same check as activity_pdf_builder::columns_fit(): do the selected columns fit
-    // the page next to Núm. + Alumne (min) + a usable Observacions?
+    // the page next to Núm. + Alumne (min) + a usable Observacions? Excel has no page
+    // width constraint, so the geometric check is skipped entirely for that format.
     const columnsFit = () => {
+        if (isExcelFormat()) {
+            return true;
+        }
+        const orientation = orientationSelect && orientationSelect.value === 'portrait' ? 'portrait' : 'landscape';
+        const pageInnerMm = PAGE_WIDTH_MM[orientation] - 20;
+
         let fixed = 0;
         let obsmin = 0;
         state.orderedKeys.forEach((key) => {
@@ -394,7 +410,7 @@ const initActivityMode = () => {
                 fixed += columnWidth(key);
             }
         });
-        return (NUM_WIDTH_MM + ALUMNE_MIN_MM + fixed + obsmin) <= PAGE_INNER_MM + 0.5;
+        return (NUM_WIDTH_MM + ALUMNE_MIN_MM + fixed + obsmin) <= pageInnerMm + 0.5;
     };
 
     /**
@@ -601,6 +617,29 @@ const initActivityMode = () => {
         // Switching Observacions to "curta" frees width, which can lift the fit warning.
         obsWidth.addEventListener('change', enforceColumnLimit);
     }
+    if (orientationSelect) {
+        // A combination that fits landscape may not fit portrait - re-check immediately
+        // rather than only on submit.
+        orientationSelect.addEventListener('change', enforceColumnLimit);
+    }
+
+    // Excel has no page orientation and can't be shown in the <iframe> preview - hide
+    // both controls while it's selected, and re-run the fit check (which Excel always
+    // passes) since it depends on the format too.
+    const updateFormatVisibility = () => {
+        const excel = isExcelFormat();
+        if (orientationField) {
+            orientationField.hidden = excel;
+        }
+        if (previewBtn) {
+            previewBtn.hidden = excel;
+        }
+        enforceColumnLimit();
+    };
+    if (formatSelect) {
+        formatSelect.addEventListener('change', updateFormatVisibility);
+    }
+    updateFormatVisibility();
 
     // Apply the default template (Sortida) on load, matching the pre-checked columns.
     applyTemplate(template.value);
@@ -664,6 +703,8 @@ const initActivityMode = () => {
                 showgeneralobs: document.querySelector(SELECTORS.ACTIVITY_SHOWGENERALOBS).checked,
                 order: document.querySelector(SELECTORS.ACTIVITY_ORDER).value,
                 density: document.querySelector(SELECTORS.ACTIVITY_DENSITY).value,
+                orientation: orientationSelect ? orientationSelect.value : 'landscape',
+                format: formatSelect ? formatSelect.value : 'pdf',
             });
         }).then((result) => {
             return getString('export_ready', 'local_profilephoto', result.count).then((message) => {
@@ -682,14 +723,21 @@ const initActivityMode = () => {
         window.location.href = url;
     }));
 
-    previewBtn.addEventListener('click', () => runGeneration((url) => {
-        // export.php?preview=1 serves the same file with Content-Disposition: inline
-        // (see export.php), so the browser's built-in PDF viewer renders it in place
-        // instead of only offering a download.
-        previewFrame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + 'preview=1';
-        previewFrame.hidden = false;
-        previewPlaceholder.hidden = true;
-    }));
+    previewBtn.addEventListener('click', () => {
+        // The button is hidden for Excel (browsers can't render .xlsx inline) - this
+        // guards against it still being reachable despite that.
+        if (isExcelFormat()) {
+            return;
+        }
+        runGeneration((url) => {
+            // export.php?preview=1 serves the same file with Content-Disposition: inline
+            // (see export.php), so the browser's built-in PDF viewer renders it in place
+            // instead of only offering a download.
+            previewFrame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + 'preview=1';
+            previewFrame.hidden = false;
+            previewPlaceholder.hidden = true;
+        });
+    });
 };
 
 export default {init};

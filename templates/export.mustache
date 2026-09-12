@@ -111,7 +111,7 @@
                 <legend>{{#str}}export_filetype, local_profilephoto{{/str}} {{{helpicons.filetype}}}</legend>
                 <div id="lpp-export-type" class="lpp-doctype-list" role="radiogroup" aria-label="{{#str}}export_filetype, local_profilephoto{{/str}}">
                     <label class="lpp-doctype">
-                        <input type="radio" name="lpp-export-type" value="grid6" checked>
+                        <input type="radio" name="lpp-export-type" value="grid6" {{^canexportactivity}}checked{{/canexportactivity}}>
                         <span class="lpp-doctype-text">
                             <span class="lpp-doctype-title">{{#str}}export_filetype_grid6, local_profilephoto{{/str}}</span>
                             <span class="lpp-doctype-desc">{{#str}}export_filetype_grid6_desc, local_profilephoto{{/str}}</span>
@@ -147,7 +147,7 @@
                     </label>
                     {{#canexportactivity}}
                     <label class="lpp-doctype">
-                        <input type="radio" name="lpp-export-type" value="activity">
+                        <input type="radio" name="lpp-export-type" value="activity" checked>
                         <span class="lpp-doctype-text">
                             <span class="lpp-doctype-title">{{#str}}export_filetype_activity, local_profilephoto{{/str}}</span>
                             <span class="lpp-doctype-desc">{{#str}}export_filetype_activity_desc, local_profilephoto{{/str}}</span>
@@ -372,6 +372,24 @@
                     <legend>{{#str}}export_section_activity_options, local_profilephoto{{/str}}</legend>
 
                     <div class="lpp-grid">
+                        <div class="lpp-field" id="lpp-activity-format-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-format">{{#str}}activity_format, local_profilephoto{{/str}}</label> {{{helpicons.activityformat}}}
+                            </span>
+                            <select id="lpp-activity-format" class="form-control">
+                                <option value="pdf" selected>{{#str}}activity_format_pdf, local_profilephoto{{/str}}</option>
+                                <option value="excel">{{#str}}activity_format_excel, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
+                        <div class="lpp-field" id="lpp-activity-orientation-field">
+                            <span class="lpp-field-label">
+                                <label for="lpp-activity-orientation">{{#str}}activity_orientation, local_profilephoto{{/str}}</label>
+                            </span>
+                            <select id="lpp-activity-orientation" class="form-control">
+                                <option value="landscape" selected>{{#str}}activity_orientation_landscape, local_profilephoto{{/str}}</option>
+                                <option value="portrait">{{#str}}activity_orientation_portrait, local_profilephoto{{/str}}</option>
+                            </select>
+                        </div>
                         <div class="lpp-field">
                             <span class="lpp-field-label">
                                 <label for="lpp-activity-showphotos">{{#str}}activity_showphotos, local_profilephoto{{/str}}</label>

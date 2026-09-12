@@ -195,6 +195,42 @@ final class activity_pdf_builder_test extends advanced_testcase {
         $this->assertGreaterThan(1, preg_match_all('/\/Type\s*\/Page[^s]/', $content));
     }
 
+    public function test_columns_fit_is_orientation_aware(): void {
+        // The 7 standard columns alone (present/autoritzacio/transport/epi/material/hora/email,
+        // no observacions) already sum to 158mm, which fits landscape's ~277mm usable width
+        // but not portrait's much narrower ~190mm.
+        $columns = [
+            ['key' => 'present', 'type' => 'checkbox'],
+            ['key' => 'autoritzacio', 'type' => 'checkbox'],
+            ['key' => 'transport', 'type' => 'checkbox'],
+            ['key' => 'epi', 'type' => 'checkbox'],
+            ['key' => 'material', 'type' => 'checkbox'],
+            ['key' => 'hora', 'type' => 'text'],
+            ['key' => 'email', 'type' => 'value'],
+        ];
+        $this->assertTrue(activity_pdf_builder::columns_fit($columns, 'landscape'));
+        $this->assertFalse(activity_pdf_builder::columns_fit($columns, 'portrait'));
+        // Omitting the orientation keeps today's landscape-default behaviour.
+        $this->assertTrue(activity_pdf_builder::columns_fit($columns));
+    }
+
+    public function test_build_portrait_produces_a_portrait_page(): void {
+        $this->resetAfterTest();
+
+        $result = activity_pdf_builder::build([$this->member(1, 'Nora', 'Assali')], 'Grup X', [], [
+            ['key' => 'present', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'observacions', 'label' => '', 'type' => 'text'],
+        ], [
+            'orientation' => 'portrait',
+        ]);
+
+        $this->assertFileExists($result['path']);
+        $content = file_get_contents($result['path']);
+        // A4 portrait is ~595 x 842 pt (width < height); landscape is the reverse.
+        // TCPDF writes the MediaBox as "[0 0 <width> <height>]".
+        $this->assertMatchesRegularExpression('/\/MediaBox\s*\[\s*0\s+0\s+595\.\d+\s+841\.\d+\s*\]/', $content);
+    }
+
     public function test_is_standard_column_and_type_helpers(): void {
         $this->assertTrue(activity_pdf_builder::is_standard_column('present'));
         $this->assertSame('checkbox', activity_pdf_builder::standard_column_type('present'));

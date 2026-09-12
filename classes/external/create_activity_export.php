@@ -27,6 +27,7 @@ use local_profilephoto\event\export_created;
 use local_profilephoto\local\access\scope;
 use local_profilephoto\local\audit\logger;
 use local_profilephoto\local\export\activity_pdf_builder;
+use local_profilephoto\local\export\activity_xlsx_builder;
 use moodle_exception;
 
 defined('MOODLE_INTERNAL') || die();
@@ -85,6 +86,8 @@ class create_activity_export extends external_api {
             'showgeneralobs' => new external_value(PARAM_BOOL, 'Add a general incidents/notes box', VALUE_DEFAULT, true),
             'order' => new external_value(PARAM_ALPHA, 'lastname | firstname | cohort', VALUE_DEFAULT, 'lastname'),
             'density' => new external_value(PARAM_ALPHA, 'compact | normal | large', VALUE_DEFAULT, 'normal'),
+            'orientation' => new external_value(PARAM_ALPHA, 'portrait | landscape (PDF only)', VALUE_DEFAULT, 'landscape'),
+            'format' => new external_value(PARAM_ALPHA, 'pdf | excel', VALUE_DEFAULT, 'pdf'),
         ]);
     }
 
@@ -99,6 +102,9 @@ class create_activity_export extends external_api {
      * @param bool $showphotos
      * @param bool $showgeneralobs
      * @param string $order
+     * @param string $density
+     * @param string $orientation
+     * @param string $format
      * @return array
      */
     public static function execute(
@@ -110,7 +116,9 @@ class create_activity_export extends external_api {
         bool $showphotos = true,
         bool $showgeneralobs = true,
         string $order = 'lastname',
-        string $density = 'normal'
+        string $density = 'normal',
+        string $orientation = 'landscape',
+        string $format = 'pdf'
     ): array {
         global $DB, $USER;
 
@@ -124,7 +132,13 @@ class create_activity_export extends external_api {
             'showgeneralobs' => $showgeneralobs,
             'order' => $order,
             'density' => $density,
+            'orientation' => $orientation,
+            'format' => $format,
         ]);
+
+        $orientation = in_array($params['orientation'], ['portrait', 'landscape'], true)
+            ? $params['orientation'] : 'landscape';
+        $format = in_array($params['format'], ['pdf', 'excel'], true) ? $params['format'] : 'pdf';
 
         $context = context_system::instance();
         self::validate_context($context);
@@ -141,7 +155,7 @@ class create_activity_export extends external_api {
             throw new moodle_exception('error_outofscope', 'local_profilephoto');
         }
 
-        $extracolumns = self::normalize_columns($params['columns']);
+        $extracolumns = self::normalize_columns($params['columns'], $orientation, $format);
 
         // Columns that print a student's email / phone / idnumber need the same
         // capability the rest of the plugin uses to gate personal identifiers.
@@ -168,21 +182,38 @@ class create_activity_export extends external_api {
 
         $order = in_array($params['order'], ['lastname', 'firstname', 'cohort'], true) ? $params['order'] : 'lastname';
 
-        $built = activity_pdf_builder::build(
-            array_values($members),
-            format_string($cohort->name),
-            $activityoptions,
-            $extracolumns,
-            [
-                'language' => $params['language'],
-                'stage' => $params['stage'],
-                'showphotos' => $params['showphotos'],
-                'showgeneralobs' => $params['showgeneralobs'],
-                'order' => $order,
-                'density' => $params['density'],
-                'generatedby' => fullname($USER),
-            ]
-        );
+        if ($format === 'excel') {
+            $built = activity_xlsx_builder::build(
+                array_values($members),
+                format_string($cohort->name),
+                $activityoptions,
+                $extracolumns,
+                [
+                    'language' => $params['language'],
+                    'stage' => $params['stage'],
+                    'showgeneralobs' => $params['showgeneralobs'],
+                    'order' => $order,
+                    'generatedby' => fullname($USER),
+                ]
+            );
+        } else {
+            $built = activity_pdf_builder::build(
+                array_values($members),
+                format_string($cohort->name),
+                $activityoptions,
+                $extracolumns,
+                [
+                    'language' => $params['language'],
+                    'stage' => $params['stage'],
+                    'showphotos' => $params['showphotos'],
+                    'showgeneralobs' => $params['showgeneralobs'],
+                    'order' => $order,
+                    'density' => $params['density'],
+                    'orientation' => $orientation,
+                    'generatedby' => fullname($USER),
+                ]
+            );
+        }
 
         $token = bin2hex(random_bytes(20));
         $cache = cache::make('local_profilephoto', 'exports');
@@ -245,9 +276,12 @@ class create_activity_export extends external_api {
      * self::MAX_CUSTOM_COLUMNS of them.
      *
      * @param array $columns raw {key, label, type} entries from the client.
+     * @param string $orientation portrait|landscape - only relevant to the PDF fit-check.
+     * @param string $format pdf|excel - the geometric fit-check only applies to pdf; a
+     *     spreadsheet has no page-width constraint.
      * @return array normalised {key, label, type} entries.
      */
-    private static function normalize_columns(array $columns): array {
+    private static function normalize_columns(array $columns, string $orientation, string $format): array {
         if (count($columns) > activity_pdf_builder::MAX_EXTRA_COLUMNS) {
             throw new moodle_exception('error_activitytoomanycolumns', 'local_profilephoto', '',
                 activity_pdf_builder::MAX_EXTRA_COLUMNS);
@@ -296,7 +330,7 @@ class create_activity_export extends external_api {
             $normalized[] = ['key' => $key, 'label' => $label, 'type' => $type];
         }
 
-        if (!activity_pdf_builder::columns_fit($normalized)) {
+        if ($format === 'pdf' && !activity_pdf_builder::columns_fit($normalized, $orientation)) {
             throw new moodle_exception('error_activitytoomanycolumns', 'local_profilephoto', '',
                 activity_pdf_builder::MAX_EXTRA_COLUMNS);
         }

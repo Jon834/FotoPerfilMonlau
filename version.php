@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_profilephoto';
-$plugin->version   = 2026090608;
+$plugin->version   = 2026091200;
 // Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
 // against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
 $plugin->requires  = 2025100600;
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.7.12 ("Corporate" stage label kept in English across all languages)';
+$plugin->release   = '0.8.0 (Control d\'activitat: default doc type, page orientation, Excel export)';

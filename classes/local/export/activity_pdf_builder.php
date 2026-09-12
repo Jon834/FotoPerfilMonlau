@@ -23,18 +23,26 @@ use stdClass;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Build the "Control d'activitat" PDF: an A4 landscape, printable roster for
- * a cohort with configurable pen-and-paper columns (attendance, transport,
- * authorisation...), meant for outings, workshops and similar activities.
+ * Build the "Control d'activitat" PDF: an A4 (portrait or landscape), printable
+ * roster for a cohort with configurable pen-and-paper columns (attendance,
+ * transport, authorisation...), meant for outings, workshops and similar
+ * activities. Landscape is the default orientation; see {@see page_size()}.
  *
  * Deliberately a separate class from {@see pdf_builder} rather than a new
- * layout inside it: that class always builds a portrait ('P') 210mm-wide
- * document, while this one needs landscape 297mm plus a dynamic-width
- * table, so sharing its private rendering methods directly is not possible.
- * A handful of small visual helpers (avatar, brand colours, logo, filename
- * sanitising) are intentionally duplicated here rather than extracted into
- * a shared trait, to avoid any risk of a refactor changing the visual
- * output of the four layouts already in production.
+ * layout inside it: that class always builds a fixed 210mm-wide portrait
+ * document, while this one needs a dynamic-width table (and, since it also
+ * supports landscape, a dynamic page size too), so sharing its private
+ * rendering methods directly is not possible. A handful of small visual
+ * helpers (avatar, brand colours, logo, filename sanitising) are
+ * intentionally duplicated here rather than extracted into a shared trait,
+ * to avoid any risk of a refactor changing the visual output of the four
+ * layouts already in production.
+ *
+ * A handful of non-rendering helpers (column labels/translations, name/date
+ * formatting, filename sanitising, user sorting) are `public` so that
+ * {@see activity_xlsx_builder}, the Excel counterpart of this class for the
+ * same "Control d'activitat" screen, can reuse the same column model instead
+ * of duplicating it - only the two classes' actual rendering differs.
  *
  * @package    local_profilephoto
  * @copyright  2026 Centre Educatiu
@@ -42,11 +50,11 @@ defined('MOODLE_INTERNAL') || die();
  */
 class activity_pdf_builder {
 
-    /** @var float Full page width, landscape A4, in mm. */
-    private const PAGE_WIDTH = 297.0;
-
-    /** @var float Full page height, landscape A4, in mm. */
-    private const PAGE_HEIGHT = 210.0;
+    /** @var array<string,array{width:float,height:float}> A4 page size (mm), by orientation. */
+    private const PAGE_SIZE = [
+        'landscape' => ['width' => 297.0, 'height' => 210.0],
+        'portrait' => ['width' => 210.0, 'height' => 297.0],
+    ];
 
     /** @var float Left/right page margin. */
     private const MARGIN = 10.0;
@@ -117,14 +125,25 @@ class activity_pdf_builder {
     ];
 
     /**
+     * Resolve the page dimensions (mm) for an orientation.
+     *
+     * @param string $orientation 'portrait' or 'landscape' (anything else falls back to landscape).
+     * @return array{width: float, height: float}
+     */
+    private static function page_size(string $orientation): array {
+        return self::PAGE_SIZE[$orientation === 'portrait' ? 'portrait' : 'landscape'];
+    }
+
+    /**
      * Whether the given extra columns fit on the page at a readable size, alongside
      * the mandatory Núm. + Alumne (minimum) and a usable Observacions.
      *
      * @param array $columns list of {key, type, short?} entries.
+     * @param string $orientation 'portrait' or 'landscape'.
      * @return bool
      */
-    public static function columns_fit(array $columns): bool {
-        $available = self::PAGE_WIDTH - (self::MARGIN * 2);
+    public static function columns_fit(array $columns, string $orientation = 'landscape'): bool {
+        $available = self::page_size($orientation)['width'] - (self::MARGIN * 2);
 
         $fixed = 0.0;
         $obsmin = 0.0;
@@ -173,7 +192,7 @@ class activity_pdf_builder {
      * @param array $columns ordered list of {key, label, type: checkbox|text}. Standard keys
      *     use their own translated label regardless of the label supplied; custom keys
      *     (anything not in STANDARD_COLUMN_DEFS) use the supplied label as-is.
-     * @param array $options language, stage, showphotos, showgeneralobs, order, generatedby.
+     * @param array $options language, stage, showphotos, showgeneralobs, order, density, orientation, generatedby.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $members, string $cohortname, array $activity, array $columns,
@@ -182,10 +201,14 @@ class activity_pdf_builder {
 
         require_once($CFG->libdir . '/tcpdf/tcpdf.php');
 
+        $orientation = in_array($options['orientation'] ?? 'landscape', ['portrait', 'landscape'], true)
+            ? $options['orientation'] : 'landscape';
+        ['width' => $pagewidth, 'height' => $pageheight] = self::page_size($orientation);
+
         $extracolumns = array_values(array_filter($columns, static function(array $column): bool {
             return ($column['key'] ?? '') !== '';
         }));
-        if (count($extracolumns) > self::MAX_EXTRA_COLUMNS || !self::columns_fit($extracolumns)) {
+        if (count($extracolumns) > self::MAX_EXTRA_COLUMNS || !self::columns_fit($extracolumns, $orientation)) {
             throw new moodle_exception('error_activitytoomanycolumns', 'local_profilephoto', '', self::MAX_EXTRA_COLUMNS);
         }
 
@@ -211,22 +234,11 @@ class activity_pdf_builder {
             $users[] = $user;
         }
 
-        if ($order === 'firstname') {
-            usort($users, static function($a, $b): int {
-                $cmp = strcmp((string) $a->firstname, (string) $b->firstname);
-                return $cmp !== 0 ? $cmp : strcmp((string) $a->lastname, (string) $b->lastname);
-            });
-        } else if ($order === 'lastname') {
-            usort($users, static function($a, $b): int {
-                $cmp = strcmp((string) $a->lastname, (string) $b->lastname);
-                return $cmp !== 0 ? $cmp : strcmp((string) $a->firstname, (string) $b->firstname);
-            });
-        }
-        // order === 'cohort': keep the order the members were supplied in.
+        $users = self::sort_users($users, $order);
 
         $count = count($users);
 
-        [$colwidths, $alumnewidth] = self::compute_column_widths($extracolumns);
+        [$colwidths, $alumnewidth] = self::compute_column_widths($extracolumns, $pagewidth);
 
         $activitydate = self::resolve_activity_date($activity['date'] ?? '');
         $filenamedate = $activitydate !== null ? $activitydate->format('Ymd') : userdate(time(), '%Y%m%d');
@@ -237,7 +249,7 @@ class activity_pdf_builder {
 
         $brand = self::brand_colors($stage);
 
-        $pdf = new class('L', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
+        $pdf = new class($orientation === 'portrait' ? 'P' : 'L', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
 
             /** @var string Left-aligned footer caption (document title). */
             public $footercaption = '';
@@ -276,11 +288,12 @@ class activity_pdf_builder {
 
         $pdf->AddPage();
 
-        self::render_brand_header($pdf, $cohortname, $language, $stage, $count, $activitydate, $generatedby);
-        $blocktop = self::render_activity_block($pdf, $activity, $activitydate, $count, $language, $brand);
+        self::render_brand_header($pdf, $cohortname, $language, $stage, $count, $activitydate, $generatedby, $pagewidth);
+        $blocktop = self::render_activity_block($pdf, $activity, $activitydate, $count, $language, $brand,
+            $pagewidth, $orientation);
 
         self::render_table($pdf, $users, $extracolumns, $colwidths, $alumnewidth, $blocktop, $language, $brand,
-            $showphotos, $showgeneralobs, $density);
+            $showphotos, $showgeneralobs, $density, $pageheight);
 
         $pdf->Output($path, 'F');
 
@@ -295,10 +308,11 @@ class activity_pdf_builder {
      * Compute the width (mm) of every extra column plus the Alumne column.
      *
      * @param array $columns ordered {key, type} list (already capped at MAX_EXTRA_COLUMNS).
+     * @param float $pagewidth full page width (mm), by orientation.
      * @return array{0: array<string,float>, 1: float} widths keyed by column key, then Alumne's width.
      */
-    private static function compute_column_widths(array $columns): array {
-        $available = self::PAGE_WIDTH - (self::MARGIN * 2) - self::NUM_WIDTH;
+    private static function compute_column_widths(array $columns, float $pagewidth): array {
+        $available = $pagewidth - (self::MARGIN * 2) - self::NUM_WIDTH;
 
         $hasobservacions = false;
         $observacionsshort = false;
@@ -370,12 +384,35 @@ class activity_pdf_builder {
     }
 
     /**
+     * Sort users by lastname, firstname, or leave them in the order supplied ('cohort').
+     *
+     * @param stdClass[] $users each with firstname/lastname.
+     * @param string $order lastname|firstname|cohort
+     * @return stdClass[]
+     */
+    public static function sort_users(array $users, string $order): array {
+        if ($order === 'firstname') {
+            usort($users, static function($a, $b): int {
+                $cmp = strcmp((string) $a->firstname, (string) $b->firstname);
+                return $cmp !== 0 ? $cmp : strcmp((string) $a->lastname, (string) $b->lastname);
+            });
+        } else if ($order === 'lastname') {
+            usort($users, static function($a, $b): int {
+                $cmp = strcmp((string) $a->lastname, (string) $b->lastname);
+                return $cmp !== 0 ? $cmp : strcmp((string) $a->firstname, (string) $b->firstname);
+            });
+        }
+        // order === 'cohort': keep the order the members were supplied in.
+        return $users;
+    }
+
+    /**
      * Parse a "Y-m-d" activity date string into a DateTime, or null when empty/invalid.
      *
      * @param string $raw
      * @return \DateTime|null
      */
-    private static function resolve_activity_date(string $raw): ?\DateTime {
+    public static function resolve_activity_date(string $raw): ?\DateTime {
         $raw = trim($raw);
         if ($raw === '') {
             return null;
@@ -397,24 +434,34 @@ class activity_pdf_builder {
      * @param int $count
      * @param \DateTime|null $activitydate
      * @param string $generatedby
+     * @param float $pagewidth full page width (mm), by orientation.
      */
     private static function render_brand_header(\TCPDF &$pdf, string $cohortname, string $language, string $stage,
-            int $count, ?\DateTime $activitydate, string $generatedby): void {
+            int $count, ?\DateTime $activitydate, string $generatedby, float $pagewidth): void {
         $brand = self::brand_colors($stage);
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
-        $pdf->Rect(0, 0, self::PAGE_WIDTH, 22, 'F');
+        $pdf->Rect(0, 0, $pagewidth, 22, 'F');
 
         // Logo: fitted into a 20x12 mm box (up to the cohort name at x=30), never distorted.
         branding::render_logo($pdf, $stage, 8, 5, 20, 12);
 
+        // Cap every cell to whatever room the page actually has right of the logo/name
+        // column (x=30): on landscape's 297mm page this reproduces the original fixed
+        // 150/150/240 widths exactly; on a narrower portrait page it shrinks them so
+        // fit_text() truncates against a real budget instead of an already-overflowed one.
+        $avail = $pagewidth - 30.0 - self::MARGIN;
+        $titlewidth = min(150.0, $avail);
+        $subtitlewidth = min(150.0, $avail);
+        $infowidth = min(240.0, $avail);
+
         $pdf->SetTextColor(255, 255, 255);
         $pdf->SetFont('helvetica', 'B', 14);
         $pdf->SetXY(30, 3.2);
-        $pdf->Cell(150, 7, self::fit_text($pdf, $cohortname, 148), 0, 0, 'L');
+        $pdf->Cell($titlewidth, 7, self::fit_text($pdf, $cohortname, $titlewidth - 2.0), 0, 0, 'L');
 
         $pdf->SetFont('helvetica', '', 9);
         $pdf->SetXY(30, 10.2);
-        $pdf->Cell(150, 5, self::translate_word('subtitle', $language), 0, 1, 'L');
+        $pdf->Cell($subtitlewidth, 5, self::translate_word('subtitle', $language), 0, 1, 'L');
 
         $info = $count . ' ' . self::translate_word('students', $language);
         if ($activitydate !== null) {
@@ -425,7 +472,7 @@ class activity_pdf_builder {
         }
         $pdf->SetFont('helvetica', '', 8);
         $pdf->SetXY(30, 15.5);
-        $pdf->Cell(240, 5, self::fit_text($pdf, $info, 250), 0, 1, 'L');
+        $pdf->Cell($infowidth, 5, self::fit_text($pdf, $info, $infowidth - 2.0), 0, 1, 'L');
 
         $pdf->SetTextColor(0, 0, 0);
     }
@@ -440,17 +487,15 @@ class activity_pdf_builder {
      * @param int $count
      * @param string $language
      * @param array{r:int,g:int,b:int} $brand
+     * @param float $pagewidth full page width (mm), by orientation.
+     * @param string $orientation 'portrait' or 'landscape'.
      * @return float Y coordinate the table should start below.
      */
     private static function render_activity_block(\TCPDF &$pdf, array $activity, ?\DateTime $activitydate, int $count,
-            string $language, array $brand): float {
+            string $language, array $brand, float $pagewidth, string $orientation): float {
         $top = 24.0;
-        $height = 12.5;
         $left = self::MARGIN;
-        $width = self::PAGE_WIDTH - self::MARGIN * 2;
-
-        $pdf->SetFillColor(246, 247, 250);
-        $pdf->Rect($left, $top, $width, $height, 'F');
+        $width = $pagewidth - self::MARGIN * 2;
 
         $name = trim((string) ($activity['name'] ?? ''));
         $place = trim((string) ($activity['place'] ?? ''));
@@ -461,9 +506,7 @@ class activity_pdf_builder {
 
         $padx = $left + 4.0;
 
-        // All seven fields on a single line (was two): keeps the block compact so the
-        // table gets more of the page. render_kv_row already truncates long values.
-        self::render_kv_row($pdf, $padx, $top + 4.0, $width - 8.0, [
+        $fields = [
             [self::translate_word('activity', $language), $name, 45.0],
             [self::translate_word('date', $language), $datestr, 31.0],
             [self::translate_word('place', $language), $place, 33.0],
@@ -471,7 +514,29 @@ class activity_pdf_builder {
             [ucfirst(self::translate_word('students', $language)), (string) $count, 27.0],
             [self::translate_word('present', $language), null, 27.0],
             [self::translate_word('absent', $language), null, 27.0],
-        ]);
+        ];
+
+        // Landscape: all seven fields fit on a single line (277mm usable vs 246mm needed).
+        // Portrait's ~182mm usable width does not fit them on one line, so they split
+        // across two rows instead - each row's own budget sum comfortably fits.
+        // $height must be computed before the background Rect() below is drawn.
+        if ($orientation === 'portrait') {
+            $height = 19.0;
+        } else {
+            $height = 12.5;
+        }
+
+        $pdf->SetFillColor(246, 247, 250);
+        $pdf->Rect($left, $top, $width, $height, 'F');
+
+        if ($orientation === 'portrait') {
+            // Row 1: Activitat, Data, Lloc (109mm). Row 2: Responsables, Alumnes,
+            // Presents, Absents (137mm). Both fit inside the 182mm interior.
+            self::render_kv_row($pdf, $padx, $top + 4.0, $width - 8.0, array_slice($fields, 0, 3));
+            self::render_kv_row($pdf, $padx, $top + 10.5, $width - 8.0, array_slice($fields, 3));
+        } else {
+            self::render_kv_row($pdf, $padx, $top + 4.0, $width - 8.0, $fields);
+        }
 
         $pdf->SetTextColor(0, 0, 0);
         return $top + $height + 2.0;
@@ -554,10 +619,11 @@ class activity_pdf_builder {
      * @param bool $showphotos
      * @param bool $showgeneralobs
      * @param string $density compact|normal|large - controls the row-height bounds.
+     * @param float $pageheight full page height (mm), by orientation.
      */
     private static function render_table(\TCPDF &$pdf, array $users, array $extracolumns, array $colwidths,
             float $alumnewidth, float $firstpagetop, string $language, array $brand, bool $showphotos,
-            bool $showgeneralobs, string $density = 'normal'): void {
+            bool $showgeneralobs, string $density, float $pageheight): void {
         $count = count($users);
         [$minrowheight, $maxrowheight] = self::DENSITY_ROW_BOUNDS[$density] ?? self::DENSITY_ROW_BOUNDS['normal'];
 
@@ -565,7 +631,7 @@ class activity_pdf_builder {
             self::draw_table_header($pdf, $y, $extracolumns, $colwidths, $alumnewidth, $language);
         };
 
-        $availablefirstpage = self::PAGE_HEIGHT - $firstpagetop - self::TABLE_HEADER_HEIGHT - self::BOTTOM_MARGIN;
+        $availablefirstpage = $pageheight - $firstpagetop - self::TABLE_HEADER_HEIGHT - self::BOTTOM_MARGIN;
 
         $rowheight = $count > 0
             ? self::clamp($availablefirstpage / max($count, 1), $minrowheight, $maxrowheight)
@@ -573,14 +639,14 @@ class activity_pdf_builder {
 
         $tableheaderdraw($firstpagetop);
         $y = $firstpagetop + self::TABLE_HEADER_HEIGHT;
-        $pagebottom = self::PAGE_HEIGHT - self::BOTTOM_MARGIN;
+        $pagebottom = $pageheight - self::BOTTOM_MARGIN;
 
         foreach ($users as $index => $user) {
             if ($y + $rowheight > $pagebottom) {
                 $pdf->AddPage();
                 $tableheaderdraw(self::CONTINUATION_TOP);
                 $y = self::CONTINUATION_TOP + self::TABLE_HEADER_HEIGHT;
-                $pagebottom = self::PAGE_HEIGHT - self::BOTTOM_MARGIN;
+                $pagebottom = $pageheight - self::BOTTOM_MARGIN;
             }
 
             self::draw_table_row($pdf, $y, $rowheight, $index, $user, $extracolumns, $colwidths, $alumnewidth,
@@ -595,7 +661,7 @@ class activity_pdf_builder {
             } else {
                 $y += 3.0;
             }
-            self::render_general_obs($pdf, $y, $language);
+            self::render_general_obs($pdf, $y, $language, $pdf->getPageWidth());
         }
     }
 
@@ -743,7 +809,7 @@ class activity_pdf_builder {
      * @param string $language
      * @return string
      */
-    private static function column_label(array $column, string $language): string {
+    public static function column_label(array $column, string $language): string {
         $key = (string) $column['key'];
         if (isset(self::STANDARD_COLUMN_DEFS[$key])) {
             return self::translate_column($key, $language);
@@ -758,10 +824,11 @@ class activity_pdf_builder {
      * @param \TCPDF $pdf
      * @param float $y
      * @param string $language
+     * @param float $pagewidth full page width (mm), by orientation.
      */
-    private static function render_general_obs(\TCPDF &$pdf, float $y, string $language): void {
+    private static function render_general_obs(\TCPDF &$pdf, float $y, string $language, float $pagewidth): void {
         $left = self::MARGIN;
-        $width = self::PAGE_WIDTH - self::MARGIN * 2;
+        $width = $pagewidth - self::MARGIN * 2;
         $height = self::GENERALOBS_HEIGHT;
 
         $pdf->SetDrawColor(190, 196, 206);
@@ -782,7 +849,7 @@ class activity_pdf_builder {
      * @param string $raw
      * @return string
      */
-    private static function format_responsables(string $raw): string {
+    public static function format_responsables(string $raw): string {
         $raw = trim($raw);
         if ($raw === '') {
             return '';
@@ -892,7 +959,7 @@ class activity_pdf_builder {
      * @param stdClass $user
      * @return string
      */
-    private static function format_student_name(stdClass $user): string {
+    public static function format_student_name(stdClass $user): string {
         $lastname = trim((string) ($user->lastname ?? ''));
         $firstname = trim((string) ($user->firstname ?? ''));
         if ($lastname === '' && $firstname === '') {
@@ -914,7 +981,7 @@ class activity_pdf_builder {
      * @param string $key email|phone|idnumber
      * @return string
      */
-    private static function user_field_value(stdClass $user, string $key): string {
+    public static function user_field_value(stdClass $user, string $key): string {
         if ($key === 'email') {
             return trim((string) ($user->email ?? ''));
         }
@@ -960,7 +1027,7 @@ class activity_pdf_builder {
      * @param string $name
      * @return string
      */
-    private static function sanitize_filename(string $name): string {
+    public static function sanitize_filename(string $name): string {
         $name = preg_replace('/[^a-zA-Z0-9_-]/', '_', trim($name));
         $name = preg_replace('/_+/', '_', $name);
         $name = trim($name, '_');
@@ -975,7 +1042,7 @@ class activity_pdf_builder {
      * @param string $language
      * @return string
      */
-    private static function translate_column(string $key, string $language): string {
+    public static function translate_column(string $key, string $language): string {
         $map = [
             'ca' => [
                 'present' => 'Present', 'autoritzacio' => 'Autorització', 'transport' => 'Transport',
@@ -1003,7 +1070,7 @@ class activity_pdf_builder {
      * @param string $language
      * @return string
      */
-    private static function translate_word(string $key, string $language): string {
+    public static function translate_word(string $key, string $language): string {
         $map = [
             'ca' => [
                 'subtitle' => 'Control d’activitat', 'students' => 'alumnes', 'page' => 'Pàg.',
