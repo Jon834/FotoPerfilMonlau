@@ -164,6 +164,16 @@
                 <div class="lpp-grid">
                     <div class="lpp-field">
                         <span class="lpp-field-label">
+                            <label for="lpp-export-format">{{#str}}export_format, local_profilephoto{{/str}}</label>
+                        </span>
+                        <select id="lpp-export-format" class="form-control">
+                            <option value="pdf" selected>{{#str}}export_format_pdf, local_profilephoto{{/str}}</option>
+                            <option value="excel">{{#str}}export_format_excel, local_profilephoto{{/str}}</option>
+                        </select>
+                    </div>
+
+                    <div class="lpp-field">
+                        <span class="lpp-field-label">
                         <label for="lpp-export-density">{{#str}}export_density, local_profilephoto{{/str}}</label> {{{helpicons.density}}}
                     </span>
                         <select id="lpp-export-density" class="form-control">

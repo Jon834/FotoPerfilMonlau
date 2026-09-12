@@ -37,6 +37,7 @@ const SELECTORS = {
     ROLE_FILTER: '[data-role-filter]',
     FILENAME_STRATEGY: '#lpp-export-filenamestrategy',
     EXPORT_TYPE: '#lpp-export-type',
+    EXPORT_FORMAT: '#lpp-export-format',
     DENSITY: '#lpp-export-density',
     LANGUAGE: '#lpp-export-language',
     STAGE: '#lpp-export-stage',
@@ -117,12 +118,13 @@ const getExportOptions = () => Ajax.call([{
  * @param {string} filenamestrategy
  * @return {Promise}
  */
-const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading, density, roleset) =>
+const createExport = (filtertype, filterid, filenamestrategy, exporttype, language, stage, heading, density, roleset,
+        format) =>
     Ajax.call([{
         methodname: 'local_profilephoto_create_export',
         args: {
             filtertype, filterid, filenamestrategy, fallbackstrategy: 'username',
-            exporttype, language, stage, heading, density, roleset,
+            exporttype, language, stage, heading, density, roleset, format,
         },
     }])[0];
 
@@ -225,6 +227,7 @@ const initStandardMode = () => {
     const roleFilter = document.querySelector(SELECTORS.ROLE_FILTER);
     const filenameStrategy = document.querySelector(SELECTORS.FILENAME_STRATEGY);
     const exportType = document.querySelector(SELECTORS.EXPORT_TYPE);
+    const exportFormat = document.querySelector(SELECTORS.EXPORT_FORMAT);
     const density = document.querySelector(SELECTORS.DENSITY);
     const language = document.querySelector(SELECTORS.LANGUAGE);
     const stage = document.querySelector(SELECTORS.STAGE);
@@ -295,7 +298,8 @@ const initStandardMode = () => {
                 stage.value,
                 heading.value.trim(),
                 density.value,
-                roleset.value
+                roleset.value,
+                exportFormat ? exportFormat.value : 'pdf'
             );
         }).then((result) => {
             return getString('export_ready', 'local_profilephoto', result.count).then((message) => {

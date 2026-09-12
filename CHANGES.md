@@ -1,5 +1,34 @@
 # Changelog — local_profilephoto
 
+## 0.9.0 (Excel con fotos incrustadas para Orla, Orla compacta, Directori y Full de signatures)
+
+* Los cuatro tipos de documento que hasta ahora eran solo PDF (**Orla en
+  targetes**, **Orla compacta**, **Directori d'alumnes**, **Full de
+  signatures**) tienen ahora también la opción **«Format de sortida: PDF |
+  Excel (.xlsx)»** en la pantalla de exportación estándar (`ZIP de
+  fotografies` sigue sin esta opción, no es un "documento").
+  `classes/local/export/photo_xlsx_builder.php` genera la hoja: cabecera de
+  marca, Núm./Foto/Alumne y, según el tipo, Correu (Directori) o Signatura
+  (Full de signatures, celda en blanco con borde).
+* La fotografía de cada alumno se **incrusta** en la celda (recortada a un
+  cuadrado y redimensionada), con un avatar de iniciales de color como
+  alternativa cuando no hay foto — nunca queda una celda vacía.
+  `classes/local/export/xlsx_avatar.php` centraliza esto (usa GD, ya probado
+  en este mismo entorno por `branding::fallback_logo()`; sin dependencias de
+  fuentes externas).
+* El Excel del **Control d'activitat** también incrusta ahora la foto de
+  cada alumno cuando el interruptor «Mostrar fotografia» está activo (antes
+  se ignoraba para el Excel, aunque el PDF ya lo respetaba).
+* Nuevo `classes/local/export/xlsx_common.php` con un par de ayudantes
+  (color de marca en hex, título de hoja válido) compartidos por los dos
+  generadores de Excel, para no duplicarlos una tercera vez.
+* Cobertura en `tests/photo_xlsx_builder_test.php` (nuevo) y casos
+  adicionales en `tests/activity_xlsx_builder_test.php`.
+* **Aviso**: a diferencia del resto de cambios de esta sesión, esta parte
+  (incrustar imágenes con PhpSpreadsheet) no se ha podido probar contra una
+  instalación real — solo se ha verificado leyendo la API con cuidado.
+  Genera un documento de cada tipo tras instalar y avisa si algo falla.
+
 ## 0.8.2 (fix: la exportación a Excel fallaba con "Failed opening required phpspreadsheet")
 
 * En algunos Moodle (confirmado en un sitio 5.1 con la reestructuración

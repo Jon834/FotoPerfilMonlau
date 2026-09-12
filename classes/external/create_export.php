@@ -27,6 +27,7 @@ use local_profilephoto\event\export_created;
 use local_profilephoto\local\audit\logger;
 use local_profilephoto\local\export\filename_strategy;
 use local_profilephoto\local\export\pdf_builder;
+use local_profilephoto\local\export\photo_xlsx_builder;
 use local_profilephoto\local\export\zip_builder;
 use local_profilephoto\local\session\manager;
 use moodle_exception;
@@ -65,6 +66,7 @@ class create_export extends external_api {
             'density' => new external_value(PARAM_ALPHA, 'compact | normal | large', VALUE_DEFAULT, 'normal'),
             'roleset' => new external_value(PARAM_ALPHA,
                 'Which course participants to include: students | studentsteachers | all', VALUE_DEFAULT, 'students'),
+            'format' => new external_value(PARAM_ALPHA, 'pdf | excel (ignored for exporttype=zip)', VALUE_DEFAULT, 'pdf'),
         ]);
     }
 
@@ -92,7 +94,8 @@ class create_export extends external_api {
         string $stage = 'fp',
         string $heading = '',
         string $density = 'normal',
-        string $roleset = 'students'
+        string $roleset = 'students',
+        string $format = 'pdf'
     ): array {
         global $DB, $USER;
 
@@ -107,9 +110,11 @@ class create_export extends external_api {
             'heading' => $heading,
             'density' => $density,
             'roleset' => $roleset,
+            'format' => $format,
         ]);
 
         $roleset = in_array($params['roleset'], self::ROLESETS, true) ? $params['roleset'] : 'students';
+        $format = in_array($params['format'], ['pdf', 'excel'], true) ? $params['format'] : 'pdf';
 
         $context = context_system::instance();
         self::validate_context($context);
@@ -160,6 +165,14 @@ class create_export extends external_api {
             ? $params['exporttype'] : 'zip';
         if ($layout === 'zip') {
             $built = zip_builder::build($userids, $strategy, $fallback, $sessionid);
+        } else if ($format === 'excel') {
+            $title = self::resolve_export_title($params['filtertype'], $params['filterid']);
+            $built = photo_xlsx_builder::build($userids, $title, $layout, [
+                'language' => $params['language'],
+                'stage' => $params['stage'],
+                'heading' => $params['heading'],
+                'generatedby' => fullname($USER),
+            ]);
         } else {
             $title = self::resolve_export_title($params['filtertype'], $params['filterid']);
             $built = pdf_builder::build($userids, $title, $layout, [

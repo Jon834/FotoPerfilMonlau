@@ -191,6 +191,7 @@ class create_activity_export extends external_api {
                 [
                     'language' => $params['language'],
                     'stage' => $params['stage'],
+                    'showphotos' => $params['showphotos'],
                     'showgeneralobs' => $params['showgeneralobs'],
                     'order' => $order,
                     'generatedby' => fullname($USER),

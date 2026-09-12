@@ -1077,21 +1077,21 @@ class activity_pdf_builder {
                 'num' => 'Núm.', 'student' => 'Alumne', 'activity' => 'Activitat', 'date' => 'Data',
                 'place' => 'Lloc', 'responsables' => 'Responsables', 'present' => 'Presents',
                 'absent' => 'Absents', 'generalobs' => 'Incidències / observacions generals',
-                'customcolumn' => 'Columna',
+                'customcolumn' => 'Columna', 'photo' => 'Foto',
             ],
             'es' => [
                 'subtitle' => 'Control de actividad', 'students' => 'alumnos', 'page' => 'Pág.',
                 'num' => 'Nº', 'student' => 'Alumno', 'activity' => 'Actividad', 'date' => 'Fecha',
                 'place' => 'Lugar', 'responsables' => 'Responsables', 'present' => 'Presentes',
                 'absent' => 'Ausentes', 'generalobs' => 'Incidencias / observaciones generales',
-                'customcolumn' => 'Columna',
+                'customcolumn' => 'Columna', 'photo' => 'Foto',
             ],
             'en' => [
                 'subtitle' => 'Activity control sheet', 'students' => 'students', 'page' => 'Page',
                 'num' => 'No.', 'student' => 'Student', 'activity' => 'Activity', 'date' => 'Date',
                 'place' => 'Place', 'responsables' => 'Staff in charge', 'present' => 'Present',
                 'absent' => 'Absent', 'generalobs' => 'Incidents / general notes',
-                'customcolumn' => 'Column',
+                'customcolumn' => 'Column', 'photo' => 'Photo',
             ],
         ];
         return $map[$language][$key] ?? ($map['ca'][$key] ?? $key);

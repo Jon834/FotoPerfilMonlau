@@ -663,7 +663,7 @@ class pdf_builder {
      * @param object $user
      * @return string
      */
-    private static function format_student_name($user): string {
+    public static function format_student_name($user): string {
         $lastname = trim((string) ($user->lastname ?? ''));
         $firstname = trim((string) ($user->firstname ?? ''));
         if ($lastname === '' && $firstname === '') {
@@ -685,7 +685,7 @@ class pdf_builder {
      * @param string $language
      * @return string
      */
-    private static function translate_title(string $layout, string $language): string {
+    public static function translate_title(string $layout, string $language): string {
         $map = [
             'ca' => [
                 'orla' => 'Llistat fotogràfic',
@@ -715,23 +715,26 @@ class pdf_builder {
     /**
      * Translate a handful of single words / patterns used inside the PDF chrome.
      *
-     * @param string $key students|page|number|student|signature|dateformat
+     * @param string $key students|page|number|student|signature|dateformat|email|photo
      * @param string $language
      * @return string
      */
-    private static function translate_word(string $key, string $language): string {
+    public static function translate_word(string $key, string $language): string {
         $map = [
             'ca' => [
                 'students' => 'alumnes', 'page' => 'Pàg.', 'number' => 'Núm.',
                 'student' => 'Alumne', 'signature' => 'Signatura', 'dateformat' => '%d/%m/%Y',
+                'email' => 'Correu', 'photo' => 'Foto',
             ],
             'es' => [
                 'students' => 'alumnos', 'page' => 'Pág.', 'number' => 'Nº',
                 'student' => 'Alumno', 'signature' => 'Firma', 'dateformat' => '%d/%m/%Y',
+                'email' => 'Correo', 'photo' => 'Foto',
             ],
             'en' => [
                 'students' => 'students', 'page' => 'Page', 'number' => 'No.',
                 'student' => 'Student', 'signature' => 'Signature', 'dateformat' => '%Y-%m-%d',
+                'email' => 'Email', 'photo' => 'Photo',
             ],
         ];
         return $map[$language][$key] ?? ($map['ca'][$key] ?? $key);
@@ -766,7 +769,7 @@ class pdf_builder {
      * @param string $name
      * @return string
      */
-    private static function sanitize_filename(string $name): string {
+    public static function sanitize_filename(string $name): string {
         // Remove or replace problematic characters.
         $name = preg_replace('/[^a-zA-Z0-9_-]/', '_', trim($name));
         // Replace multiple underscores with single.

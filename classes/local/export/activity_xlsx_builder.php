@@ -30,7 +30,9 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Build the "Control d'activitat" roster as an .xlsx spreadsheet: same
  * columns, order and branding as {@see activity_pdf_builder}'s PDF, but
- * fillable digitally instead of printed - no page orientation, no photos.
+ * fillable digitally instead of printed - no page orientation. Photos are
+ * optional (via the same `showphotos` toggle as the PDF) and, when shown,
+ * are embedded via {@see xlsx_avatar}.
  *
  * Column model / label / formatting helpers are reused from
  * {@see activity_pdf_builder} rather than duplicated; only the sheet layout
@@ -53,7 +55,7 @@ class activity_xlsx_builder {
      * @param string $cohortname
      * @param array $activity name, date (Y-m-d or ''), place, responsables.
      * @param array $columns ordered list of {key, label, type: checkbox|text|value}.
-     * @param array $options language, stage, showgeneralobs, order, generatedby.
+     * @param array $options language, stage, showphotos, showgeneralobs, order, generatedby.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $members, string $cohortname, array $activity, array $columns,
@@ -69,6 +71,7 @@ class activity_xlsx_builder {
         $order = in_array($options['order'] ?? 'lastname', ['lastname', 'firstname', 'cohort'], true)
             ? $options['order'] : 'lastname';
         $showgeneralobs = (bool) ($options['showgeneralobs'] ?? true);
+        $showphotos = (bool) ($options['showphotos'] ?? true);
 
         $users = [];
         foreach ($members as $member) {
@@ -76,6 +79,8 @@ class activity_xlsx_builder {
             $user->firstname = (string) ($member->firstname ?? '');
             $user->lastname = (string) ($member->lastname ?? '');
             $user->email = (string) ($member->email ?? '');
+            $user->photo = $showphotos && ((int) ($member->picture ?? 0)) > 0
+                ? xlsx_avatar::get_icon_content((int) ($member->id ?? 0)) : null;
             $users[] = $user;
         }
         $users = activity_pdf_builder::sort_users($users, $order);
@@ -90,10 +95,10 @@ class activity_xlsx_builder {
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle(self::sheet_title($cohortname));
+        $sheet->setTitle(xlsx_common::sheet_title($cohortname, 'Control activitat'));
 
-        $lastcol = Coordinate::stringFromColumnIndex(2 + count($extracolumns));
-        $brandhex = self::rgb_hex(branding::palette($stage));
+        $lastcol = Coordinate::stringFromColumnIndex(($showphotos ? 3 : 2) + count($extracolumns));
+        $brandhex = xlsx_common::rgb_hex(branding::palette($stage));
 
         self::render_brand_rows($sheet, $lastcol, $brandhex, $cohortname,
             activity_pdf_builder::translate_word('subtitle', $language) . ' · ' . $count . ' '
@@ -102,9 +107,9 @@ class activity_xlsx_builder {
         self::render_activity_rows($sheet, $activity, $activitydate, $count, $language);
 
         $headerrow = 7;
-        self::render_table_header($sheet, $headerrow, $lastcol, $extracolumns, $language);
+        self::render_table_header($sheet, $headerrow, $lastcol, $extracolumns, $language, $showphotos);
 
-        $lastrow = self::render_student_rows($sheet, $headerrow + 1, $lastcol, $users, $extracolumns);
+        $lastrow = self::render_student_rows($sheet, $headerrow + 1, $lastcol, $users, $extracolumns, $showphotos);
 
         if ($showgeneralobs) {
             $lastrow = self::render_general_obs($sheet, $lastrow + 1, $lastcol, $language);
@@ -229,16 +234,25 @@ class activity_xlsx_builder {
      * @param string $lastcol
      * @param array $extracolumns ordered {key, label, type} list.
      * @param string $language
+     * @param bool $showphotos when true, a "Foto" column is inserted at B, shifting
+     *     Alumne to C and every extra column one index later.
      */
     private static function render_table_header(Worksheet $sheet, int $row, string $lastcol,
-            array $extracolumns, string $language): void {
+            array $extracolumns, string $language, bool $showphotos): void {
         $sheet->setCellValue('A' . $row, activity_pdf_builder::translate_word('num', $language));
         $sheet->getColumnDimension('A')->setWidth(6);
 
-        $sheet->setCellValue('B' . $row, activity_pdf_builder::translate_word('student', $language));
-        $sheet->getColumnDimension('B')->setWidth(28);
+        $studentcol = 'B';
+        if ($showphotos) {
+            $sheet->setCellValue('B' . $row, activity_pdf_builder::translate_word('photo', $language));
+            $sheet->getColumnDimension('B')->setWidth(6);
+            $studentcol = 'C';
+        }
 
-        $colindex = 3;
+        $sheet->setCellValue($studentcol . $row, activity_pdf_builder::translate_word('student', $language));
+        $sheet->getColumnDimension($studentcol)->setWidth(28);
+
+        $colindex = $showphotos ? 4 : 3;
         foreach ($extracolumns as $column) {
             $letter = Coordinate::stringFromColumnIndex($colindex);
             $key = (string) $column['key'];
@@ -265,16 +279,24 @@ class activity_xlsx_builder {
      * @param string $lastcol
      * @param stdClass[] $users
      * @param array $extracolumns
+     * @param bool $showphotos
      * @return int the last row written (equals $firstrow - 1 when there are no users).
      */
     private static function render_student_rows(Worksheet $sheet, int $firstrow, string $lastcol,
-            array $users, array $extracolumns): int {
+            array $users, array $extracolumns, bool $showphotos): int {
         $row = $firstrow;
         foreach ($users as $index => $user) {
             $sheet->setCellValue('A' . $row, $index + 1);
-            $sheet->setCellValue('B' . $row, activity_pdf_builder::format_student_name($user));
 
-            $colindex = 3;
+            $studentcol = 'B';
+            if ($showphotos) {
+                xlsx_avatar::embed($sheet, 'B' . $row, $user->photo ?? null, $user->firstname, $user->lastname);
+                $studentcol = 'C';
+                $sheet->getRowDimension($row)->setRowHeight(34);
+            }
+            $sheet->setCellValue($studentcol . $row, activity_pdf_builder::format_student_name($user));
+
+            $colindex = $showphotos ? 4 : 3;
             foreach ($extracolumns as $column) {
                 $type = (string) ($column['type'] ?? 'checkbox');
                 if ($type === 'value') {
@@ -336,28 +358,5 @@ class activity_xlsx_builder {
             return 26.0;
         }
         return $type === 'text' ? 14.0 : 10.0;
-    }
-
-    /**
-     * Convert an {r,g,b} triple into an "RRGGBB" hex string for PhpSpreadsheet fills.
-     *
-     * @param array{r:int,g:int,b:int} $rgb
-     * @return string
-     */
-    private static function rgb_hex(array $rgb): string {
-        return sprintf('%02X%02X%02X', $rgb['r'], $rgb['g'], $rgb['b']);
-    }
-
-    /**
-     * Sanitise a cohort name into a valid Excel sheet title: no \ / ? * [ ] : and
-     * capped at Excel's 31-character limit.
-     *
-     * @param string $name
-     * @return string
-     */
-    private static function sheet_title(string $name): string {
-        $name = trim((string) preg_replace('/[\\\\\/\?\*\[\]:]/', ' ', $name));
-        $name = mb_substr($name, 0, 31);
-        return $name !== '' ? $name : 'Control activitat';
     }
 }

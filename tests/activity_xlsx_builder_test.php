@@ -34,21 +34,22 @@ defined('MOODLE_INTERNAL') || die();
 final class activity_xlsx_builder_test extends advanced_testcase {
 
     /**
-     * Build a fake cohort-member row (id/firstname/lastname/email; no picture - xlsx never
-     * fetches photos).
+     * Build a fake cohort-member row (id/firstname/lastname/email/picture).
      *
      * @param int $id
      * @param string $firstname
      * @param string $lastname
      * @param string $email
+     * @param int $picture
      * @return stdClass
      */
-    private function member(int $id, string $firstname, string $lastname, string $email): stdClass {
+    private function member(int $id, string $firstname, string $lastname, string $email, int $picture = 0): stdClass {
         $member = new stdClass();
         $member->id = $id;
         $member->firstname = $firstname;
         $member->lastname = $lastname;
         $member->email = $email;
+        $member->picture = $picture;
         return $member;
     }
 
@@ -76,6 +77,7 @@ final class activity_xlsx_builder_test extends advanced_testcase {
             'language' => 'ca',
             'stage' => 'eso',
             'generatedby' => 'Tester',
+            'showphotos' => false,
         ]);
 
         $this->assertSame(2, $result['count']);
@@ -122,5 +124,61 @@ final class activity_xlsx_builder_test extends advanced_testcase {
 
         // Header row 7, one student row 8: nothing should be written at row 9.
         $this->assertSame('', (string) $sheet->getCell('A9')->getValue());
+    }
+
+    public function test_build_with_photos_inserts_a_foto_column_and_embeds_avatars(): void {
+        global $CFG;
+        $this->resetAfterTest();
+
+        require_once($CFG->libdir . '/phpspreadsheet/vendor/autoload.php');
+
+        $members = [
+            $this->member(1, 'Ada', 'Bravo', 'ada.bravo@example.com'),
+            $this->member(2, 'Cyril', 'Duarte', 'cyril.duarte@example.com'),
+        ];
+
+        $result = activity_xlsx_builder::build($members, 'Grup X', [], [
+            ['key' => 'present', 'label' => '', 'type' => 'checkbox'],
+            ['key' => 'email', 'label' => '', 'type' => 'value'],
+            ['key' => 'observacions', 'label' => '', 'type' => 'text'],
+        ], [
+            'showphotos' => true,
+        ]);
+
+        $spreadsheet = IOFactory::load($result['path']);
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Foto column at B pushes Alumne to C and every extra column one letter later.
+        $this->assertSame('Foto', $sheet->getCell('B7')->getValue());
+        $this->assertSame('Alumne', $sheet->getCell('C7')->getValue());
+        $this->assertSame('Present', $sheet->getCell('D7')->getValue());
+        $this->assertSame('Correu', $sheet->getCell('E7')->getValue());
+        $this->assertSame('Observacions', $sheet->getCell('F7')->getValue());
+        $this->assertSame('Bravo, Ada', $sheet->getCell('C8')->getValue());
+        $this->assertSame('ada.bravo@example.com', $sheet->getCell('E8')->getValue());
+
+        // One embedded avatar per student (none of them have a real photo, so both are
+        // initials-avatar fallbacks, but xlsx_avatar::embed() always draws something).
+        $this->assertSame(2, $spreadsheet->getActiveSheet()->getDrawingCollection()->count());
+    }
+
+    public function test_build_without_photos_has_no_drawings(): void {
+        global $CFG;
+        $this->resetAfterTest();
+
+        require_once($CFG->libdir . '/phpspreadsheet/vendor/autoload.php');
+
+        $members = [$this->member(1, 'Nora', 'Assali', 'nora@example.com')];
+
+        $result = activity_xlsx_builder::build($members, 'Grup X', [], [
+            ['key' => 'present', 'label' => '', 'type' => 'checkbox'],
+        ], [
+            'showphotos' => false,
+        ]);
+
+        $spreadsheet = IOFactory::load($result['path']);
+        $this->assertSame(0, $spreadsheet->getActiveSheet()->getDrawingCollection()->count());
+        // No Foto column: Alumne stays at B.
+        $this->assertSame('Alumne', $spreadsheet->getActiveSheet()->getCell('B7')->getValue());
     }
 }
