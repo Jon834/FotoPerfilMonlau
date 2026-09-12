@@ -236,6 +236,7 @@ $string['error_exporttoobig'] = 'La selecció supera el màxim de {$a} alumnes p
 $string['error_invalidexportfilter'] = 'Filtre d\'exportació no vàlid.';
 $string['error_invalidstatus'] = 'Estat de cua no vàlid.';
 $string['error_activitycohortnotfound'] = 'El grup o classe seleccionat no existeix.';
+$string['error_phpspreadsheetmissing'] = 'Aquest Moodle no té disponible la llibreria PhpSpreadsheet (necessària per exportar a Excel). Contacta amb l’administrador del servidor, o genera el document en PDF mentre es resol.';
 $string['error_activitytoomanycolumns'] = 'Has seleccionat massa columnes per generar un document llegible. Redueix el nombre de columnes o elimina alguna columna (màxim {$a} a més de Núm. i Alumne).';
 $string['error_activitytoomanycustomcolumns'] = 'Només es poden afegir fins a {$a} columnes personalitzades.';
 $string['error_activityinvalidcolumn'] = 'Alguna de les columnes seleccionades no és vàlida.';

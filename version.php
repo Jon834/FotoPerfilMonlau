@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_profilephoto';
-$plugin->version   = 2026091201;
+$plugin->version   = 2026091202;
 // Moodle 5.1.0 (branch 501, "public/" docroot restructuring). Verified
 // against MOODLE_501_STABLE on 2026-07-25; see docs/technical-design.md.
 $plugin->requires  = 2025100600;
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.8.1 (fix: amd/build/export.min.js was never updated for orientation/Excel)';
+$plugin->release   = '0.8.2 (fix: locate PhpSpreadsheet robustly instead of a single hardcoded path)';

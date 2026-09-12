@@ -236,6 +236,7 @@ $string['error_exporttoobig'] = 'La selección supera el máximo de {$a} alumnos
 $string['error_invalidexportfilter'] = 'Filtro de exportación no válido.';
 $string['error_invalidstatus'] = 'Estado de cola no válido.';
 $string['error_activitycohortnotfound'] = 'El grupo o clase seleccionado no existe.';
+$string['error_phpspreadsheetmissing'] = 'Este Moodle no tiene disponible la librería PhpSpreadsheet (necesaria para exportar a Excel). Contacta con el administrador del servidor, o genera el documento en PDF mientras se resuelve.';
 $string['error_activitytoomanycolumns'] = 'Has seleccionado demasiadas columnas para generar un documento legible. Reduce el número de columnas o elimina alguna (máximo {$a} además de Nº y Alumno).';
 $string['error_activitytoomanycustomcolumns'] = 'Solo se pueden añadir hasta {$a} columnas personalizadas.';
 $string['error_activityinvalidcolumn'] = 'Alguna de las columnas seleccionadas no es válida.';

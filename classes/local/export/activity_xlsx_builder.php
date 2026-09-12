@@ -22,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use moodle_exception;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -57,9 +58,7 @@ class activity_xlsx_builder {
      */
     public static function build(array $members, string $cohortname, array $activity, array $columns,
             array $options = []): array {
-        global $CFG;
-
-        require_once($CFG->libdir . '/phpspreadsheet/vendor/autoload.php');
+        self::require_phpspreadsheet();
 
         $extracolumns = array_values(array_filter($columns, static function(array $column): bool {
             return ($column['key'] ?? '') !== '';
@@ -122,6 +121,39 @@ class activity_xlsx_builder {
             'filename' => $filename,
             'count' => $count,
         ];
+    }
+
+    /**
+     * Load PhpSpreadsheet's autoloader, trying every path it has lived at across Moodle
+     * versions/deployments rather than assuming the classic `lib/phpspreadsheet` location -
+     * e.g. Moodle 5.1's "public/" docroot restructuring, or a site whose $CFG->dirroot
+     * doesn't sit directly above the classic layout, can put it somewhere else. Throws a
+     * clear, translated error instead of a raw fatal include error if it can't be found
+     * anywhere, so the operator gets an actionable message rather than a stack trace.
+     */
+    private static function require_phpspreadsheet(): void {
+        global $CFG;
+
+        if (class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            return;
+        }
+
+        $candidates = [
+            $CFG->libdir . '/phpspreadsheet/vendor/autoload.php',
+            $CFG->dirroot . '/vendor/autoload.php',
+            dirname($CFG->dirroot) . '/vendor/autoload.php',
+            dirname($CFG->dirroot) . '/lib/phpspreadsheet/vendor/autoload.php',
+        ];
+        foreach ($candidates as $path) {
+            if (is_readable($path)) {
+                require_once($path);
+                if (class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+                    return;
+                }
+            }
+        }
+
+        throw new moodle_exception('error_phpspreadsheetmissing', 'local_profilephoto');
     }
 
     /**

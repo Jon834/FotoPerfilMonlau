@@ -1,5 +1,18 @@
 # Changelog — local_profilephoto
 
+## 0.8.2 (fix: la exportación a Excel fallaba con "Failed opening required phpspreadsheet")
+
+* En algunos Moodle (confirmado en un sitio 5.1 con la reestructuración
+  del docroot `public/`) la librería PhpSpreadsheet no está en la ruta
+  clásica `lib/phpspreadsheet/vendor/autoload.php`, y el Excel del Control
+  d'activitat fallaba con un error fatal de PHP al intentar cargarla.
+* `activity_xlsx_builder::require_phpspreadsheet()` ahora primero
+  comprueba si la clase ya está disponible (por si el propio Moodle la
+  autocarga), y si no, prueba varias rutas plausibles en vez de una sola
+  fija. Si de verdad no está en ningún sitio, se lanza un error traducido
+  y comprensible («aquest Moodle no té disponible la llibreria
+  PhpSpreadsheet…») en lugar del fallo crudo de PHP.
+
 ## 0.8.1 (fix: el build de export.js no reflejaba los cambios de la 0.8.0)
 
 * `amd/build/export.min.js` (el fichero que Moodle sirve realmente al
