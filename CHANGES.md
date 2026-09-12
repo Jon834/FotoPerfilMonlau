@@ -1,5 +1,18 @@
 # Changelog — local_profilephoto
 
+## 0.9.2 (el logo de la etapa aparece ahora en la cabecera de todos los Excel)
+
+* Los Excel (Control d'activitat, Orla, Orla compacta, Directori y Full de
+  signatures) no mostraban ningún logo en la cabecera, a diferencia del PDF.
+  `xlsx_avatar::embed_logo()` (nuevo) lo descarga y lo incrusta (logos
+  ráster) o usa la misma marca generada de reserva que ya usan los PDF
+  cuando no se puede cargar (logo SVG de Monlau Group, o cualquier fallo de
+  descarga) — siempre hay algo en la cabecera.
+* La columna A de las cabeceras (filas 1-2) ya no lleva el título: se deja
+  sin fusionar, con el color de marca, como espacio para el logo, y el
+  título/subtítulo pasan a empezar en la columna B — imita el orden
+  «logo, luego texto» del PDF.
+
 ## 0.9.1 (fix: "Class MemoryDrawing not found" al generar Excel con fotos)
 
 * `xlsx_avatar.php` importaba `PhpOffice\PhpSpreadsheet\Worksheet\Drawing\MemoryDrawing`,

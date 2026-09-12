@@ -207,6 +207,34 @@ class branding {
     }
 
     /**
+     * Fetch a remote raster image (jpg/png) as raw bytes. Used where the caller needs
+     * the actual bytes rather than handing TCPDF a URL to fetch itself (e.g. to decode
+     * into a GD resource for an Excel export) - see {@see xlsx_avatar::embed_logo()}.
+     *
+     * @param string $url
+     * @return string|null raw image bytes, or null if it could not be fetched.
+     */
+    public static function fetch_raster(string $url): ?string {
+        static $cache = [];
+        if (array_key_exists($url, $cache)) {
+            return $cache[$url];
+        }
+
+        $bytes = null;
+        try {
+            $curl = new \curl();
+            $response = $curl->get($url, [], ['CURLOPT_TIMEOUT' => 5, 'CURLOPT_CONNECTTIMEOUT' => 5]);
+            if (!$curl->get_errno() && is_string($response) && $response !== '') {
+                $bytes = $response;
+            }
+        } catch (\Throwable $e) {
+            $bytes = null;
+        }
+
+        return $cache[$url] = $bytes;
+    }
+
+    /**
      * A self-contained PNG mark used when the remote logo can't be loaded.
      *
      * @param string $stage

@@ -158,11 +158,12 @@ final class activity_xlsx_builder_test extends advanced_testcase {
         $this->assertSame('ada.bravo@example.com', $sheet->getCell('E8')->getValue());
 
         // One embedded avatar per student (none of them have a real photo, so both are
-        // initials-avatar fallbacks, but xlsx_avatar::embed() always draws something).
-        $this->assertSame(2, $spreadsheet->getActiveSheet()->getDrawingCollection()->count());
+        // initials-avatar fallbacks, but xlsx_avatar::embed() always draws something),
+        // plus one stage logo in the header (always embedded, regardless of showphotos).
+        $this->assertSame(3, $spreadsheet->getActiveSheet()->getDrawingCollection()->count());
     }
 
-    public function test_build_without_photos_has_no_drawings(): void {
+    public function test_build_without_photos_only_has_the_header_logo(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -177,7 +178,8 @@ final class activity_xlsx_builder_test extends advanced_testcase {
         ]);
 
         $spreadsheet = IOFactory::load($result['path']);
-        $this->assertSame(0, $spreadsheet->getActiveSheet()->getDrawingCollection()->count());
+        // No student avatars, but the header logo is always embedded.
+        $this->assertSame(1, $spreadsheet->getActiveSheet()->getDrawingCollection()->count());
         // No Foto column: Alumne stays at B.
         $this->assertSame('Alumne', $spreadsheet->getActiveSheet()->getCell('B7')->getValue());
     }

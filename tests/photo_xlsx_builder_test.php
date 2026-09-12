@@ -74,8 +74,9 @@ final class photo_xlsx_builder_test extends advanced_testcase {
             $spreadsheet = IOFactory::load($result['path']);
             $sheet = $spreadsheet->getActiveSheet();
 
-            // One embedded avatar per student, real photo or initials fallback alike.
-            $this->assertSame(2, $sheet->getDrawingCollection()->count(), "drawings for {$layout}");
+            // One embedded avatar per student (real photo or initials fallback alike),
+            // plus one stage logo in the header.
+            $this->assertSame(3, $sheet->getDrawingCollection()->count(), "drawings for {$layout}");
 
             $this->assertSame('Núm.', $sheet->getCell('A6')->getValue(), "num header for {$layout}");
             $this->assertSame('Foto', $sheet->getCell('B6')->getValue(), "foto header for {$layout}");

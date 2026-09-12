@@ -100,7 +100,7 @@ class activity_xlsx_builder {
         $lastcol = Coordinate::stringFromColumnIndex(($showphotos ? 3 : 2) + count($extracolumns));
         $brandhex = xlsx_common::rgb_hex(branding::palette($stage));
 
-        self::render_brand_rows($sheet, $lastcol, $brandhex, $cohortname,
+        self::render_brand_rows($sheet, $lastcol, $brandhex, $stage, $cohortname,
             activity_pdf_builder::translate_word('subtitle', $language) . ' · ' . $count . ' '
                 . activity_pdf_builder::translate_word('students', $language));
 
@@ -167,25 +167,30 @@ class activity_xlsx_builder {
      * @param Worksheet $sheet
      * @param string $lastcol
      * @param string $brandhex RRGGBB, no leading '#'.
+     * @param string $stage
      * @param string $cohortname
      * @param string $subtitle
      */
-    private static function render_brand_rows(Worksheet $sheet, string $lastcol, string $brandhex,
+    private static function render_brand_rows(Worksheet $sheet, string $lastcol, string $brandhex, string $stage,
             string $cohortname, string $subtitle): void {
-        $sheet->mergeCells("A1:{$lastcol}1");
-        $sheet->setCellValue('A1', $cohortname);
+        // Column A is left unmerged (brand-filled, no text) so the stage logo has its own
+        // slot at the left of the header, matching the PDF's logo-then-title layout.
         $sheet->getStyle("A1:{$lastcol}1")->applyFromArray([
             'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $brandhex]],
         ]);
+        $sheet->mergeCells("B1:{$lastcol}1");
+        $sheet->setCellValue('B1', $cohortname);
         $sheet->getRowDimension(1)->setRowHeight(22);
 
-        $sheet->mergeCells("A2:{$lastcol}2");
-        $sheet->setCellValue('A2', $subtitle);
         $sheet->getStyle("A2:{$lastcol}2")->applyFromArray([
             'font' => ['size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $brandhex]],
         ]);
+        $sheet->mergeCells("B2:{$lastcol}2");
+        $sheet->setCellValue('B2', $subtitle);
+
+        xlsx_avatar::embed_logo($sheet, 'A1', $stage);
 
         $sheet->getRowDimension(3)->setRowHeight(4);
     }
@@ -240,7 +245,9 @@ class activity_xlsx_builder {
     private static function render_table_header(Worksheet $sheet, int $row, string $lastcol,
             array $extracolumns, string $language, bool $showphotos): void {
         $sheet->setCellValue('A' . $row, activity_pdf_builder::translate_word('num', $language));
-        $sheet->getColumnDimension('A')->setWidth(6);
+        // A bit wider than a bare "Núm." column needs, so the header rows' logo (column A,
+        // unmerged - see render_brand_rows()) has room to sit in.
+        $sheet->getColumnDimension('A')->setWidth(9);
 
         $studentcol = 'B';
         if ($showphotos) {

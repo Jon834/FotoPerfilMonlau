@@ -102,6 +102,56 @@ final class xlsx_avatar {
         $drawing->setWorksheet($sheet);
     }
 
+    /** @var int Max width/height (px) the stage logo is scaled to fit, aspect preserved. */
+    private const LOGO_MAX_W = 90;
+    private const LOGO_MAX_H = 30;
+
+    /**
+     * Embed the stage's brand logo at the given cell, scaled to fit a small box while
+     * preserving its aspect ratio. Raster logos (jpg/png) are fetched and decoded as-is;
+     * the one SVG stage logo (monlaugroup) - and any raster fetch failure - falls back to
+     * {@see branding::fallback_logo()}, the same generated mark the PDF builders use when
+     * their own logo fetch fails, so there's always something in the header.
+     *
+     * @param Worksheet $sheet
+     * @param string $cell e.g. "A1"
+     * @param string|null $stage
+     */
+    public static function embed_logo(Worksheet $sheet, string $cell, ?string $stage): void {
+        $stage = branding::normalise_stage($stage);
+        $url = branding::logo_url($stage);
+        $issvg = $url !== null && preg_match('/\.svg(\?|$)/i', $url);
+
+        $image = null;
+        if ($url !== null && !$issvg) {
+            $bytes = branding::fetch_raster($url);
+            if ($bytes !== null) {
+                $decoded = @imagecreatefromstring($bytes);
+                $image = $decoded !== false ? $decoded : null;
+            }
+        }
+        if ($image === null) {
+            $image = imagecreatefromstring(branding::fallback_logo($stage));
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $scale = min(self::LOGO_MAX_W / $width, self::LOGO_MAX_H / $height, 1.0);
+
+        $drawing = new MemoryDrawing();
+        $drawing->setName('logo');
+        $drawing->setDescription('logo');
+        $drawing->setImageResource($image);
+        $drawing->setRenderingFunction(MemoryDrawing::RENDERING_PNG);
+        $drawing->setMimeType(MemoryDrawing::MIMETYPE_PNG);
+        $drawing->setWidth((int) round($width * $scale));
+        $drawing->setHeight((int) round($height * $scale));
+        $drawing->setOffsetX(4);
+        $drawing->setOffsetY(4);
+        $drawing->setCoordinates($cell);
+        $drawing->setWorksheet($sheet);
+    }
+
     /**
      * Centre-crop raw image bytes to a square and resize to {@see SIZE_PX}.
      *
