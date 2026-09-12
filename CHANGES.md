@@ -1,5 +1,12 @@
 # Changelog — local_profilephoto
 
+## 0.9.1 (fix: "Class MemoryDrawing not found" al generar Excel con fotos)
+
+* `xlsx_avatar.php` importaba `PhpOffice\PhpSpreadsheet\Worksheet\Drawing\MemoryDrawing`,
+  un namespace que no existe: `MemoryDrawing` vive directamente en
+  `PhpOffice\PhpSpreadsheet\Worksheet\`, no dentro de un sub-namespace
+  `Drawing\`. Corregido el `use`.
+
 ## 0.9.0 (Excel con fotos incrustadas para Orla, Orla compacta, Directori y Full de signatures)
 
 * Los cuatro tipos de documento que hasta ahora eran solo PDF (**Orla en

@@ -17,7 +17,7 @@
 namespace local_profilephoto\local\export;
 
 use context_user;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing\MemoryDrawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 defined('MOODLE_INTERNAL') || die();
