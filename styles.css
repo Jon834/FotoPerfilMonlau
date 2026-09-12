@@ -195,6 +195,40 @@
     .lpp-student-zone {
         order: -1;
     }
+
+    /* The capture-flow buttons are the only thing a photographer taps over and
+       over on a phone. Bigger targets and distinct colors per action make the
+       row scannable and harder to mis-tap than same-size/same-color buttons. */
+    .lpp-camera-controls .btn,
+    .lpp-queue-controls .btn {
+        min-height: 3.25rem;
+        padding: 0.75rem 1.25rem;
+        font-size: 1.1rem;
+    }
+
+    .lpp-queue-controls {
+        gap: 0.75rem;
+    }
+
+    #lpp-capture-btn,
+    #lpp-save-btn {
+        flex: 1 1 auto;
+    }
+
+    #lpp-skip-btn,
+    #lpp-absent-btn {
+        flex: 1 1 auto;
+        color: #fff;
+        border-width: 0;
+    }
+
+    #lpp-skip-btn {
+        background-color: var(--warning, #e0a800);
+    }
+
+    #lpp-absent-btn {
+        background-color: var(--danger, #b02a37);
+    }
 }
 
 .lpp-camera-zone,
