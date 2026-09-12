@@ -188,6 +188,13 @@
     .lpp-layout {
         grid-template-columns: 1fr;
     }
+
+    /* On a single column, show the student's name/existing-photo warning before the
+       camera preview (source order stays the same, only the visual order changes) -
+       otherwise the camera pushes that information below the fold. */
+    .lpp-student-zone {
+        order: -1;
+    }
 }
 
 .lpp-camera-zone,

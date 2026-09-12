@@ -1,5 +1,15 @@
 # Changelog — local_profilephoto
 
+## 0.9.3 (móvil: nombre del alumno y aviso de foto existente ya no quedan ocultos bajo la cámara)
+
+* En la pantalla de sesión de fotos, por debajo de 768px el diseño pasa a
+  una sola columna y la zona de la cámara (`.lpp-camera-zone`) iba antes
+  que la ficha del alumno (`.lpp-student-zone`) en el orden visual, así que
+  había que hacer scroll para ver el nombre o si ya tenía foto.
+* Solo CSS: `.lpp-student-zone { order: -1; }` dentro del `@media
+  (max-width: 768px)` ya existente, para que la ficha se muestre primero
+  visualmente sin tocar el HTML ni el JS.
+
 ## 0.9.2 (el logo de la etapa aparece ahora en la cabecera de todos los Excel)
 
 * Los Excel (Control d'activitat, Orla, Orla compacta, Directori y Full de
