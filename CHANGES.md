@@ -1,5 +1,20 @@
 # Changelog — local_profilephoto
 
+## 0.8.1 (fix: el build de export.js no reflejaba los cambios de la 0.8.0)
+
+* `amd/build/export.min.js` (el fichero que Moodle sirve realmente al
+  navegador) no se había actualizado al añadir la orientación y el Excel
+  en la 0.8.0 — por eso esas dos opciones no hacían nada. Se ha portado a
+  mano el `amd/src/export.js` actual a ese fichero (ver nota en
+  `INSTALL.md` sobre por qué este plugin usa un build "a mano" en vez del
+  `grunt amd` habitual). De paso se corrige que también le faltaba el
+  soporte para los grupos de radio (`#lpp-export-filtertype`,
+  `#lpp-export-type`) de un cambio anterior.
+* Tras esta actualización hay que **purgar las cachés del sitio**
+  (Administración del sitio → Desarrollo → Purgar cachés): Moodle cachea
+  el paquete AMD en disco y no lo invalida solo con subir la versión del
+  plugin.
+
 ## 0.8.0 (Control de actividad: formato por defecto, orientación de página, exportación a Excel)
 
 * **«Control d'activitat»** pasa a ser el tipo de documento seleccionado por
