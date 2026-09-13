@@ -201,7 +201,7 @@ class activity_pdf_builder {
      * @param array $columns ordered list of {key, label, type: checkbox|text}. Standard keys
      *     use their own translated label regardless of the label supplied; custom keys
      *     (anything not in STANDARD_COLUMN_DEFS) use the supplied label as-is.
-     * @param array $options language, stage, showphotos, showgeneralobs, order, density, orientation, generatedby.
+     * @param array $options language, stage, showphotos, showgeneralobs, order, density, orientation.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $members, string $cohortname, array $activity, array $columns,
@@ -229,7 +229,6 @@ class activity_pdf_builder {
             ? $options['density'] : 'normal';
         $showphotos = (bool) ($options['showphotos'] ?? true);
         $showgeneralobs = (bool) ($options['showgeneralobs'] ?? true);
-        $generatedby = trim((string) ($options['generatedby'] ?? ''));
 
         $users = [];
         foreach ($members as $member) {
@@ -297,7 +296,7 @@ class activity_pdf_builder {
 
         $pdf->AddPage();
 
-        self::render_brand_header($pdf, $cohortname, $language, $stage, $count, $activitydate, $generatedby, $pagewidth);
+        self::render_brand_header($pdf, $cohortname, $language, $stage, $count, $activitydate, $pagewidth);
         $blocktop = self::render_activity_block($pdf, $activity, $activitydate, $count, $language, $brand,
             $pagewidth, $orientation);
 
@@ -442,11 +441,10 @@ class activity_pdf_builder {
      * @param string $stage
      * @param int $count
      * @param \DateTime|null $activitydate
-     * @param string $generatedby
      * @param float $pagewidth full page width (mm), by orientation.
      */
     private static function render_brand_header(\TCPDF &$pdf, string $cohortname, string $language, string $stage,
-            int $count, ?\DateTime $activitydate, string $generatedby, float $pagewidth): void {
+            int $count, ?\DateTime $activitydate, float $pagewidth): void {
         $brand = self::brand_colors($stage);
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, $pagewidth, 22, 'F');
@@ -475,9 +473,6 @@ class activity_pdf_builder {
         $info = $count . ' ' . self::translate_word('students', $language);
         if ($activitydate !== null) {
             $info .= '   ·   ' . $activitydate->format('d/m/Y');
-        }
-        if ($generatedby !== '') {
-            $info .= '   ·   ' . $generatedby;
         }
         $pdf->SetFont('helvetica', '', 8);
         $pdf->SetXY(30, 15.5);

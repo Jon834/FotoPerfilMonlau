@@ -55,7 +55,7 @@ class activity_xlsx_builder {
      * @param string $cohortname
      * @param array $activity name, date (Y-m-d or ''), place, responsables.
      * @param array $columns ordered list of {key, label, type: checkbox|text|value}.
-     * @param array $options language, stage, showphotos, showgeneralobs, order, generatedby.
+     * @param array $options language, stage, showphotos, showgeneralobs, order.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $members, string $cohortname, array $activity, array $columns,

@@ -194,7 +194,6 @@ class create_activity_export extends external_api {
                     'showphotos' => $params['showphotos'],
                     'showgeneralobs' => $params['showgeneralobs'],
                     'order' => $order,
-                    'generatedby' => fullname($USER),
                 ]
             );
         } else {
@@ -211,7 +210,6 @@ class create_activity_export extends external_api {
                     'order' => $order,
                     'density' => $params['density'],
                     'orientation' => $orientation,
-                    'generatedby' => fullname($USER),
                 ]
             );
         }

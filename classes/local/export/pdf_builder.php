@@ -48,7 +48,7 @@ class pdf_builder {
      * @param int[] $userids
      * @param string $title course/cohort title shown at the top of the sheet.
      * @param string $layout orla|grid6|directory|signatures (roster kept as alias for orla).
-     * @param array $options language, stage, density, heading, generatedby.
+     * @param array $options language, stage, density, heading.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $userids, string $title, string $layout = 'orla', array $options = []): array {
@@ -69,7 +69,6 @@ class pdf_builder {
         $density = in_array($options['density'] ?? 'normal', ['compact', 'normal', 'large'], true)
             ? $options['density'] : 'normal';
         $heading = trim((string) ($options['heading'] ?? ''));
-        $generatedby = trim((string) ($options['generatedby'] ?? ''));
 
         $users = [];
         foreach ($userids as $userid) {
@@ -145,7 +144,7 @@ class pdf_builder {
 
         $pdf->AddPage();
 
-        self::render_header($pdf, $title, $layout, $language, $stage, $count, $generatedby);
+        self::render_header($pdf, $title, $layout, $language, $stage, $count);
         $firstpagebasey = self::render_heading($pdf, $heading);
 
         if ($layout === 'signatures') {
@@ -181,7 +180,7 @@ class pdf_builder {
 
     /**
      * Render the PDF header with logo, title and an informative line
-     * (student count, generation date and, optionally, who generated it).
+     * (student count and generation date).
      *
      * @param \TCPDF $pdf
      * @param string $title
@@ -189,10 +188,9 @@ class pdf_builder {
      * @param string $language
      * @param string $stage
      * @param int $count
-     * @param string $generatedby
      */
     private static function render_header(\TCPDF &$pdf, string $title, string $layout, string $language,
-            string $stage, int $count, string $generatedby): void {
+            string $stage, int $count): void {
         $brand = self::brand_colors($stage);
         $pdf->SetFillColor($brand['r'], $brand['g'], $brand['b']);
         $pdf->Rect(0, 0, 210, 30, 'F');
@@ -209,12 +207,9 @@ class pdf_builder {
         $pdf->SetXY(40, 13.5);
         $pdf->Cell(0, 6, self::translate_title($layout, $language), 0, 1, 'L');
 
-        // Informative line: "34 alumnos  ·  03/09/2026  ·  Nombre operador".
+        // Informative line: "34 alumnos  ·  03/09/2026".
         $info = $count . ' ' . self::translate_word('students', $language)
             . '   ·   ' . userdate(time(), self::translate_word('dateformat', $language));
-        if ($generatedby !== '') {
-            $info .= '   ·   ' . $generatedby;
-        }
         $pdf->SetFont('helvetica', '', 8.5);
         $pdf->SetXY(40, 21.5);
         $pdf->Cell(0, 5, $info, 0, 1, 'L');

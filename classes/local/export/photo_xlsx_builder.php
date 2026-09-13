@@ -49,7 +49,7 @@ final class photo_xlsx_builder {
      * @param int[] $userids
      * @param string $title course/cohort title shown at the top of the sheet.
      * @param string $layout orla|grid6|directory|signatures (roster kept as alias for orla).
-     * @param array $options language, stage, heading, generatedby.
+     * @param array $options language, stage, heading.
      * @return array{path: string, filename: string, count: int}
      */
     public static function build(array $userids, string $title, string $layout = 'orla', array $options = []): array {

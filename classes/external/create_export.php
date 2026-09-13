@@ -171,7 +171,6 @@ class create_export extends external_api {
                 'language' => $params['language'],
                 'stage' => $params['stage'],
                 'heading' => $params['heading'],
-                'generatedby' => fullname($USER),
             ]);
         } else {
             $title = self::resolve_export_title($params['filtertype'], $params['filterid']);
@@ -180,7 +179,6 @@ class create_export extends external_api {
                 'stage' => $params['stage'],
                 'heading' => $params['heading'],
                 'density' => $params['density'],
-                'generatedby' => fullname($USER),
             ]);
         }
 
