@@ -89,16 +89,25 @@ class activity_pdf_builder {
     private const OBSERVACIONS_MIN_WIDTH_SHORT = 15.0;
 
     /**
-     * Row height bounds (min, max) in mm, by density option. "normal" keeps the
-     * original bounds; "large" trades pages for legibility (roughly 20 rows per
-     * page on a full page of content) with bigger avatars and more room to write
-     * in Observacions; "compact" tightens them for cohorts that need to fit more
-     * densely.
+     * Row height bounds (min, max) in mm, by density option. The row height is
+     * fitted to the page (available height / student count) and then clamped
+     * into whichever of these ranges the selected density uses, so "normal"
+     * keeps the original bounds; "large" trades pages for legibility (roughly
+     * 20 rows per page on a full page of content) with bigger avatars and more
+     * room to write in Observacions; "compact" tightens them for cohorts that
+     * need to fit more densely.
+     *
+     * The three ranges are deliberately non-overlapping (with a gap either
+     * side of "normal"): if they overlapped, a class size whose natural fit
+     * already landed inside two ranges would render identically under both
+     * densities, making the setting look like it did nothing. Keeping them
+     * disjoint guarantees compact/normal/large always clamp to a different
+     * height from one another.
      */
     private const DENSITY_ROW_BOUNDS = [
-        'compact' => [4.6, 6.4],
+        'compact' => [4.2, 5.4],
         'normal' => [5.6, 8.6],
-        'large' => [7.2, 9.6],
+        'large' => [8.8, 10.4],
     ];
 
     /** @var float Height of the table header row. */

@@ -746,8 +746,12 @@
     position: relative;
     width: 100%;
     /* A4 landscape aspect ratio (297:210), so the frame reads roughly full-size
-       instead of leaving awkward blank space above/below it. */
+       instead of leaving awkward blank space above/below it. The min-height
+       floor keeps portrait documents tall enough to read without the PDF
+       viewer's own scrollbars kicking in on a squashed box. */
     aspect-ratio: 297 / 210;
+    min-height: 70vh;
+    max-height: 85vh;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.35rem;
     background: #f4f5f7;
